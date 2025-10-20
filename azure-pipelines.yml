@@ -1,0 +1,23 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+
+  - script: |
+      git config user.name "Azure DevOps Mirror Bot"
+      git config user.email "devops@azure.com"
+
+      echo "Adding GitHub remote..."
+      git remote add github https://github.com/AnurZ/Biteflow.git
+
+      echo "Pushing all branches and tags to GitHub mirror..."
+      git push --mirror https://$(Github_Token)@github.com/AnurZ/Biteflow.git
+    displayName: "Mirror Azure DevOps Repo to GitHub"
+    env:
+      GITHUB_TOKEN: $(Github_Token)
