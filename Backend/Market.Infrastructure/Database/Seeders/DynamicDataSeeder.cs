@@ -25,13 +25,13 @@ public static class DynamicDataSeeder
                 {
                     Name = "Računari (demo)",
                     IsEnabled = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAtUtc = DateTime.UtcNow
                 },
                 new ProductCategoryEntity
                 {
                     Name = "Mobilni uređaji (demo)",
                     IsEnabled = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAtUtc = DateTime.UtcNow
                 }
             );
 

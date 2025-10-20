@@ -16,11 +16,11 @@ public partial class DatabaseContext
 
             if (entry.State == EntityState.Added)
             {
-                entity.CreatedAt = DateTime.Now;
+                entity.CreatedAtUtc = DateTime.UtcNow;
             }
             else if (entry.State == EntityState.Modified)
             {
-                entity.ModifiedAt = DateTime.Now;
+                entity.ModifiedAtUtc = DateTime.UtcNow;
             }
         }
     }
