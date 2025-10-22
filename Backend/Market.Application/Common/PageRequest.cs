@@ -11,6 +11,6 @@ public sealed class PageRequest
         get => _pageSize;
         init => _pageSize = value <= 0 ? 10 : value > MaxPageSize ? MaxPageSize : value;
     }
-
+    [JsonIgnore]
     public int SkipCount => (Page - 1) * PageSize;
 }
