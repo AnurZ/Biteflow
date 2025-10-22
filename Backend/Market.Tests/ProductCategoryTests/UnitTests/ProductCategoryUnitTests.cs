@@ -10,7 +10,9 @@ public class ProductCategoryUnitTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())// Each test gets a new database
             .Options;
 
-        return new DatabaseContext(options);
+        var fakeClock = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
+
+        return new DatabaseContext(options, fakeClock);
     }
 
     [Fact]

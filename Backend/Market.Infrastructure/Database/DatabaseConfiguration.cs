@@ -6,21 +6,30 @@ namespace Market.Infrastructure.Database;
 
 public partial class DatabaseContext
 {
-    private void ModifyTimestamps()
+    private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
+
+    private void ApplyAuditAndSoftDelete()
     {
-        var entries = ChangeTracker.Entries();
-
-        foreach (var entry in entries)
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
-            var entity = ((BaseEntity)entry.Entity);
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAtUtc = UtcNow;
+                    entry.Entity.ModifiedAtUtc = null; // ili = UtcNow
+                    entry.Entity.IsDeleted = false;
+                    break;
 
-            if (entry.State == EntityState.Added)
-            {
-                entity.CreatedAtUtc = DateTime.UtcNow;
-            }
-            else if (entry.State == EntityState.Modified)
-            {
-                entity.ModifiedAtUtc = DateTime.UtcNow;
+                case EntityState.Modified:
+                    entry.Entity.ModifiedAtUtc = UtcNow;
+                    break;
+
+                case EntityState.Deleted:
+                    // soft-delete: set is Modified and IsDeleted
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeleted = true;
+                    entry.Entity.ModifiedAtUtc = UtcNow;
+                    break;
             }
         }
     }
@@ -60,14 +69,14 @@ public partial class DatabaseContext
 
     public override int SaveChanges()
     {
-        ModifyTimestamps();
+        ApplyAuditAndSoftDelete();
 
         return base.SaveChanges();
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
-        ModifyTimestamps();
+        ApplyAuditAndSoftDelete();
 
         return base.SaveChangesAsync(cancellationToken);
     }

@@ -1,5 +1,6 @@
 ﻿using Market.Infrastructure.Database;
 using Market.Infrastructure.Database.Seeders;
+using Market.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -15,7 +16,7 @@ public static class DatabaseInitializer
         await using var scope = services.CreateAsyncScope();
         var ctx = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
 
-        if (env.IsEnvironment("IntegrationTests") || env.IsEnvironment("Testing"))
+        if (env.IsTest())
         {
             await ctx.Database.EnsureCreatedAsync();
             await DynamicDataSeeder.SeedAsync(ctx);

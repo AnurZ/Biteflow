@@ -76,6 +76,12 @@ public partial class Program
             Log.Information("Market API started successfully.");
             app.Run();
         }
+        catch (HostAbortedException)
+        {
+            // EF Core tools abortiraju host nakon što uzmu DbContext.
+            // Ovo nije runtime greška – samo tiho izađi.
+            Log.Information("Host aborted by EF Core tooling (design-time) - its ok.");
+        }
         catch (Exception ex)
         {
             // Any startup failure will be logged here

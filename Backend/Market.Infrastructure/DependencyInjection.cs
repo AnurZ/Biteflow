@@ -1,6 +1,7 @@
 ﻿using Market.Application.Abstractions;
 using Market.Infrastructure.Common;
 using Market.Infrastructure.Database;
+using Market.Shared.Constants;
 using Market.Shared.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ public static class DependencyInjection
         // DbContext: InMemory for test environments; SQL Server otherwise
         services.AddDbContext<DatabaseContext>((sp, options) =>
         {
-            if (env.IsEnvironment("IntegrationTests") || env.IsEnvironment("Testing"))
+            if (env.IsTest())
             {
                 options.UseInMemoryDatabase("IntegrationTestsDb");
 
