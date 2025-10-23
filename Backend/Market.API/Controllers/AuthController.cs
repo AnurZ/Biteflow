@@ -26,4 +26,12 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
     {
         await mediator.Send(command, ct);
     }
+
+    [HttpPost("test")]
+    [AllowAnonymous]
+    public IActionResult Test([FromBody] object payload)
+    {
+        return Ok("success");
+    }
+
 }
