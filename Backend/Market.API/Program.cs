@@ -49,6 +49,22 @@ public partial class Program
                 .AddInfrastructure(builder.Configuration, builder.Environment)
                 .AddApplication();
 
+            //SETTING UP CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAngularDev", policy =>
+                {
+                    policy.WithOrigins("http://localhost:4200")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader()
+                          .AllowCredentials();
+                });
+            });
+
+            
+
+
+
             var app = builder.Build();
 
             // ---------------------------------------------------------
@@ -64,7 +80,12 @@ public partial class Program
             app.UseExceptionHandler();
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
+            //CORS
+            app.UseCors("AllowAngularDev");
+
             app.UseHttpsRedirection();
+ 
+
             app.UseAuthentication();
             app.UseAuthorization();
 
