@@ -4,9 +4,9 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () => import('./modules/core/auth/auth-module').then(m => m.AuthModule)  // Lazy load  modula
+    loadChildren: () => import('./modules/core/auth/auth-module').then(m => m.AuthModule)  // Lazy loaded module
   },
-  {path: '**', redirectTo: 'public', pathMatch: 'full'}  // Default ruta koja vodi na public
+  {path: '**', redirectTo: 'public', pathMatch: 'full'}  // Default route
 ];
 
 @NgModule({
