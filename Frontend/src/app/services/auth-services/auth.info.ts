@@ -1,10 +1,10 @@
 // DTO to hold authentication information
 export interface MyAuthInfo {
-  userId: number;
-  username: string;
-  firstName: string;
-  lastName: string;
-  isAdmin: boolean;
-  isManager: boolean;
+  id:number;
+  restaurantId:string; //guid
+  displayName:string;
+  email:string;
+  isEnabled:boolean;
+  isLocked:boolean;
   isLoggedIn: boolean;
 }
