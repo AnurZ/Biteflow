@@ -5,7 +5,7 @@ using Market.Infrastructure.Database;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IMediator mediator) : ControllerBase
+public sealed class AuthController(IMediator mediator,DatabaseContext ctx) : ControllerBase
 {
     [HttpPost("login")]
     [AllowAnonymous]
