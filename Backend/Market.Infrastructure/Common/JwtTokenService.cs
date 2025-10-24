@@ -20,7 +20,7 @@ public sealed class JwtTokenService : IJwtTokenService
         _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
-    public JwtTokenPair IssueTokens(MarketUserEntity user)
+    public JwtTokenPair IssueTokens(AppUser user)
     {
         // Now from TimeProvider (consistent with the rest of the app)
         var nowInstant = _time.GetUtcNow();
@@ -34,9 +34,9 @@ public sealed class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(ClaimTypes.NameIdentifier,   user.Id.ToString()),
             new(ClaimTypes.Email,            user.Email),
-            new("is_admin",    user.IsAdmin.ToString().ToLowerInvariant()),
-            new("is_manager",  user.IsManager.ToString().ToLowerInvariant()),
-            new("is_employee", user.IsEmployee.ToString().ToLowerInvariant()),
+            new("tenant_id", user.TenantId.ToString()),
+            new("restaurant_id", user.RestaurantId.ToString()),
+            new("display_name", user.DisplayName),
             new("ver",         user.TokenVersion.ToString()),
             new(JwtRegisteredClaimNames.Iat, ToUnixTimeSeconds(nowInstant).ToString(), ClaimValueTypes.Integer64),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),

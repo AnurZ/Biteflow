@@ -35,8 +35,8 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<MarketUse
             .HasDefaultValue(true);
 
         // Navigation
-        b.HasMany(x => x.RefreshTokens)
-            .WithOne(x => x.User)
-            .HasForeignKey(x => x.UserId);
+        //b.HasMany(x => x.RefreshTokens)
+        //    .WithOne(x => x.User)
+        //    .HasForeignKey(x => x.UserId);
     }
 }
