@@ -1,10 +1,11 @@
 ﻿using Market.Application.Modules.Auth.Commands.Login;
 using Market.Application.Modules.Auth.Commands.Logout;
 using Market.Application.Modules.Auth.Commands.Refresh;
+using Market.Infrastructure.Database;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IMediator mediator) : ControllerBase
+public sealed class AuthController(IMediator mediator,DatabaseContext ctx) : ControllerBase
 {
     [HttpPost("login")]
     [AllowAnonymous]
@@ -29,9 +30,9 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
 
     [HttpPost("test")]
     [AllowAnonymous]
-    public IActionResult Test([FromBody] object payload)
+    public IActionResult Test()
     {
-        return Ok("success");
+        return Ok();
     }
 
 }
