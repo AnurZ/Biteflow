@@ -1,16 +1,16 @@
 <header>
   <nav>
-    Biteflow
+    <div id="biteflow-tag" routerLink="/public">Biteflow</div>
   </nav>
 
   <div class="navButtons">
     @if (authService.isLoggedIn()) {
       <div class="user-info">
         <span>{{ authService.getDisplayName() }}</span>
-        <button routerLink="/auth/logout">Logout</button>
+        <button mat-stroked-button color="warn" routerLink="/auth/logout">Logout</button>
       </div>
     } @else if (!isOnLoginPage()) {
-      <button routerLink="/auth/login">Login</button>
+      <button mat-raised-button color="primary" routerLink="/auth/login">Login</button>
     }
   </div>
 </header>

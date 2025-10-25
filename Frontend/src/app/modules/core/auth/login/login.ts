@@ -28,6 +28,7 @@ export class Login {
     this.authLoginService.handleAsync(this.form.value).subscribe({
       next: () => {
         console.log('Login successful');
+        this.router.navigateByUrl('/public');
       },
     });
   }
