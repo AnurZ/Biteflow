@@ -4,6 +4,7 @@ import { Header } from './header/header';
 import { Home } from './home/home';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { PublicRoutingModule } from './public-routing.module';
+import {MatButtonModule} from '@angular/material/button';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { PublicRoutingModule } from './public-routing.module';
     CommonModule,
     RouterLink,
     RouterLinkActive,
-    PublicRoutingModule
+    PublicRoutingModule,
+    MatButtonModule,
   ]
 })
 export class PublicModule { }
