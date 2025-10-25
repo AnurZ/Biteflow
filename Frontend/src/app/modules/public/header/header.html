@@ -1,0 +1,16 @@
+<header>
+  <nav>
+    Biteflow
+  </nav>
+
+  <div class="navButtons">
+    @if (authService.isLoggedIn()) {
+      <div class="user-info">
+        <span>{{ authService.getDisplayName() }}</span>
+        <button routerLink="/auth/logout">Logout</button>
+      </div>
+    } @else if (!isOnLoginPage()) {
+      <button routerLink="/auth/login">Login</button>
+    }
+  </div>
+</header>

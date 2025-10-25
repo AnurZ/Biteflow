@@ -7,6 +7,7 @@ import { AppRoutingModule } from './app-routing-module';
 import { App } from './app';
 import { SharedModule } from './modules/shared/shared.module';
 import { AuthInterceptor } from './modules/core/auth/auth-interceptor';
+import {PublicModule} from './modules/public/public-module';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { AuthInterceptor } from './modules/core/auth/auth-interceptor';
     HttpClientModule,
     AppRoutingModule,
     ReactiveFormsModule,
-    SharedModule
+    SharedModule,
+    PublicModule
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),
