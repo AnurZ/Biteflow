@@ -1,25 +1,22 @@
-<h1>Login works!</h1>
-
 <div class="login-container">
-  <h2>{{ 'LOGIN.TITLE' }}</h2>
+  <h2>{{ 'Sign in to your account' }}</h2>
   <form (ngSubmit)="onLogin()" [formGroup]="form">
     <app-input-text
-      [myLabel]="'LOGIN.USERNAME_LABEL' "
-      [myPlaceholder]="'LOGIN.USERNAME_PLACEHOLDER'"
+      [myLabel]="'Email'"
+      [myPlaceholder]="'anur@test.com'"
       myControlName="email"
     ></app-input-text>
 
 
     <app-input-text
-      [myLabel]="'LOGIN.PASSWORD_LABEL'"
-      [myPlaceholder]="'LOGIN.PASSWORD_PLACEHOLDER'"
+      [myLabel]="'Password'"
+      [myPlaceholder]="'test123'"
       [myType]="InputTextType.Password"
       myControlName="password"
     ></app-input-text>
 
-    <mat-slide-toggle>{{ 'LOGIN.SAVE_LOGIN'}}</mat-slide-toggle>
 
-    <button class="login-button" color="primary" type="submit">{{ 'LOGIN.BUTTON' }}</button>
+    <button mat-stroked-button color="primary" class="login-button" type="submit">{{ 'Login' }}</button>
 
   </form>
 </div>
