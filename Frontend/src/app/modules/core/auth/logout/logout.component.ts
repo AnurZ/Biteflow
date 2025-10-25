@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import {MyConfig} from '../../../../my-config';
-import {AuthService} from '../../../../services/auth-services/auth.service';
+import { MatDialog } from '@angular/material/dialog';
+import { MyConfig } from '../../../../my-config';
+import { AuthService } from '../../../../services/auth-services/auth.service';
+import { LogoutConfirmDialogComponent } from './logout-confirm-dialog.component';
 
 @Component({
   selector: 'app-logout',
@@ -10,23 +12,40 @@ import {AuthService} from '../../../../services/auth-services/auth.service';
   styleUrls: ['./logout.component.css'],
   standalone: false
 })
-export class LogoutComponent implements OnInit {
+export class LogoutComponent {
   private apiUrl = `${MyConfig.api_address}/auth/logout`;
+  confirmed = false;
 
   constructor(
     private httpClient: HttpClient,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    this.logout();
+    this.openConfirmDialog();
+  }
+
+  openConfirmDialog(): void {
+    const dialogRef = this.dialog.open(LogoutConfirmDialogComponent, {
+      width: '360px',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.confirmed = true;
+        this.logout();
+      } else {
+        this.router.navigate(['/public']);
+      }
+    });
   }
 
   logout(): void {
     const refreshToken = this.authService.getLoginToken()?.refreshToken;
 
-    // If there's no token set user to null and reroute them to home page after 3s
     if (!refreshToken) {
       this.handleLogoutSuccessOrError();
       return;
