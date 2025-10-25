@@ -1,12 +1,23 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-
+import { Header } from './header/header';
+import { Home } from './home/home';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { PublicRoutingModule } from './public-routing.module';
 
 @NgModule({
-  declarations: [],
+  declarations: [
+    Header,
+    Home
+  ],
+  exports: [
+    Header
+  ],
   imports: [
-    CommonModule
+    CommonModule,
+    RouterLink,
+    RouterLinkActive,
+    PublicRoutingModule
   ]
 })
 export class PublicModule { }
