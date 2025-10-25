@@ -26,7 +26,7 @@ export class LogoutComponent implements OnInit {
   logout(): void {
     const refreshToken = this.authService.getLoginToken()?.refreshToken;
 
-    // If there's no token set user to null and reroute them to login page after 3s
+    // If there's no token set user to null and reroute them to home page after 3s
     if (!refreshToken) {
       this.handleLogoutSuccessOrError();
       return;
@@ -44,7 +44,7 @@ export class LogoutComponent implements OnInit {
   private handleLogoutSuccessOrError(): void {
     this.authService.setLoggedInUser(null);
     setTimeout(() => {
-      this.router.navigate(['/auth/login']);
+      this.router.navigate(['/public']);
     }, 3000);
   }
 }
