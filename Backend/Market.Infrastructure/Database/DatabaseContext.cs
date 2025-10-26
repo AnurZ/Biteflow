@@ -1,4 +1,5 @@
 ﻿using Market.Application.Abstractions;
+using Market.Domain.Entities.Staff;
 
 namespace Market.Infrastructure.Database;
 
@@ -8,6 +9,8 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<RefreshTokenEntity> RefreshTokens => Set<RefreshTokenEntity>();
+
+    public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
 
     private readonly TimeProvider _clock;
     public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock) : base(options)

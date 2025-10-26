@@ -1,4 +1,6 @@
-﻿namespace Market.Infrastructure.Database.Seeders;
+﻿using Market.Domain.Entities.Staff;
+
+namespace Market.Infrastructure.Database.Seeders;
 
 /// <summary>
 /// Dynamic seeder koji se pokreće u runtime-u,
@@ -14,7 +16,56 @@ public static class DynamicDataSeeder
 
         await SeedProductCategoriesAsync(context);
         await SeedUsersAsync(context);
+        await SeedUserProfilesAsync(context);
     }
+
+    private static async Task SeedUserProfilesAsync(DatabaseContext context)
+    {
+        var user = await context.Users
+            .Where(u => EF.Functions.Like(u.Email, "%string%"))
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            Console.WriteLine("ℹ️ Seed skipped: no user found whose email contains 'string'.");
+            return;
+        }
+
+        // 2) Avoid duplicates (if multi-tenant, also filter by TenantId)
+        var hasAny = await context.EmployeeProfiles
+            .AnyAsync(ep => ep.AppUserId == user.Id);
+        if (hasAny)
+        {
+            Console.WriteLine("ℹ️ Seed skipped: EmployeeProfile already exists for this user.");
+            return;
+        }
+
+        // 3) Create profile (only set FK; no need to set navigation explicitly)
+        var profile = new EmployeeProfile
+        {
+            AppUserId = user.Id,
+            Position = "Waiter",
+            FirstName = "Anur",
+            LastName = "Zjakic",
+            PhoneNumber = "123123123",
+            HireDate = DateTime.UtcNow,
+            Salary = 1200m,
+            HourlyRate = 5m,
+            EmploymentType = "FullTime",
+            ShiftType = "Morning",
+            ShiftStart = TimeOnly.FromTimeSpan(TimeSpan.FromHours(8)),
+            ShiftEnd = TimeOnly.FromTimeSpan(TimeSpan.FromHours(15)),
+            AverageRating = 4.39,
+            CompletedOrders = 10,
+            MonthlyTips = 11m,
+            IsActive = true
+        };
+
+        context.EmployeeProfiles.Add(profile);
+        await context.SaveChangesAsync();
+        Console.WriteLine("✅ Seed: EmployeeProfile added.");
+    }
+
 
     private static async Task SeedProductCategoriesAsync(DatabaseContext context)
     {
