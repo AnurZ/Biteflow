@@ -1,4 +1,5 @@
-﻿using Market.Domain.Entities.Staff;
+﻿using Market.Domain.Entities.InventoryItem;
+using Market.Domain.Entities.Staff;
 
 namespace Market.Application.Abstractions;
 
@@ -11,6 +12,7 @@ public interface IAppDbContext
     DbSet<RefreshTokenEntity> RefreshTokens { get; }
 
     DbSet<EmployeeProfile> EmployeeProfiles { get; }
+    DbSet<InventoryItem> InventoryItems { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct);
 }
