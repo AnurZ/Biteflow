@@ -20,12 +20,11 @@ namespace Market.Infrastructure.Database.Configurations.Staff
             b.Property(x => x.PhoneNumber).HasMaxLength(50);
 
             b.HasOne(x => x.AppUser)
-                .WithMany() 
-                .HasForeignKey(x => x.AppUserId)
+                .WithOne()
+                .HasForeignKey<EmployeeProfile>(x => x.AppUserId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // TenantConfiguration TODO
-            //b.HasIndex(x => new { x.TenantId, x.AppUserId }).IsUnique();
+            b.HasIndex(x => new { x.TenantId, x.AppUserId }).IsUnique();
         }
     }
 }
