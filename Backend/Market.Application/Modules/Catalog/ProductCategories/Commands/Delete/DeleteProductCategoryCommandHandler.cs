@@ -1,6 +1,7 @@
 ﻿namespace Market.Application.Modules.Catalog.ProductCategories.Commands.Delete;
 
-public class DeleteProductCategoryCommandHandler(IAppDbContext context, IAppCurrentUser appCurrentUser)
+public class DeleteProductCategory
+    (IAppDbContext context, IAppCurrentUser appCurrentUser)
       : IRequestHandler<DeleteProductCategoryCommand, Unit>
 {
     public async Task<Unit> Handle(DeleteProductCategoryCommand request, CancellationToken cancellationToken)
