@@ -84,7 +84,7 @@ public static class DependencyInjection
             var bearer = new OpenApiSecurityScheme
             {
                 Name = "Authorization",
-                Description = "Unesi JWT token. Format: **Bearer {token}**",
+                Description = "Unesi JWT token.", // Format: **Bearer {token}** -> Format je samo token Bearer dio se dodaje automatski na swaggeru
                 In = ParameterLocation.Header,
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
