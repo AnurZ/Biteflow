@@ -51,7 +51,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProductCategories");
+                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Catalog.ProductEntity", b =>
@@ -98,7 +98,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.AppUser", b =>
@@ -153,7 +153,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.RefreshTokenEntity", b =>
@@ -199,7 +199,55 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.InventoryItems.InventoryItems", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("CurrentQty")
+                        .HasColumnType("float");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ReorderFrequency")
+                        .HasColumnType("int");
+
+                    b.Property<double>("ReorderQty")
+                        .HasColumnType("float");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("UnitType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InventoryItems", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Staff.EmployeeProfile", b =>
@@ -286,7 +334,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasIndex("AppUserId");
 
-                    b.ToTable("EmployeeProfiles");
+                    b.ToTable("EmployeeProfiles", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Catalog.ProductEntity", b =>
