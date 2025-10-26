@@ -122,7 +122,7 @@ public static class DynamicDataSeeder
             Email = "string",
             PasswordHash = hasher.HashPassword(null!, "string"),
             IsEnabled = true,
-            DisplayName = "STRING1"
+            DisplayName = "Konobar1"
         };
         var dummyForTests = new AppUser
         {
