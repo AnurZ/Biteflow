@@ -38,6 +38,7 @@ export class AuthService {
 
   getLoginToken(): LoginTokenDto | null {
     const tokenString = window.localStorage.getItem('my-auth-token') ?? '';
+    if (!tokenString) return null;
     try {
       return JSON.parse(tokenString);
     } catch {

@@ -17,13 +17,17 @@ export class StaffListEndpoint implements BaseEndpointAsync<StaffListRequest, Pa
   private base = `${MyConfig.api_address}/staff`;
   constructor(private http: HttpClient) {}
 
-  handleAsync(req: StaffListRequest): Observable<PageResult<StaffListItem>> {
+  handleAsync(req: StaffListRequest) {
     let params = new HttpParams()
-      .set('pageNumber', req.pageNumber)
-      .set('pageSize', req.pageSize);
+      .set('paging.page',     String(req.pageNumber)) // << OVO je ključno
+      .set('paging.pageSize', String(req.pageSize));
+
     if (req.search) params = params.set('search', req.search);
-    if (req.sort) params = params.set('sort', req.sort);
+    if (req.sort)   params = params.set('sort',   req.sort);
 
     return this.http.get<PageResult<StaffListItem>>(this.base, { params });
   }
+
+
+
 }
