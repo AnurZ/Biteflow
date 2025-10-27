@@ -1,14 +1,20 @@
-<header>
-  <nav>
-    <div id="biteflow-tag" routerLink="/public">Biteflow</div>
-  </nav>
+<header class="topbar">
+  <div id="biteflow-tag" routerLink="/public">Biteflow</div>
 
-  <div class="navButtons">
+  <div class="center">
     @if (authService.isLoggedIn()) {
-      <div class="user-info">
-        <span>{{ authService.getDisplayName() }}</span>
-        <button mat-stroked-button color="warn" routerLink="/auth/logout">Logout</button>
+      <div class="ComponentButtons">
+        <button mat-raised-button color="primary" routerLink="/admin/staff">Admin</button>
+        <button mat-raised-button color="primary" routerLink="/public">Waiter</button>
+        <button mat-raised-button color="primary" routerLink="/public">Kitchen</button>
       </div>
+    }
+  </div>
+
+  <div class="right">
+    @if (authService.isLoggedIn()) {
+      <span>{{ authService.getDisplayName() }}</span>
+      <button mat-stroked-button color="warn" routerLink="/auth/logout">Logout</button>
     } @else if (!isOnLoginPage()) {
       <button mat-raised-button color="primary" routerLink="/auth/login">Login</button>
     }
