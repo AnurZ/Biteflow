@@ -13,6 +13,7 @@ namespace Market.Application.Modules.Staff.Commands.Update
         public string Position { get; init; } = string.Empty;
         public string FirstName { get; init; } = string.Empty;
         public string LastName { get; init; } = string.Empty;
+        public string DisplayName { get; init; } = string.Empty;
         public string? PhoneNumber { get; init; }
         public DateTime? HireDate { get; init; }
         public DateTime? TerminationDate { get; init; }

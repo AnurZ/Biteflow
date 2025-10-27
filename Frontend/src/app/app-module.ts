@@ -9,17 +9,16 @@ import { SharedModule } from './modules/shared/shared.module';
 import { AuthInterceptor } from './modules/core/auth/auth-interceptor';
 import {PublicModule} from './modules/public/public-module';
 
+// src/app/app-module.ts
 @NgModule({
-  declarations: [
-    App
-  ],
+  declarations: [App],
   imports: [
     BrowserModule,
     HttpClientModule,
     AppRoutingModule,
     ReactiveFormsModule,
     SharedModule,
-    PublicModule
+    PublicModule,
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),
