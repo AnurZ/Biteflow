@@ -24,7 +24,7 @@ export interface StaffDetails {
   firstName: string;
   lastName: string;
   phoneNumber?: string;
-  hireDate?: string;
+  hireDate?: string | undefined;
   terminationDate?: string;
   salary?: number;
   hourlyRate?: number;
@@ -61,6 +61,7 @@ export interface CreateStaffRequest {
 
 export interface UpdateStaffRequest {
   id: number;
+  displayName?:string;
   position: string;
   firstName: string;
   lastName: string;

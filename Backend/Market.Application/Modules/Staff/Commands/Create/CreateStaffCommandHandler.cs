@@ -1,24 +1,30 @@
-﻿// Market.Application.Modules.Staff.Commands.Create.CreateStaffCommandHandler
-using Market.Domain.Entities.Identity;
+﻿using Market.Domain.Entities.Identity;
 using Market.Domain.Entities.Staff;
+using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Identity;      
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Staff.Commands.Create
 {
+
+   
+
+
     public sealed class CreateStaffCommandHandler(IAppDbContext db, IPasswordHasher<AppUser> hasher)
         : IRequestHandler<CreateStaffCommand, int>
     {
         public async Task<int> Handle(CreateStaffCommand r, CancellationToken ct)
         {
-            
+
+            var tenantId = SeedConstants.DefaultTenantId;
+
             if (string.IsNullOrWhiteSpace(r.FirstName) || string.IsNullOrWhiteSpace(r.LastName))
                 throw new ValidationException("FirstName and LastName are required.");
 
             int appUserId;
 
-            //If user exsist then set the id
+            //For testing if the user exissts get his id
             if (r.AppUserId > 0)
             {
                 
@@ -49,7 +55,7 @@ namespace Market.Application.Modules.Staff.Commands.Create
                 
                 var user = new AppUser
                 {
-                    // TODO: set RestaurantId from TenantCOntext
+                    TenantId = tenantId,
                     RestaurantId = Guid.Empty,
                     Email = email,
                     DisplayName = displayName,
@@ -69,6 +75,7 @@ namespace Market.Application.Modules.Staff.Commands.Create
 
             var profile = new EmployeeProfile
             {
+                TenantId = tenantId,
                 AppUserId = appUserId,
                 Position = r.Position.Trim(),
                 FirstName = r.FirstName.Trim(),
@@ -86,7 +93,8 @@ namespace Market.Application.Modules.Staff.Commands.Create
 
             db.EmployeeProfiles.Add(profile);
             await db.SaveChangesAsync(ct);
-
+            
+            
             return profile.Id;
         }
     }

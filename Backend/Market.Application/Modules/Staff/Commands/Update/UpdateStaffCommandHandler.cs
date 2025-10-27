@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Market.Application.Modules.Staff.Commands.Update
 {
@@ -28,6 +29,13 @@ namespace Market.Application.Modules.Staff.Commands.Update
             e.ShiftEnd = r.ShiftEnd;
             e.IsActive = r.IsActive;
             e.Notes = r.Notes;
+
+            if (!string.IsNullOrWhiteSpace(r.DisplayName))
+            {
+                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == e.AppUserId, ct)
+                           ?? throw new MarketNotFoundException("User not found for staff.");
+                user.DisplayName = r.DisplayName.Trim();
+            }
 
             await db.SaveChangesAsync(ct);
         }
