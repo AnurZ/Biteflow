@@ -1,1 +1,146 @@
-<p>staff-form-dialog works!</p>
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+
+    @if (data.mode === 'create') {
+      <div class="section-card">
+        <h3 class="section-title">User account</h3>
+
+        <div class="inner-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput formControlName="email" type="email" required>
+            <mat-error *ngIf="form.controls.email.hasError('required')">Email is required.</mat-error>
+            <mat-error *ngIf="form.controls.email.hasError('email')">Enter valid email.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Display name</mat-label>
+            <input matInput formControlName="displayName" required>
+            <mat-error *ngIf="form.controls.displayName.hasError('required')">Display name is required.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Temporary password</mat-label>
+            <input matInput formControlName="plainPassword" [type]="showPwd ? 'text' : 'password'" required>
+            <button mat-icon-button matSuffix type="button" (click)="togglePwd()" [attr.aria-label]="'Show/hide password'">
+              <mat-icon>{{ showPwd ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error *ngIf="form.controls.plainPassword.hasError('required')">Password is required</mat-error>
+            <mat-error *ngIf="form.controls.plainPassword.hasError('minlength')">Min 8 characters</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+    } @else {
+      <div class="section-card">
+        <h3 class="section-title">User account info</h3>
+
+        <div class="inner-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Email</mat-label>
+            <input matInput [value]="form.getRawValue().email" disabled>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Display name</mat-label>
+            <input matInput formControlName="displayName">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Plain password</mat-label>
+            <input matInput value="********" disabled>
+          </mat-form-field>
+        </div>
+      </div>
+    }
+
+    <div class="section-card">
+      <h3 class="section-title">Employee profile</h3>
+
+      <div class="inner-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Position</mat-label>
+          <mat-select formControlName="position" required>
+            <mat-option value="Waiter">Waiter</mat-option>
+            <mat-option value="Cook">Cook</mat-option>
+            <mat-option value="Manager">Manager</mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls.position.hasError('required')">Position is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Name</mat-label>
+          <input matInput formControlName="firstName" required>
+          <mat-error *ngIf="form.controls.firstName.hasError('required')">Name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last name</mat-label>
+          <input matInput formControlName="lastName" required>
+          <mat-error *ngIf="form.controls.lastName.hasError('required')">Last name is required</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phoneNumber">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hire date</mat-label>
+          <input matInput [matDatepicker]="dp1" formControlName="hireDate">
+          <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
+          <mat-datepicker #dp1></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hourly rate</mat-label>
+          <input matInput type="number" formControlName="hourlyRate">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hire type</mat-label>
+          <mat-select formControlName="employmentType">
+            <mat-option value="FullTime">Full Time</mat-option>
+            <mat-option value="PartTime">Part Time</mat-option>
+            <mat-option value="Contractor">Contractor</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Shift type</mat-label>
+          <mat-select formControlName="shiftType">
+            <mat-option value="Morning">Morning</mat-option>
+            <mat-option value="Evening">Evening</mat-option>
+            <mat-option value="Night">Night</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Shift start (HH:mm:ss)</mat-label>
+          <input matInput formControlName="shiftStart" placeholder="08:00:00">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Shift end (HH:mm:ss)</mat-label>
+          <input matInput formControlName="shiftEnd" placeholder="15:00:00">
+        </mat-form-field>
+
+        <mat-checkbox formControlName="isActive">Active</mat-checkbox>
+
+        <mat-form-field appearance="outline" class="full">
+          <mat-label>Notes</mat-label>
+          <textarea matInput rows="3" formControlName="notes"></textarea>
+        </mat-form-field>
+      </div>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || loading">
+    {{ data.mode === 'create' ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>
