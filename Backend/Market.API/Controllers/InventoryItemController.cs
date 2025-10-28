@@ -1,9 +1,9 @@
-﻿// Market.API/Controllers/StaffController.cs
-using Market.Application.Modules.Staff.Commands.Create;
-using Market.Application.Modules.Staff.Commands.Delete;
-using Market.Application.Modules.Staff.Commands.Update;
-using Market.Application.Modules.Staff.Queries.GetById;
-using Market.Application.Modules.Staff.Queries.List;
+﻿using Market.Application.Modules.InventoryItem.Commands.Create;
+using Market.Application.Modules.InventoryItem.Commands.Delete;
+using Market.Application.Modules.InventoryItem.Commands.Update;
+using Market.Application.Modules.InventoryItem.Queries.List;
+using Market.Application.Modules.InventoryItem.Querries.GetById;
+using Market.Application.Modules.InventoryItem.Querries.List;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,22 +12,22 @@ using Microsoft.AspNetCore.Mvc;
 public class InventoryItemController(ISender sender) : ControllerBase
 {
     [HttpGet]
-    public async Task<PageResult<ListStaffItemDto>> List([FromQuery] ListStaffQuery q, CancellationToken ct)
+    public async Task<PageResult<ListInventoryItemsDto>> List([FromQuery] ListInventoryItemsQuery q, CancellationToken ct)
         => await sender.Send(q, ct);
 
     [HttpGet("{id:int}")]
-    public async Task<GetStaffByIdDto> GetById(int id, CancellationToken ct)
-        => await sender.Send(new GetStaffByIdQuery { Id = id }, ct);
+    public async Task<GetInventoryItemByIdDto> GetById(int id, CancellationToken ct)
+        => await sender.Send(new GetInventoryItemByIdQuery { Id = id }, ct);
 
     [HttpPost]
-    public async Task<ActionResult<int>> Create(CreateStaffCommand cmd, CancellationToken ct)
+    public async Task<ActionResult<int>> Create(CreateInventoryItemCommand cmd, CancellationToken ct)
     {
         var id = await sender.Send(cmd, ct);
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, UpdateStaffCommand cmd, CancellationToken ct)
+    public async Task<IActionResult> Update(int id, UpdateInventoryItemCommand cmd, CancellationToken ct)
     {
         cmd.Id = id;
         await sender.Send(cmd, ct);
@@ -37,7 +37,7 @@ public class InventoryItemController(ISender sender) : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        await sender.Send(new DeleteStaffCommand { Id = id }, ct);
+        await sender.Send(new DeleteInventoryItemCommand { Id = id }, ct);
         return NoContent();
     }
 }
