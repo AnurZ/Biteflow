@@ -44,6 +44,8 @@ public partial class DatabaseContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(DatabaseContext).Assembly);
+
         ApplyGlobalFielters(modelBuilder);
 
         StaticDataSeeder.Seed(modelBuilder); // static data
