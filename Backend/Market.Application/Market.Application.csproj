@@ -22,10 +22,4 @@
     <ProjectReference Include="..\Market.Shared\Market.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Modules\InventoryItem\Commands\Delete\" />
-    <Folder Include="Modules\InventoryItem\Commands\Update\" />
-    <Folder Include="Modules\InventoryItem\Querries\GetById\" />
-  </ItemGroup>
-
 </Project>
