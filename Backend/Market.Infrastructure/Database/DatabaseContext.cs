@@ -1,5 +1,7 @@
 ﻿using Market.Application.Abstractions;
 using Market.Domain.Entities.InventoryItem;
+using Market.Domain.Entities.Meal;
+using Market.Domain.Entities.MealIngredient;
 using Market.Domain.Entities.Staff;
 
 namespace Market.Infrastructure.Database;
@@ -13,6 +15,8 @@ public partial class DatabaseContext : DbContext, IAppDbContext
 
     public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
     public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+    public DbSet<Meal> Meals => Set<Meal>();
+    public DbSet<MealIngredient> MealIngredients => Set<MealIngredient>();
 
     private readonly TimeProvider _clock;
     public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock) : base(options)

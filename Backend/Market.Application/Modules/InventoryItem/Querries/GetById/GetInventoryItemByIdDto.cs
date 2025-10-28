@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.InventoryItem.Commands.Create
+namespace Market.Application.Modules.InventoryItem.Querries.GetById
 {
-    public sealed class CreateInventoryItemCommand:IRequest<int>
+    public sealed class GetInventoryItemByIdDto 
     {
-        public Guid RestaurantId { get; set; }
+        public int Id { get; init; }
+        public Guid RestaurantId { get; init; }
         public string Name { get; init; } = string.Empty;
         public string Sku { get; init; } = string.Empty;
         public UnitTypes UnitType { get; init; }
