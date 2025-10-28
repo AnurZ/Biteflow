@@ -17,6 +17,14 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
                 throw new ValidationException("Name is required.");
             // Have to add checks for all other attributes
 
+            bool exists = await db.InventoryItems
+                .AnyAsync(i => i.Name.ToLower() == r.Name.ToLower()
+                            && i.RestaurantId == r.RestaurantId, ct);
+
+            if (exists)
+                throw new ValidationException($"An item with the name '{r.Name}' already exists for this restaurant.");
+
+
             var ie = new Market.Domain.Entities.InventoryItem.InventoryItem
             {
                 Name = r.Name,
