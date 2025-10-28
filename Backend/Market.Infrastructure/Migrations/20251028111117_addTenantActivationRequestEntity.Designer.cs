@@ -4,6 +4,7 @@ using Market.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Market.Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20251028111117_addTenantActivationRequestEntity")]
+    partial class addTenantActivationRequestEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,7 +55,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ProductCategories");
+                    b.ToTable("ProductCategories", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Catalog.ProductEntity", b =>
@@ -101,7 +104,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.AppUser", b =>
@@ -230,7 +233,6 @@ namespace Market.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
-                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.RefreshTokenEntity", b =>
@@ -285,7 +287,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasIndex("UserId", "TokenHash")
                         .IsUnique();
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.InventoryItem.InventoryItem", b =>
@@ -342,97 +344,6 @@ namespace Market.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("InventoryItems", (string)null);
-                    b.ToTable("InventoryItems");
-                });
-
-            modelBuilder.Entity("Market.Domain.Entities.Meal.Meal", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("BasePrice")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImageField")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsAvailable")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsFeatured")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ModifiedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("StockManaged")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Meals");
-                });
-
-            modelBuilder.Entity("Market.Domain.Entities.MealIngredient.MealIngredient", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InventoryItemId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("MealId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ModifiedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<double>("Quantity")
-                        .HasColumnType("float");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("UnitTypes")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InventoryItemId");
-
-                    b.HasIndex("MealId");
-
-                    b.ToTable("MealIngredients");
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Staff.EmployeeProfile", b =>
@@ -527,7 +438,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasIndex("TenantId", "AppUserId")
                         .IsUnique();
 
-                    b.ToTable("EmployeeProfiles");
+                    b.ToTable("EmployeeProfiles", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Tenants.TenantActivationRequest", b =>
@@ -642,25 +553,6 @@ namespace Market.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Market.Domain.Entities.MealIngredient.MealIngredient", b =>
-                {
-                    b.HasOne("Market.Domain.Entities.InventoryItem.InventoryItem", "InventoryItem")
-                        .WithMany()
-                        .HasForeignKey("InventoryItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Market.Domain.Entities.Meal.Meal", "Meal")
-                        .WithMany("Ingredients")
-                        .HasForeignKey("MealId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("InventoryItem");
-
-                    b.Navigation("Meal");
-                });
-
             modelBuilder.Entity("Market.Domain.Entities.Staff.EmployeeProfile", b =>
                 {
                     b.HasOne("Market.Domain.Entities.Identity.AppUser", "AppUser")
@@ -685,9 +577,6 @@ namespace Market.Infrastructure.Migrations
             modelBuilder.Entity("Market.Domain.Entities.Identity.MarketUserEntity", b =>
                 {
                     b.Navigation("RefreshTokens");
-            modelBuilder.Entity("Market.Domain.Entities.Meal.Meal", b =>
-                {
-                    b.Navigation("Ingredients");
                 });
 #pragma warning restore 612, 618
         }
