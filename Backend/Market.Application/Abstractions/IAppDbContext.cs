@@ -1,4 +1,6 @@
 ﻿using Market.Domain.Entities.InventoryItem;
+using Market.Domain.Entities.Meal;
+using Market.Domain.Entities.MealIngredient;
 using Market.Domain.Entities.Staff;
 
 namespace Market.Application.Abstractions;
@@ -13,6 +15,8 @@ public interface IAppDbContext
 
     DbSet<EmployeeProfile> EmployeeProfiles { get; }
     DbSet<InventoryItem> InventoryItems { get; }
+    DbSet<Meal> Meals { get; }
+    DbSet<MealIngredient> MealIngredients { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct);
 }
