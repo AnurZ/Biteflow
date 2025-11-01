@@ -1,4 +1,5 @@
-﻿using Market.Infrastructure.Common;
+﻿using Market.Application.Abstractions;
+using Market.Infrastructure.Common;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -98,6 +99,13 @@ public static class DependencyInjection
         services.AddExceptionHandler<MarketExceptionHandler>();
         services.AddProblemDetails();
 
+        services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
+        services.AddScoped<IActivationLinkService, ActivationLinkService>();
+
+
         return services;
     }
+
+
+
 }
