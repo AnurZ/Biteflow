@@ -1,4 +1,5 @@
 ﻿using Market.Domain.Entities.Staff;
+using Market.Domain.Entities.Tenants;
 
 namespace Market.Infrastructure.Database.Seeders;
 
@@ -17,6 +18,7 @@ public static class DynamicDataSeeder
         await SeedProductCategoriesAsync(context);
         await SeedUsersAsync(context);
         await SeedUserProfilesAsync(context);
+        await SeedTenantActivationRequestAsync(context);
     }
 
     private static async Task SeedUserProfilesAsync(DatabaseContext context)
@@ -136,4 +138,28 @@ public static class DynamicDataSeeder
 
         Console.WriteLine("✅ Dynamic seed: demo users added.");
     }
+
+    private static async Task SeedTenantActivationRequestAsync(DatabaseContext context)
+    {
+        if (await context.TenantActivationRequests.AnyAsync()) return;
+
+        var req = new TenantActivationRequest();
+        req.EditDraft(
+            restaurantName: "Demo Bistro",
+            domain: "demo-bistro",
+            ownerFullName: "Owner Name",
+            ownerEmail: "owner@example.com",
+            ownerPhone: "+38761111222",
+            address: "Ulica 1",
+            city: "Mostar",
+            state: "FBIH"
+        );
+        req.Submit(); // status -> Submitted
+
+        context.TenantActivationRequests.Add(req);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"✅ Seed: TenantActivationRequest created with Id = {req.Id}");
+    }
+
 }
