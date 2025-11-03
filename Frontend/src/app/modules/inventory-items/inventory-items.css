@@ -2,17 +2,16 @@
   background: #fff;
   border: 1px solid #dee2e6;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px rgba(0,0,0,.04);
   padding: 0.5rem 0.75rem 0.75rem;
 }
 
-/* --- Header --- */
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 0.75rem 0;
+  padding: .75rem 0;
   border-bottom: 1px solid #e9ecef;
 }
 
@@ -42,7 +41,7 @@
   min-width: 280px;
 }
 
-/* --- Fix for Material form field height --- */
+/* Fix for search bar height */
 :host ::ng-deep .card-header .actions .mat-mdc-form-field .mdc-text-field {
   height: 40px;
   border-radius: 8px;
@@ -63,98 +62,103 @@
   border-color: #ced4da;
 }
 
-.my-actions .no-warn {
-  color: rgba(0, 0, 0, 0.54);
-}
-
-/* --- Table wrapper --- */
+/* Table wrapper */
 .table-wrap {
-  margin-top: 0.5rem;
+  margin-top: .5rem;
   overflow: auto;
   border-radius: 8px;
   border: 1px solid #e9ecef;
 }
 
-/* --- Table --- */
 table[mat-table] {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
   background: #fff;
 }
 
-/* --- Header & Cell shared styling --- */
-th[mat-header-cell],
-td[mat-cell] {
-  text-align: center;
-  padding: 12px 14px;
-  border-bottom: 1px solid #dee2e6;
-  vertical-align: middle;
-  color: #212529;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-/* --- Inner wrappers for perfect alignment --- */
-.header-content,
-.cell-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-}
-
-/* --- Header look --- */
 tr[mat-header-row] {
   background: #f8f9fa;
 }
 
 th[mat-header-cell] {
+  padding: 12px 14px;
   font-weight: 600;
+  font-size: .9rem;
   color: #495057;
-
+  border-bottom: 1px solid #dee2e6;
+  white-space: nowrap;
+  text-align: center; /* center headers */
 }
 
-/* --- Sorting icon --- */
 .sortable {
   cursor: pointer;
   user-select: none;
   position: relative;
 }
+
 .sortable::after {
   content: "↕";
-  opacity: 0.35;
+  opacity: .35;
   margin-left: 6px;
-  font-size: 0.75rem;
+  font-size: .75rem;
 }
 
-/* --- Alternating row background --- */
+/* Cells */
+td[mat-cell] {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f3f5;
+  color: #212529;
+  vertical-align: middle;
+  text-align: center; /* center content horizontally */
+}
+
+/* Wrap cell content for buttons/icons */
+td[mat-cell] .cell-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 table[mat-table] tr[mat-row]:nth-child(even) td[mat-cell] {
   background: #fcfcfd;
 }
+
 table[mat-table] tr[mat-row]:hover td[mat-cell] {
   background: #f5f7f9;
 }
 
-/* --- Icons --- */
+/* Actions column */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.green-icon mat-icon {
+  color: #198754;
+}
+
+.red-icon mat-icon {
+  color: #dc3545;
+}
+
+.right { text-align: right; }
+
 td[mat-cell] mat-icon {
   font-size: 20px;
   height: 20px;
   width: 20px;
   vertical-align: middle;
 }
-td[mat-cell] mat-icon {
-  color: #198754;
-}
-td[mat-cell] mat-icon.warn {
-  color: #dc3545;
-}
+
 td[mat-cell] .icon-delete {
   color: #dc3545 !important;
 }
 
-/* --- Paginator --- */
+/* Paginator */
 mat-paginator {
   border-top: 1px solid #e9ecef;
   border-radius: 0 0 10px 10px;
@@ -162,26 +166,13 @@ mat-paginator {
   background: #fff;
 }
 
-/* --- Responsive tweaks --- */
+/* Responsive adjustments */
 @media (max-width: 992px) {
-  .card-header .actions .search {
-    min-width: 200px;
-  }
+  .card-header .actions .search { min-width: 200px; }
 }
 @media (max-width: 640px) {
-  .card {
-    padding: 0.5rem;
-  }
-  .card-header {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-  .card-header .actions {
-    margin-left: 0;
-  }
-  .card-header .actions .search {
-    width: 100%;
-    min-width: 0;
-  }
+  .card { padding: 0.5rem; }
+  .card-header { flex-direction: column; align-items: stretch; gap: 8px; }
+  .card-header .actions { margin-left: 0; }
+  .card-header .actions .search { width: 100%; min-width: 0; }
 }

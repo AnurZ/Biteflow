@@ -29,7 +29,7 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
             {
                 Name = r.Name,
                 Sku = r.Sku,
-                RestaurantId = r.RestaurantId,
+                RestaurantId = Guid.Empty,
                 UnitType = r.UnitType,
                 ReorderFrequency = r.ReorderFrequency,
                 ReorderQty = r.ReorderQty,
