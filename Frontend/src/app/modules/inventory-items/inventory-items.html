@@ -1,0 +1,78 @@
+<div class="card">
+  <div class="card-header">
+    <div class="title">Inventory Items</div>
+    <div class="actions">
+      <button mat-flat-button color="primary" (click)="createItem()">
+        <mat-icon>add</mat-icon>&nbsp;New Item
+      </button>
+      <mat-form-field appearance="outline" class="search">
+        <mat-label>Search</mat-label>
+        <input #searchInput
+               (input)="loadItemsByName(searchInput.value)"
+               matInput
+               placeholder="Name, SKU…" />
+      </mat-form-field>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table mat-table [dataSource]="items" class="mat-elevation-z8">
+
+      <!-- ID Column -->
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">ID</div></th>
+        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.id }}</div></td>
+      </ng-container>
+
+      <!-- Name Column -->
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Name</div></th>
+        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.name }}</div></td>
+      </ng-container>
+
+      <!-- SKU Column -->
+      <ng-container matColumnDef="sku">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">SKU</div></th>
+        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.sku }}</div></td>
+      </ng-container>
+
+      <!-- Unit Type Column -->
+      <ng-container matColumnDef="unitType">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Unit Type</div></th>
+        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ unitTypes[item.unitType] }}</div></td>
+      </ng-container>
+
+      <!-- Current Qty Column -->
+      <ng-container matColumnDef="currentQty">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Current Qty</div></th>
+        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.currentQty }}</div></td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Actions</div></th>
+        <td mat-cell *matCellDef="let item">
+          <div class="cell-content action-buttons">
+            <button mat-icon-button class="green-icon" (click)="editItem(item.id)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button class="red-icon" (click)="deleteItem(item.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </td>
+      </ng-container>
+
+      <!-- Header & Row -->
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+
+    </table>
+  </div>
+
+  <mat-paginator
+    [length]="total"
+    [pageSize]="pageSize"
+    (page)="onPage($event)">
+  </mat-paginator>
+</div>

@@ -1,4 +1,5 @@
-﻿using Market.Application.Modules.Meal.Commands.Create;
+﻿using Market.Application.Modules.InventoryItem.Queries.GetByName;
+using Market.Application.Modules.Meal.Commands.Create;
 using Market.Application.Modules.Meal.Commands.Delete;
 using Market.Application.Modules.Meal.Commands.Update;
 
@@ -7,6 +8,7 @@ using Market.Application.Modules.Meal.Commands.Update;
 //using Market.Application.Modules.Meal.Queries.GetById;
 using Market.Application.Modules.Meal.Queries.GetList;
 using Market.Application.Modules.Meal.Queries.GetMealIngredients;
+using Market.Application.Modules.Meal.Queries.GetMealsByName;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -23,6 +25,10 @@ public class MealController(ISender sender) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<GetMealByIdDto> GetById(int id, CancellationToken ct)
         => await sender.Send(new GetMealByIdQuery { Id = id }, ct);
+
+    [HttpGet("by-name")]
+    public async Task<PageResult<GetMealsByNameDto>> GetByName([FromQuery] GetMealsByNameQuery q, CancellationToken ct)
+        => await sender.Send(q, ct);
 
     // GET: api/meal/{id}/ingredients
     [HttpGet("{id:int}/ingredients")]
