@@ -1,8 +1,10 @@
 ﻿using Market.Application.Modules.InventoryItem.Commands.Create;
 using Market.Application.Modules.InventoryItem.Commands.Delete;
 using Market.Application.Modules.InventoryItem.Commands.Update;
+using Market.Application.Modules.InventoryItem.Queries.GetByName;
 using Market.Application.Modules.InventoryItem.Queries.List;
 using Market.Application.Modules.InventoryItem.Querries.GetById;
+using Market.Application.Modules.InventoryItem.Querries.GetByName;
 using Market.Application.Modules.InventoryItem.Querries.List;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +20,10 @@ public class InventoryItemController(ISender sender) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<GetInventoryItemByIdDto> GetById(int id, CancellationToken ct)
         => await sender.Send(new GetInventoryItemByIdQuery { Id = id }, ct);
+
+    [HttpGet("by-name")]
+    public async Task<PageResult<GetInventoryItemByNameDto>> List([FromQuery] GetInventoryItemByNameQuery q, CancellationToken ct)
+        => await sender.Send(q, ct);
 
     [HttpPost]
     public async Task<ActionResult<int>> Create(CreateInventoryItemCommand cmd, CancellationToken ct)
