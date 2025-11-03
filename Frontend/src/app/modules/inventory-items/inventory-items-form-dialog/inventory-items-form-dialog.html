@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+
+      <div class = "section-card">
+        <div class="inner-grid">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Item name</mat-label>
+            <input matInput formControlName="name" type="name" required>
+            <mat-error *ngIf="form.controls.name.hasError('required')">Item name is required.</mat-error>
+            <mat-error *ngIf="form.controls.name.hasError('name')">Enter valid Item name.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>SKU</mat-label>
+            <input matInput formControlName="sku" required>
+            <mat-error *ngIf="form.controls.sku.hasError('required')">SKU is required.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Current quantity</mat-label>
+            <input matInput type = "number" required min="0" formControlName="currentQty" required>
+            <mat-error *ngIf="form.controls.currentQty.hasError('required')">Current quantity is required.</mat-error>
+            <mat-error *ngIf="form.controls.currentQty.hasError('number')">Current quantity is required.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Unit type</mat-label>
+            <mat-select formControlName="unitType" required>
+              <mat-option value="0">kilogram (kg)</mat-option>
+              <mat-option value="1">gram (g)</mat-option>
+              <mat-option value="2">miligram (mg)</mat-option>
+              <mat-option value="3">liter (l)</mat-option>
+              <mat-option value="4">mililiter (ml)</mat-option>
+              <mat-option value="5">unit</mat-option>
+              <mat-option value="6">slice</mat-option>
+              <mat-option value="7">teaspoon</mat-option>
+              <mat-option value="8">tablespoon</mat-option>
+              <mat-option value="9">cup</mat-option>
+              <mat-option value="10">pinch</mat-option>
+              <mat-option value="11">drop</mat-option>
+              <mat-option value="12">meter (m)</mat-option>
+              <mat-option value="13">centimeter (cm)</mat-option>
+              <mat-option value="14">pack</mat-option>
+              <mat-option value="15">bottle</mat-option>
+              <mat-option value="16">can</mat-option>
+              <mat-option value="17">box</mat-option>
+              <mat-option value="18">bag</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.controls.unitType.hasError('required')">Unit type is required</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Reorder quantity</mat-label>
+            <input matInput type = "number" required min="0" formControlName="reorderQty" required>
+            <mat-error *ngIf="form.controls.reorderQty.hasError('required')">Reorder quantity is required.</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Reorder frequency</mat-label>
+            <input matInput type = "number" required min="0" formControlName="reorderFrequency" required>
+            <mat-error *ngIf="form.controls.reorderFrequency.hasError('required')">Reorder frequency is required.</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+
+
+
+
+  </form>
+
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || loading">
+    {{ data.mode === 'create' ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>
+
+

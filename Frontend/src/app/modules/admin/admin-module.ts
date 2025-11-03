@@ -24,6 +24,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { StaffList } from './staff/staff-list/staff-list';
 import { StaffFormDialogComponent } from './staff/staff-form-dialog/staff-form-dialog';
 import {MatDivider} from '@angular/material/divider';
+import {AdminLayout} from './admin-layout';
 
 @NgModule({
   declarations: [
