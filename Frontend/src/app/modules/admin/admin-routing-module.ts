@@ -5,6 +5,7 @@ import { StaffList } from './staff/staff-list/staff-list';
 import {Meals} from '../meals/meals';
 import {InventoryItems} from '../inventory-items/inventory-items';
 import {MealsStats} from '../meals/Stats/meals-stats';
+import { ActivationRequestsListComponent } from './activation-requests/activation-requests-list.component';
 const routes: Routes = [
   {
     path: '',
@@ -16,6 +17,7 @@ const routes: Routes = [
         loadChildren: () => import('../meals/meals-module').then(m => m.MealsModule)
       },
       { path: 'inventory-items', component: InventoryItems },
+      { path: 'activation-requests', component: ActivationRequestsListComponent },
       { path: '', redirectTo: 'admin', pathMatch: 'full' }
     ]
   }
