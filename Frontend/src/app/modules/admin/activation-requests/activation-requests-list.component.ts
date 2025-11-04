@@ -102,9 +102,9 @@ export class ActivationRequestsListComponent implements OnInit {
       case 2:
         return 'Approved';
       case 3:
-        return 'Activated';
-      case 4:
         return 'Rejected';
+      case 4:
+        return 'Activated';
       default:
         return String(status);
     }
