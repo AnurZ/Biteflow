@@ -16,7 +16,10 @@ const routes: Routes = [
     path: 'admin',
     loadChildren: () => import('./modules/admin/admin-module').then(m => m.AdminModule)
   },
-  { path: '**', redirectTo: 'public', pathMatch: 'full' }
+
+  { path: 'activation/wizard', redirectTo: 'public/activation/wizard', pathMatch: 'full' },
+
+  {path: '**', redirectTo: 'public', pathMatch: 'full'}
 ];
 
 
