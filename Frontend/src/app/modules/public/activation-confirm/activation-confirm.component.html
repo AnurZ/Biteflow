@@ -1,0 +1,14 @@
+<div class="activation-wrapper">
+  @if (loading()) {
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Activating your tenant…</p>
+  } @else if (ok()) {
+    <mat-icon color="primary" class="result-icon">check_circle</mat-icon>
+    <h2>Activation complete</h2>
+    <button mat-flat-button color="primary" (click)="goHome()">Go to app</button>
+  } @else {
+    <mat-icon color="warn" class="result-icon">error</mat-icon>
+    <h2>{{ message() }}</h2>
+    <button mat-stroked-button color="primary" (click)="goHome()">Back to home</button>
+  }
+</div>
