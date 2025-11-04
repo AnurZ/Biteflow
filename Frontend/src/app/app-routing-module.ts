@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import {AdminLayout} from './modules/admin/admin-layout';
 import {AdminModule} from './modules/admin/admin-module';
+import { ActivationConfirmComponent } from './modules/public/activation-confirm/activation-confirm.component';
 
 const routes: Routes = [
   {
@@ -16,7 +17,14 @@ const routes: Routes = [
     path: 'admin',
     loadChildren: () => import('./modules/admin/admin-module').then(m => m.AdminModule)
   },
-  { path: '**', redirectTo: 'public', pathMatch: 'full' }
+  {
+    path: 'activate',
+    component: ActivationConfirmComponent
+  },
+
+  { path: 'activation/wizard', redirectTo: 'public/activation/wizard', pathMatch: 'full' },
+
+  {path: '**', redirectTo: 'public', pathMatch: 'full'}
 ];
 
 
