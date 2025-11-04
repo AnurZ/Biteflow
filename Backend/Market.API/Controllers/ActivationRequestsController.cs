@@ -27,6 +27,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     // ---------- Public (tenant) actions ----------
 
     // Create draft
+    [AllowAnonymous]
     [HttpPost]
     [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -38,6 +39,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     }
 
     // Update draft
+    [AllowAnonymous]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -58,6 +60,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     }
 
     // Submit draft
+    [AllowAnonymous]
     [HttpPost("{id:int}/submit")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

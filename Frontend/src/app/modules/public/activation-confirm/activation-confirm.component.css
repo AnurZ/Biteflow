@@ -1,0 +1,19 @@
+.activation-wrapper {
+  margin-top: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.result-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+}
+
+.tenant-id {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: 600;
+}
