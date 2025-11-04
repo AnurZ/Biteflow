@@ -5,13 +5,14 @@ import {
   CreateDraftCommand, PageResult,
   UpdateDraftCommand
 } from '../../modules/public/models/activation.models';
+import { MyConfig } from '../../my-config';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ActivationRequests {
   private http = inject(HttpClient);
-  private base = '/api/activation-requests';
+  private base = `${MyConfig.api_address}/activation-requests`;
 
 
 
@@ -42,7 +43,7 @@ export class ActivationRequests {
   }
 
   approve(id: number) {
-    return this.http.post<string>(`${this.base}/${id}/approve`, {});
+    return this.http.post<string>(`${this.base}/${id}/approve`, {}, { responseType: 'text' as 'json' });
   }
 
   reject(id: number, reason: string) {
