@@ -1,4 +1,3 @@
-
 .button-group {
   display: flex;
   justify-content: center;
@@ -7,12 +6,10 @@
   margin-bottom: 1rem;
 }
 
-/* Hide the actual radio buttons */
 .button-group input[type="radio"] {
   display: none;
 }
 
-/* Style the labels as buttons */
 .button-group label {
   background: #ffceff;
   color: white;
@@ -23,12 +20,10 @@
   box-shadow: 1px 1px 1px rgb(223, 223, 223);
 }
 
-/* Hover */
 .button-group label:hover {
   background: #f5bfff;
 }
 
-/* When the radio is checked, make the label darker */
 .button-group input[type="radio"]:checked + label {
   background: #e584ff;
 }
