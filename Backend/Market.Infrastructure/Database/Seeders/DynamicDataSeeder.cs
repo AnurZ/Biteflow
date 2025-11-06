@@ -23,6 +23,13 @@ public static class DynamicDataSeeder
 
     private static async Task SeedUserProfilesAsync(DatabaseContext context)
     {
+        var entityType = context.Model.FindEntityType(typeof(EmployeeProfile));
+        if (entityType?.FindProperty(nameof(EmployeeProfile.AppUserId)) is null)
+        {
+            Console.WriteLine("Seed skipped: EmployeeProfile.AppUserId not mapped in current context.");
+            return;
+        }
+
         var user = await context.Users
             .Where(u => EF.Functions.Like(u.Email, "%string%"))
             .FirstOrDefaultAsync();

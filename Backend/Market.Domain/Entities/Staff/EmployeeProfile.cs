@@ -1,5 +1,6 @@
 ﻿using Market.Domain.Common;
 using Market.Domain.Entities.Identity;
+using Market.Domain.Entities.IdentityV2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,10 @@ namespace Market.Domain.Entities.Staff
     {
         public int AppUserId { get; set; }
         public AppUser AppUser { get; set; } = null!;
+
+        // Identity V2 bridge (optional until migration completes)
+        public Guid? ApplicationUserId { get; set; }
+        public ApplicationUser? ApplicationUser { get; set; }
 
         public string Position { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
