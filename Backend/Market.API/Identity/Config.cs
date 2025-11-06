@@ -9,17 +9,27 @@ namespace Market.API.Identity
         public static IEnumerable<IdentityResource> IdentityResources =>
             new IdentityResource[]
             {
-            new IdentityResources.OpenId(),
-            new IdentityResources.Profile(),
-            new IdentityResource("roles", new[] { JwtClaimTypes.Role })
+                new IdentityResources.OpenId(),
+                BuildProfileResource(),
+                new IdentityResources.Email(),
+                new IdentityResource("roles", new[] { JwtClaimTypes.Role })
             };
+
+        private static IdentityResource BuildProfileResource()
+        {
+            var profile = new IdentityResources.Profile();
+            profile.UserClaims.Add("display_name");
+            profile.UserClaims.Add("restaurant_id");
+            profile.UserClaims.Add("tenant_id");
+            return profile;
+        }
 
         public static IEnumerable<ApiScope> ApiScopes =>
             new[]
             {
             new ApiScope("biteflow.api", "Biteflow API", new[]
             {
-                JwtClaimTypes.Role, "restaurant_id", "tenant_id", "display_name"
+                JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name"
             })
             };
 
@@ -29,7 +39,7 @@ namespace Market.API.Identity
             new ApiResource("biteflow.api", "Biteflow API")
             {
                 Scopes = { "biteflow.api" },
-                UserClaims = { JwtClaimTypes.Role, "restaurant_id", "tenant_id", "display_name" }
+                UserClaims = { JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name" }
             }
             };
 
@@ -40,20 +50,24 @@ namespace Market.API.Identity
             {
                 ClientId = "biteflow-angular",
                 ClientName = "Biteflow Angular SPA",
-                AllowedGrantTypes = GrantTypes.Code,
-                RequirePkce = true,
+                AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
                 RequireClientSecret = false,
-                RedirectUris = { "https://localhost:4200/auth/callback" },
-                PostLogoutRedirectUris = { "https://localhost:4200/" },
-                AllowedCorsOrigins = { "https://localhost:4200" },
+                AllowOfflineAccess = true,
+                AllowedCorsOrigins =
+                {
+                    "http://localhost:4200",
+                    "https://localhost:4200"
+                },
                 AllowedScopes =
                 {
                     IdentityServerConstants.StandardScopes.OpenId,
                     IdentityServerConstants.StandardScopes.Profile,
+                    IdentityServerConstants.StandardScopes.Email,
                     "roles",
-                    "biteflow.api"
+                    "biteflow.api",
+                    IdentityServerConstants.StandardScopes.OfflineAccess
                 },
-                AccessTokenLifetime = 1200, 
+                AccessTokenLifetime = 1200,
                 AlwaysIncludeUserClaimsInIdToken = false
             }
             };

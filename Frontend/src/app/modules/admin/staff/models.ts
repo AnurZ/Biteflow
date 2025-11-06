@@ -44,6 +44,7 @@ export interface CreateStaffRequest {
   email?: string;
   displayName?: string;
   plainPassword?: string;
+  role?: string;
 
   position: string;
   firstName: string;
