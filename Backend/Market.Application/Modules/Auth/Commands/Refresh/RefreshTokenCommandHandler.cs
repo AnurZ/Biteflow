@@ -53,7 +53,10 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
         rt.IsRevoked = true;
         rt.RevokedAtUtc = nowUtc;
 
-        var identityUser = await _userManager.FindByEmailAsync(user.Email);
+        var identityUser = await _userManager.FindByNameAsync(user.Email)
+            ?? await _userManager.FindByEmailAsync(user.Email)
+            ?? await _userManager.FindByEmailAsync($"{user.Email}@legacy.local");
+
         var roles = identityUser is null
             ? Array.Empty<string>()
             : await _userManager.GetRolesAsync(identityUser);
