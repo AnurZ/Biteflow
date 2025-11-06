@@ -1,4 +1,6 @@
-﻿using Market.Application.Abstractions;
+﻿using Duende.IdentityServer.Services;
+using Market.API.Identity;
+using Market.Application.Abstractions;
 using Market.Infrastructure.Common;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
@@ -101,6 +103,7 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
+        services.AddTransient<IProfileService, CustomProfileService>();
 
 
         return services;
