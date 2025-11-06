@@ -9,6 +9,7 @@ import {
 import {MatButton} from '@angular/material/button';
 
 @Component({
+  selector: 'app-inventory-items-confirm-dialog',
   imports: [
     MatDialogContent,
     MatDialogTitle,

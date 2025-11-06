@@ -1,22 +1,25 @@
 <div class="login-container">
-  <h2>{{ 'Sign in to your account' }}</h2>
-  <form (ngSubmit)="onLogin()" [formGroup]="form">
+  <h2>Sign in to Biteflow</h2>
+  <form [formGroup]="form" (ngSubmit)="onLogin()">
     <app-input-text
-      [myLabel]="'Email'"
-      [myPlaceholder]="'anur@test.com'"
+      [myLabel]="'Email or Username'"
+      [myPlaceholder]="'string'"
       myControlName="email"
     ></app-input-text>
 
-
     <app-input-text
       [myLabel]="'Password'"
-      [myPlaceholder]="'test123'"
+      [myPlaceholder]="'string'"
       [myType]="InputTextType.Password"
       myControlName="password"
     ></app-input-text>
 
+    @if (loginError) {
+      <div class="error-message">{{ loginError }}</div>
+    }
 
-    <button mat-stroked-button color="primary" class="login-button" type="submit">{{ 'Login' }}</button>
-
+    <button mat-stroked-button color="primary" class="login-button" type="submit" [disabled]="isLoading">
+      {{ isLoading ? 'Signing in...' : 'Login' }}
+    </button>
   </form>
 </div>

@@ -5,11 +5,7 @@ using Market.Infrastructure.Common;
 using Market.Shared.Constants;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Security.Claims;
-using System.Text;
 
 namespace Market.API;
 
@@ -44,29 +40,6 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-
-        // JWT auth (reads from IOptions<JwtOptions>)
-        services.AddAuthentication(o =>
-        {
-            o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer((o) =>
-        {
-            var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-
-            o.TokenValidationParameters = new()
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwt.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwt.Audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
 
         services.AddAuthorization(opt =>
         {
@@ -125,9 +98,6 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
-        services.AddTransient<IProfileService, CustomProfileService>();
-
-
         return services;
     }
 
