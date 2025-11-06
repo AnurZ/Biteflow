@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Linq;
 
 namespace Market.Infrastructure.Common;
 
@@ -20,7 +21,7 @@ public sealed class JwtTokenService : IJwtTokenService
         _time = time ?? throw new ArgumentNullException(nameof(time));
     }
 
-    public JwtTokenPair IssueTokens(AppUser user)
+    public JwtTokenPair IssueTokens(AppUser user, IEnumerable<string>? roles = null)
     {
         // Now from TimeProvider (consistent with the rest of the app)
         var nowInstant = _time.GetUtcNow();
@@ -42,6 +43,14 @@ public sealed class JwtTokenService : IJwtTokenService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
             new(JwtRegisteredClaimNames.Aud, _jwt.Audience)
         };
+
+        if (roles is not null)
+        {
+            foreach (var role in roles.Where(r => !string.IsNullOrWhiteSpace(r)))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+        }
 
         // --- Signature ---
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
