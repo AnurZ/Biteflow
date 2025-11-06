@@ -13,6 +13,7 @@ namespace Market.Application.Modules.Staff.Commands.Create
         public string? Email { get; init; }
         public string? DisplayName { get; init; }
         public string? PlainPassword { get; init; }
+        public string? Role { get; init; }
 
         public string Position { get; init; } = string.Empty;
         public string FirstName { get; init; } = string.Empty;
