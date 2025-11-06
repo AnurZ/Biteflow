@@ -2,11 +2,13 @@
 using Market.API.Identity;
 using Market.Application.Abstractions;
 using Market.Infrastructure.Common;
+using Market.Shared.Constants;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 
 namespace Market.API;
@@ -66,13 +68,33 @@ public static class DependencyInjection
             };
         });
 
-        services.AddAuthorization(o =>
+        services.AddAuthorization(opt =>
         {
-            o.FallbackPolicy = new AuthorizationPolicyBuilder()
+            opt.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .Build();
 
-            //o.FallbackPolicy = null;
+            opt.AddPolicy(PolicyNames.SuperAdminOnly, policy =>
+            {
+                policy.RequireRole(RoleNames.SuperAdmin);
+            });
+
+            opt.AddPolicy(PolicyNames.RestaurantAdmin, policy =>
+            {
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole(RoleNames.SuperAdmin) ||
+                    ctx.User.IsInRole(RoleNames.Admin)
+                    // TODO: implement tenant-specific check when tenant context is available
+                );
+            });
+
+            opt.AddPolicy(PolicyNames.StaffMember, policy =>
+            {
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole(RoleNames.SuperAdmin) ||
+                    ctx.User.IsInRole(RoleNames.Admin) ||
+                    ctx.User.IsInRole(RoleNames.Staff));
+            });
         });
 
         // Swagger with Bearer auth
