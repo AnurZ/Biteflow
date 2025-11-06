@@ -1,30 +1,44 @@
-﻿namespace Market.Application.Modules.Auth.Commands.Refresh;
+namespace Market.Application.Modules.Auth.Commands.Refresh;
 
-public sealed class RefreshTokenCommandHandler(
-    IAppDbContext ctx,
-    IJwtTokenService jwt,
-    TimeProvider timeProvider)
-    : IRequestHandler<RefreshTokenCommand, RefreshTokenCommandDto>
+using Market.Domain.Entities.IdentityV2;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
+public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenCommandDto>
 {
+    private readonly IAppDbContext _ctx;
+    private readonly IJwtTokenService _jwt;
+    private readonly TimeProvider _timeProvider;
+    private readonly UserManager<ApplicationUser> _userManager;
+
+    public RefreshTokenCommandHandler(
+        IAppDbContext ctx,
+        IJwtTokenService jwt,
+        TimeProvider timeProvider,
+        UserManager<ApplicationUser> userManager)
+    {
+        _ctx = ctx;
+        _jwt = jwt;
+        _timeProvider = timeProvider;
+        _userManager = userManager;
+    }
+
     public async Task<RefreshTokenCommandDto> Handle(RefreshTokenCommand request, CancellationToken ct)
     {
-        // 1) Hash the received refresh token
-        var incomingHash = jwt.HashRefreshToken(request.RefreshToken);
+        var incomingHash = _jwt.HashRefreshToken(request.RefreshToken);
 
-        // 2) Find the valid refresh token in the database (TRACKING because we will modify it)
-        var rt = await ctx.RefreshTokens
+        var rt = await _ctx.RefreshTokens
             .Include(x => x.User)
             .FirstOrDefaultAsync(x =>
                 x.TokenHash == incomingHash &&
                 !x.IsRevoked &&
                 !x.IsDeleted, ct);
 
-        var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
 
         if (rt is null || rt.ExpiresAtUtc <= nowUtc)
-            throw new MarketConflictException("Refresh token je nevažeći ili je istekao.");
+            throw new MarketConflictException("Refresh token je nevazeci ili je istekao.");
 
-        // (optional) Fingerprint check
         if (rt.Fingerprint is not null &&
             request.Fingerprint is not null &&
             rt.Fingerprint != request.Fingerprint)
@@ -34,16 +48,18 @@ public sealed class RefreshTokenCommandHandler(
 
         var user = rt.User;
         if (user is null || !user.IsEnabled || user.IsDeleted)
-            throw new MarketConflictException("Korisnički nalog je nevažeći.");
+            throw new MarketConflictException("Korisnicki nalog je nevazeci.");
 
-        // 3) Rotation: revoke the old one
         rt.IsRevoked = true;
         rt.RevokedAtUtc = nowUtc;
 
-        // 4) Issue a NEW pair (access + refresh) – the service returns both RAW and HASH along with expirations.
-        var pair = jwt.IssueTokens(user);
+        var identityUser = await _userManager.FindByEmailAsync(user.Email);
+        var roles = identityUser is null
+            ? Array.Empty<string>()
+            : await _userManager.GetRolesAsync(identityUser);
 
-        // 5) Save the NEW refresh token (HASH only) in the database
+        var pair = _jwt.IssueTokens(user, roles);
+
         var newRt = new RefreshTokenEntity
         {
             TokenHash = pair.RefreshTokenHash,
@@ -52,10 +68,9 @@ public sealed class RefreshTokenCommandHandler(
             Fingerprint = request.Fingerprint,
         };
 
-        ctx.RefreshTokens.Add(newRt);
-        await ctx.SaveChangesAsync(ct);
+        _ctx.RefreshTokens.Add(newRt);
+        await _ctx.SaveChangesAsync(ct);
 
-        // 6) Return the RAW refresh token and access token to the client
         return new RefreshTokenCommandDto
         {
             AccessToken = pair.AccessToken,
