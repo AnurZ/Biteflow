@@ -10,6 +10,8 @@ using Market.Application.Modules.Meal.Queries.GetList;
 using Market.Application.Modules.Meal.Queries.GetMealIngredients;
 using Market.Application.Modules.Meal.Queries.GetMealsByName;
 using MediatR;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -18,25 +20,30 @@ public class MealController(ISender sender) : ControllerBase
 {
     // GET: api/meal
     [HttpGet]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<List<MealDto>> GetList(CancellationToken ct)
         => await sender.Send(new GetMealsQuery(), ct);
 
     // GET: api/meal/{id}
     [HttpGet("{id:int}")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<GetMealByIdDto> GetById(int id, CancellationToken ct)
         => await sender.Send(new GetMealByIdQuery { Id = id }, ct);
 
     [HttpGet("by-name")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<PageResult<GetMealsByNameDto>> GetByName([FromQuery] GetMealsByNameQuery q, CancellationToken ct)
         => await sender.Send(q, ct);
 
     // GET: api/meal/{id}/ingredients
     [HttpGet("{id:int}/ingredients")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<List<MealIngredientQueryDto>> GetIngredients(int id, CancellationToken ct)
         => await sender.Send(new GetMealIngredientsQuery { MealId = id }, ct);
 
     // POST: api/meal
     [HttpPost]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<ActionResult<int>> Create(CreateMealCommand cmd, CancellationToken ct)
     {
         var id = await sender.Send(cmd, ct);
@@ -45,6 +52,7 @@ public class MealController(ISender sender) : ControllerBase
 
     //// PUT: api/meal/{id}
     [HttpPut("{id:int}")]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<IActionResult> Update(int id, UpdateMealCommand cmd, CancellationToken ct)
     {
         cmd.Id = id;
@@ -54,6 +62,7 @@ public class MealController(ISender sender) : ControllerBase
 
     // DELETE: api/meal/{id}
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await sender.Send(new DeleteMealCommand { Id = id }, ct);
