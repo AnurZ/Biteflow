@@ -1,6 +1,7 @@
 ﻿using Market.Application.Abstractions;
 using Market.Infrastructure.Common;
 using Market.Infrastructure.Database;
+using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Market.Shared.Options;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Market.Domain.Entities.IdentityV2;
 using Microsoft.AspNetCore.Identity;
+using Market.Infrastructure.Database.Seeders;
 
 
 namespace Market.Infrastructure;
@@ -98,6 +100,9 @@ public static class DependencyInjection
 
         // TimeProvider (if used in handlers/services)
         services.AddSingleton<TimeProvider>(TimeProvider.System);
+
+        services.AddScoped<IdentitySeeder>();
+        services.AddScoped<StaffProfileService>();
 
         return services;
     }
