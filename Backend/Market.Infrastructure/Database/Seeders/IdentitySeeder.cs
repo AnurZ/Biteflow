@@ -1,9 +1,11 @@
 using Market.Domain.Entities.IdentityV2;
+using Market.Infrastructure.Database;
 using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Infrastructure.Database.Seeders;
 
@@ -12,6 +14,7 @@ public sealed class IdentitySeeder
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly StaffProfileService _staffProfiles;
+    private readonly DatabaseContext _legacyContext;
     private readonly ILogger<IdentitySeeder> _logger;
     private readonly IConfiguration _configuration;
 
@@ -19,12 +22,14 @@ public sealed class IdentitySeeder
         RoleManager<ApplicationRole> roleManager,
         UserManager<ApplicationUser> userManager,
         StaffProfileService staffProfiles,
+        DatabaseContext legacyContext,
         ILogger<IdentitySeeder> logger,
         IConfiguration configuration)
     {
         _roleManager = roleManager;
         _userManager = userManager;
         _staffProfiles = staffProfiles;
+        _legacyContext = legacyContext;
         _logger = logger;
         _configuration = configuration;
     }
@@ -100,6 +105,68 @@ public sealed class IdentitySeeder
         foreach (var staff in staffUsers)
         {
             await _staffProfiles.EnsureProfileAsync(staff, ct);
+        }
+
+        var legacyStringUser = await EnsureLegacyIdentityUserAsync("string", "string", ct);
+        if (legacyStringUser != null)
+        {
+            await EnsureRoleAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
+            await EnsureRoleAsync(legacyStringUser, RoleNames.Admin, ct);
+            await EnsureRoleAsync(legacyStringUser, RoleNames.Staff, ct);
+            await _staffProfiles.EnsureProfileAsync(legacyStringUser, ct);
+        }
+    }
+
+    private async Task<ApplicationUser?> EnsureLegacyIdentityUserAsync(string email, string defaultPassword, CancellationToken ct)
+    {
+        var identityUser = await _userManager.FindByEmailAsync(email);
+        if (identityUser != null)
+            return identityUser;
+
+        var legacyUser = await _legacyContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower(), ct);
+
+        identityUser = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            DisplayName = legacyUser?.DisplayName ?? email,
+            TenantId = legacyUser?.TenantId ?? Guid.Empty,
+            IsEnabled = true,
+            EmailConfirmed = true
+        };
+
+        var create = await _userManager.CreateAsync(identityUser, defaultPassword);
+        if (!create.Succeeded)
+        {
+            _logger.LogWarning("Failed creating legacy identity user {Email}: {Errors}", email,
+                string.Join(", ", create.Errors.Select(e => e.Description)));
+            return null;
+        }
+
+        return identityUser;
+        // Legacy default user support
+        var legacyStringUser = await _userManager.FindByEmailAsync("string");
+        if (legacyStringUser != null)
+        {
+            await EnsureRoleAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
+            await EnsureRoleAsync(legacyStringUser, RoleNames.Admin, ct);
+            await EnsureRoleAsync(legacyStringUser, RoleNames.Staff, ct);
+            await _staffProfiles.EnsureProfileAsync(legacyStringUser, ct);
+        }
+    }
+
+    private async Task EnsureRoleAsync(ApplicationUser user, string role, CancellationToken ct)
+    {
+        if (!await _userManager.IsInRoleAsync(user, role))
+        {
+            var result = await _userManager.AddToRoleAsync(user, role);
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning("Failed adding role {Role} to user {UserId}: {Errors}",
+                    role, user.Id, string.Join(", ", result.Errors.Select(e => e.Description)));
+            }
         }
     }
 }
