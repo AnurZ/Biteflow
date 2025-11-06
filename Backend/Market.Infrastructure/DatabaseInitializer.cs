@@ -1,5 +1,6 @@
-﻿using Market.Infrastructure.Database;
+using Market.Infrastructure.Database;
 using Market.Infrastructure.Database.Seeders;
+using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,13 +17,14 @@ public static class DatabaseInitializer
         await using var scope = services.CreateAsyncScope();
         var ctx = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         var identityCtx = scope.ServiceProvider.GetRequiredService<IdentityDatabaseContext>();
-
+        var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
 
         if (env.IsTest())
         {
             await ctx.Database.EnsureCreatedAsync();
             await identityCtx.Database.EnsureCreatedAsync();
             await DynamicDataSeeder.SeedAsync(ctx);
+            await identitySeeder.SeedAsync();
             return;
         }
 
@@ -34,5 +36,7 @@ public static class DatabaseInitializer
         {
             await DynamicDataSeeder.SeedAsync(ctx);
         }
+
+        await identitySeeder.SeedAsync();
     }
 }
