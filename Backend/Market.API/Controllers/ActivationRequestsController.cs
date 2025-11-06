@@ -11,6 +11,7 @@ using Market.Application.Modules.TenantActivation.Queries.GetById;
 using Market.Application.Modules.TenantActivation.Queries.List;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Tenants;
+using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,6 +19,7 @@ namespace Market.API.Controllers;
 
 [ApiController]
 [Route("api/activation-requests")]
+//[Authorize(Policy = PolicyNames.SuperAdminOnly)]
 public sealed class ActivationRequestsController(IMediator mediator) : ControllerBase
 {
     // --- DTOs for request bodies ---
