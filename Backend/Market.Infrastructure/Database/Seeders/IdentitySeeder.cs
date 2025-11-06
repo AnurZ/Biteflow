@@ -164,15 +164,6 @@ public sealed class IdentitySeeder
         }
 
         return identityUser;
-        // Legacy default user support
-        var legacyStringUser = await _userManager.FindByEmailAsync("string");
-        if (legacyStringUser != null)
-        {
-            await EnsureRoleAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
-            await EnsureRoleAsync(legacyStringUser, RoleNames.Admin, ct);
-            await EnsureRoleAsync(legacyStringUser, RoleNames.Staff, ct);
-            await _staffProfiles.EnsureProfileAsync(legacyStringUser, ct);
-        }
     }
 
     private async Task EnsureRoleAsync(ApplicationUser user, string role, CancellationToken ct)

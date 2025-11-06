@@ -1,8 +1,6 @@
-import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+﻿import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { MyConfig } from '../../../../my-config';
 import { AuthService } from '../../../../services/auth-services/auth.service';
 import { LogoutConfirmDialogComponent } from './logout-confirm-dialog.component';
 
@@ -13,11 +11,9 @@ import { LogoutConfirmDialogComponent } from './logout-confirm-dialog.component'
   standalone: false
 })
 export class LogoutComponent {
-  private apiUrl = `${MyConfig.api_address}/auth/logout`;
   confirmed = false;
 
   constructor(
-    private httpClient: HttpClient,
     private authService: AuthService,
     private router: Router,
     private dialog: MatDialog
@@ -44,24 +40,16 @@ export class LogoutComponent {
   }
 
   logout(): void {
-    const refreshToken = this.authService.getLoginToken()?.refreshToken;
-
-    if (!refreshToken) {
-      this.handleLogoutSuccessOrError();
-      return;
-    }
-
-    this.httpClient.post<void>(this.apiUrl, { refreshToken }).subscribe({
-      next: () => this.handleLogoutSuccessOrError(),
+    this.authService.logout().subscribe({
+      next: () => this.handleLogoutCompletion(),
       error: (error) => {
         console.error('Error during logout:', error);
-        this.handleLogoutSuccessOrError();
+        this.handleLogoutCompletion();
       }
     });
   }
 
-  private handleLogoutSuccessOrError(): void {
-    this.authService.setLoggedInUser(null);
+  private handleLogoutCompletion(): void {
     setTimeout(() => {
       this.router.navigate(['/public']);
     }, 3000);
