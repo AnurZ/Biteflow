@@ -28,7 +28,33 @@ public sealed class StaffProfileService
             .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
 
         if (profile != null)
+        {
+            if (profile.ApplicationUserId != user.Id)
+            {
+                profile.ApplicationUserId = user.Id;
+                profile.TenantId = user.TenantId;
+                await _legacyContext.SaveChangesAsync(ct);
+            }
             return true;
+        }
+
+        var legacyAppUser = await _legacyContext.Users
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == user.Email.ToLower(), ct);
+
+        if (legacyAppUser != null)
+        {
+            profile = await _legacyContext.EmployeeProfiles
+                .FirstOrDefaultAsync(x => x.AppUserId == legacyAppUser.Id, ct);
+
+            if (profile != null)
+            {
+                profile.ApplicationUserId = user.Id;
+                profile.TenantId = user.TenantId;
+                profile.FirstName = user.DisplayName ?? profile.FirstName;
+                await _legacyContext.SaveChangesAsync(ct);
+                return true;
+            }
+        }
 
         var newProfile = new EmployeeProfile
         {
