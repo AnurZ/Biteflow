@@ -1,8 +1,12 @@
-﻿using Market.API;
+﻿using Duende.IdentityServer;
+using Market.API;
+using Market.API.Identity;
 using Market.API.Middlewares;
 using Market.Application;
+using Market.Domain.Entities.IdentityV2;
 using Market.Infrastructure;
 using Serilog;
+using Microsoft.AspNetCore.Identity;
 
 public partial class Program
 {
@@ -49,6 +53,23 @@ public partial class Program
                 .AddInfrastructure(builder.Configuration, builder.Environment)
                 .AddApplication();
 
+            builder.Services
+                .AddIdentityServer(options =>
+                {
+                    options.Events.RaiseSuccessEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseErrorEvents = true;
+                    options.EmitStaticAudienceClaim = true;
+                })
+                .AddAspNetIdentity<ApplicationUser>()
+                .AddInMemoryIdentityResources(Config.IdentityResources)
+                .AddInMemoryApiScopes(Config.ApiScopes)
+                .AddInMemoryApiResources(Config.ApiResources)
+                .AddInMemoryClients(Config.Clients)
+                .AddDeveloperSigningCredential();
+
+
+
             //SETTING UP CORS
             builder.Services.AddCors(options =>
             {
@@ -84,8 +105,8 @@ public partial class Program
             app.UseCors("AllowAngularDev");
 
             app.UseHttpsRedirection();
- 
 
+            app.UseIdentityServer();
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -100,7 +121,7 @@ public partial class Program
         catch (HostAbortedException)
         {
             // EF Core tools abortiraju host nakon što uzmu DbContext.
-            // Ovo nije runtime greška – samo tiho izađi.
+            // Ovo nije runtime greška – samo tiho izadi.
             Log.Information("Host aborted by EF Core tooling (design-time) - its ok.");
         }
         catch (Exception ex)
