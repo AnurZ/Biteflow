@@ -39,7 +39,7 @@ public sealed class StaffProfileService
         }
 
         var legacyAppUser = await _legacyContext.Users
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == user.Email.ToLower(), ct);
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == user.UserName!.ToLower(), ct);
 
         if (legacyAppUser != null)
         {
@@ -50,7 +50,8 @@ public sealed class StaffProfileService
             {
                 profile.ApplicationUserId = user.Id;
                 profile.TenantId = user.TenantId;
-                profile.FirstName = user.DisplayName ?? profile.FirstName;
+                if (!string.IsNullOrWhiteSpace(user.DisplayName))
+                    profile.FirstName = user.DisplayName;
                 await _legacyContext.SaveChangesAsync(ct);
                 return true;
             }

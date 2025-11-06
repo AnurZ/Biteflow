@@ -1,5 +1,4 @@
 using Market.Domain.Entities.IdentityV2;
-using Market.Infrastructure.Database;
 using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
@@ -119,9 +118,28 @@ public sealed class IdentitySeeder
 
     private async Task<ApplicationUser?> EnsureLegacyIdentityUserAsync(string email, string defaultPassword, CancellationToken ct)
     {
-        var identityUser = await _userManager.FindByEmailAsync(email);
+        var identityUser = await _userManager.FindByNameAsync(email)
+            ?? await _userManager.FindByEmailAsync(email);
+
+        var normalizedEmail = email.Contains("@", StringComparison.Ordinal)
+            ? email
+            : $"{email}@legacy.local";
+
         if (identityUser != null)
+        {
+            if (!string.Equals(identityUser.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                identityUser.Email = normalizedEmail;
+                identityUser.NormalizedEmail = normalizedEmail.ToUpperInvariant();
+                var update = await _userManager.UpdateAsync(identityUser);
+                if (!update.Succeeded)
+                {
+                    _logger.LogWarning("Failed updating legacy identity user {Email}: {Errors}", email,
+                        string.Join(", ", update.Errors.Select(e => e.Description)));
+                }
+            }
             return identityUser;
+        }
 
         var legacyUser = await _legacyContext.Users
             .AsNoTracking()
@@ -130,7 +148,7 @@ public sealed class IdentitySeeder
         identityUser = new ApplicationUser
         {
             UserName = email,
-            Email = email,
+            Email = normalizedEmail,
             DisplayName = legacyUser?.DisplayName ?? email,
             TenantId = legacyUser?.TenantId ?? Guid.Empty,
             IsEnabled = true,
