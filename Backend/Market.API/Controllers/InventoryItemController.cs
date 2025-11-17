@@ -7,6 +7,8 @@ using Market.Application.Modules.InventoryItem.Querries.GetById;
 using Market.Application.Modules.InventoryItem.Querries.GetByName;
 using Market.Application.Modules.InventoryItem.Querries.List;
 using MediatR;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
@@ -14,18 +16,22 @@ using Microsoft.AspNetCore.Mvc;
 public class InventoryItemController(ISender sender) : ControllerBase
 {
     [HttpGet]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<PageResult<ListInventoryItemsDto>> List([FromQuery] ListInventoryItemsQuery q, CancellationToken ct)
         => await sender.Send(q, ct);
 
     [HttpGet("{id:int}")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<GetInventoryItemByIdDto> GetById(int id, CancellationToken ct)
         => await sender.Send(new GetInventoryItemByIdQuery { Id = id }, ct);
 
     [HttpGet("by-name")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public async Task<PageResult<GetInventoryItemByNameDto>> List([FromQuery] GetInventoryItemByNameQuery q, CancellationToken ct)
         => await sender.Send(q, ct);
 
     [HttpPost]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<ActionResult<int>> Create(CreateInventoryItemCommand cmd, CancellationToken ct)
     {
         var id = await sender.Send(cmd, ct);
@@ -33,6 +39,7 @@ public class InventoryItemController(ISender sender) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<IActionResult> Update(int id, UpdateInventoryItemCommand cmd, CancellationToken ct)
     {
         cmd.Id = id;
@@ -41,6 +48,7 @@ public class InventoryItemController(ISender sender) : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         await sender.Send(new DeleteInventoryItemCommand { Id = id }, ct);

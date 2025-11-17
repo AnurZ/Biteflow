@@ -18,6 +18,8 @@ namespace Market.Infrastructure.Database.Configurations.Staff
             b.Property(x => x.LastName).HasMaxLength(100);
             b.Property(x => x.Position).HasMaxLength(50);
             b.Property(x => x.PhoneNumber).HasMaxLength(50);
+            b.Property(x => x.ApplicationUserId).IsRequired(false);
+            b.Ignore(x => x.ApplicationUser);
 
             b.HasOne(x => x.AppUser)
                 .WithOne()
@@ -25,6 +27,9 @@ namespace Market.Infrastructure.Database.Configurations.Staff
                 .OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => new { x.TenantId, x.AppUserId }).IsUnique();
+            b.HasIndex(x => x.ApplicationUserId)
+                .IsUnique()
+                .HasFilter("[ApplicationUserId] IS NOT NULL");
         }
     }
 }

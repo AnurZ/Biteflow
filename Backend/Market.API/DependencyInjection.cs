@@ -1,11 +1,11 @@
-﻿using Market.Application.Abstractions;
+﻿using Duende.IdentityServer.Services;
+using Market.API.Identity;
+using Market.Application.Abstractions;
 using Market.Infrastructure.Common;
+using Market.Shared.Constants;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
 
 namespace Market.API;
 
@@ -41,36 +41,33 @@ public static class DependencyInjection
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        // JWT auth (reads from IOptions<JwtOptions>)
-        services.AddAuthentication(o =>
+        services.AddAuthorization(opt =>
         {
-            o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer((o) =>
-        {
-            var jwt = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()!;
-
-            o.TokenValidationParameters = new()
-            {
-                ValidateIssuer = true,
-                ValidIssuer = jwt.Issuer,
-                ValidateAudience = true,
-                ValidAudience = jwt.Audience,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-
-        services.AddAuthorization(o =>
-        {
-            o.FallbackPolicy = new AuthorizationPolicyBuilder()
+            opt.FallbackPolicy = new AuthorizationPolicyBuilder()
                 .RequireAuthenticatedUser()
                 .Build();
 
-            //o.FallbackPolicy = null;
+            opt.AddPolicy(PolicyNames.SuperAdminOnly, policy =>
+            {
+                policy.RequireRole(RoleNames.SuperAdmin);
+            });
+
+            opt.AddPolicy(PolicyNames.RestaurantAdmin, policy =>
+            {
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole(RoleNames.SuperAdmin) ||
+                    ctx.User.IsInRole(RoleNames.Admin)
+                    // TODO: implement tenant-specific check when tenant context is available
+                );
+            });
+
+            opt.AddPolicy(PolicyNames.StaffMember, policy =>
+            {
+                policy.RequireAssertion(ctx =>
+                    ctx.User.IsInRole(RoleNames.SuperAdmin) ||
+                    ctx.User.IsInRole(RoleNames.Admin) ||
+                    ctx.User.IsInRole(RoleNames.Staff));
+            });
         });
 
         // Swagger with Bearer auth
@@ -101,8 +98,6 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
-
-
         return services;
     }
 
