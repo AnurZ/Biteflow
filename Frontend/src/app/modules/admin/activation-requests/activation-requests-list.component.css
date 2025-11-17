@@ -1,0 +1,111 @@
+.activation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activation-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.activation-list__header h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.activation-list__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-select {
+  min-width: 200px;
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.activation-list__loading,
+.activation-list__empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: #616161;
+}
+
+.activation-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activation-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.activation-card__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.activation-card__main h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.activation-card__domain {
+  color: #757575;
+  font-size: 14px;
+}
+
+.activation-card__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #424242;
+}
+
+.activation-card__status {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #616161;
+}
+
+.activation-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 140px;
+}
+
+@media (max-width: 768px) {
+  .activation-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .activation-card__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}

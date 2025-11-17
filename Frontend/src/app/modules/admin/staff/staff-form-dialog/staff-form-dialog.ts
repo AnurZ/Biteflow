@@ -115,11 +115,15 @@ export class StaffFormDialogComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     if (this.data.mode === 'create') {
+      const normalizedPosition = raw.position?.toLowerCase() ?? '';
+      const derivedRole = normalizedPosition === 'manager' ? 'admin' : 'staff';
+
       const body: CreateStaffRequest = {
         appUserId: 0,
         email: raw.email.trim(),
         displayName: raw.displayName.trim(),
         plainPassword: raw.plainPassword.trim(),
+        role: derivedRole,
 
         position: raw.position.trim(),
         firstName: raw.firstName.trim(),

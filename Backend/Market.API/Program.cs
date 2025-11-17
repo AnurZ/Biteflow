@@ -1,97 +1,162 @@
-﻿using Market.API;
+using Duende.IdentityServer;
+using Duende.IdentityServer.AspNetIdentity;
+using Duende.IdentityServer.Services;
+using Market.API;
+using Market.API.Identity;
 using Market.API.Middlewares;
 using Market.Application;
+using Market.Domain.Entities.IdentityV2;
 using Market.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using Serilog;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using System.Linq;
 
 public partial class Program
 {
     private static async Task Main(string[] args)
     {
-        //
-        // 0) Bootstrap logger (very early, no full config yet)
-        //
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console() // minimal sink so we see startup errors
+            .WriteTo.Console()
             .CreateBootstrapLogger();
 
         try
         {
             Log.Information("Starting Market API...");
 
-            //
-            // 1) Standard builder (includes appsettings.json, appsettings.{ENV}.json,
-            //    environment variables, user-secrets (Dev), and command-line args)
-            //
             var builder = WebApplication.CreateBuilder(args);
 
-            // 2) Promote Serilog to full configuration from builder.Configuration
-            //    (reads "Serilog" section from appsettings + ENV overrides)
-            //
             builder.Host.UseSerilog((ctx, services, cfg) =>
             {
-                cfg.ReadFrom.Configuration(ctx.Configuration)   // Serilog section in appsettings
-                   .ReadFrom.Services(services)                 // DI enrichers if any
+                cfg.ReadFrom.Configuration(ctx.Configuration)
+                   .ReadFrom.Services(services)
                    .Enrich.FromLogContext()
                    .Enrich.WithThreadId()
                    .Enrich.WithProcessId()
                    .Enrich.WithMachineName();
             });
 
-            // Optional: remove default providers to have only Serilog
             builder.Logging.ClearProviders();
 
-            // ---------------------------------------------------------
-            // 3. Layer registrations
-            // ---------------------------------------------------------
             builder.Services
                 .AddAPI(builder.Configuration, builder.Environment)
                 .AddInfrastructure(builder.Configuration, builder.Environment)
                 .AddApplication();
 
-            //SETTING UP CORS
+            builder.Services
+                .AddIdentityServer(options =>
+                {
+                    options.Events.RaiseSuccessEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseErrorEvents = true;
+                    options.EmitStaticAudienceClaim = true;
+                    options.Cors.CorsPolicyName = "AllowAngularDev";
+                })
+                .AddAspNetIdentity<ApplicationUser>()
+                .AddInMemoryIdentityResources(Config.IdentityResources)
+                .AddInMemoryApiScopes(Config.ApiScopes)
+                .AddInMemoryApiResources(Config.ApiResources)
+                .AddInMemoryClients(Config.Clients)
+                .AddDeveloperSigningCredential()
+                .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
+                .AddProfileService<CustomProfileService>();
+
+            builder.Services.AddSingleton<ICorsPolicyService>(sp =>
+            {
+                var logger = sp.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
+                return new DefaultCorsPolicyService(logger)
+                {
+                    AllowedOrigins =
+                    {
+                        "http://localhost:4200",
+                        "https://localhost:4200"
+                    }
+                };
+            });
+
+            var allowedOrigins = new[] { "http://localhost:4200", "https://localhost:4200" };
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAngularDev", policy =>
                 {
-                    policy.WithOrigins("http://localhost:4200")
+                    policy.WithOrigins(allowedOrigins)
                           .AllowAnyMethod()
                           .AllowAnyHeader()
                           .AllowCredentials();
                 });
             });
 
-            
-
-
-
             var app = builder.Build();
 
-            // ---------------------------------------------------------
-            // 4. Middleware pipeline
-            // ---------------------------------------------------------
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
-            // Global exception handler (IExceptionHandler)
             app.UseExceptionHandler();
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
-            //CORS
-            app.UseCors("AllowAngularDev");
-
             app.UseHttpsRedirection();
- 
+            app.UseRouting();
+            app.UseCors("AllowAngularDev");
+            app.Use(async (context, next) =>
+            {
+                if (HttpMethods.IsOptions(context.Request.Method))
+                {
+                    var origin = context.Request.Headers["Origin"].ToString();
+                    if (!string.IsNullOrWhiteSpace(origin) &&
+                        allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                    {
+                        context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+                        context.Response.Headers["Vary"] = "Origin";
+                    }
+                    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
 
+                    var requestMethod = context.Request.Headers["Access-Control-Request-Method"].ToString();
+                    if (!string.IsNullOrWhiteSpace(requestMethod))
+                    {
+                        context.Response.Headers["Access-Control-Allow-Methods"] = requestMethod;
+                    }
+
+                    var requestHeaders = context.Request.Headers["Access-Control-Request-Headers"].ToString();
+                    if (!string.IsNullOrWhiteSpace(requestHeaders))
+                    {
+                        context.Response.Headers["Access-Control-Allow-Headers"] = requestHeaders;
+                    }
+                    else
+                    {
+                        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
+                    }
+
+                    context.Response.StatusCode = StatusCodes.Status204NoContent;
+                    await context.Response.CompleteAsync();
+                    return;
+                }
+
+                var originForResponse = context.Request.Headers["Origin"].ToString();
+                if (!string.IsNullOrWhiteSpace(originForResponse) &&
+                    allowedOrigins.Contains(originForResponse, StringComparer.OrdinalIgnoreCase))
+                {
+                    context.Response.OnStarting(() =>
+                    {
+                        context.Response.Headers["Access-Control-Allow-Origin"] = originForResponse;
+                        context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+                        context.Response.Headers.Append("Vary", "Origin");
+                        return Task.CompletedTask;
+                    });
+                }
+
+                await next();
+            });
+            app.UseIdentityServer();
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
 
-            // Database migrations + seeding
             await app.Services.InitializeDatabaseAsync(app.Environment);
 
             Log.Information("Market API started successfully.");
@@ -99,18 +164,14 @@ public partial class Program
         }
         catch (HostAbortedException)
         {
-            // EF Core tools abortiraju host nakon što uzmu DbContext.
-            // Ovo nije runtime greška – samo tiho izađi.
             Log.Information("Host aborted by EF Core tooling (design-time) - its ok.");
         }
         catch (Exception ex)
         {
-            // Any startup failure will be logged here
             Log.Fatal(ex, "Market API terminated unexpectedly.");
         }
         finally
         {
-            // Ensure all logs are flushed before the app exits
             Log.CloseAndFlush();
         }
     }

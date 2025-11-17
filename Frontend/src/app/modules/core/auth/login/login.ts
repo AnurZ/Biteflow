@@ -1,9 +1,8 @@
-import { Component } from '@angular/core';
-import {FormBuilder, FormGroup, Validators} from '@angular/forms';
-import {AuthLoginEndpointService} from '../../../../endpoints/auth-endpoints/auth-login-endpoint.service';
-import {Router} from '@angular/router';
-import {InputTextType} from '../../../shared/reactive-forms/input-text/input-text';
-
+﻿import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { InputTextType } from '../../../shared/reactive-forms/input-text/input-text';
+import { AuthService } from '../../../../services/auth-services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -13,23 +12,41 @@ import {InputTextType} from '../../../shared/reactive-forms/input-text/input-tex
 })
 export class Login {
   form: FormGroup;
+  loginError = '';
+  isLoading = false;
 
-  constructor(private fb: FormBuilder, private authLoginService: AuthLoginEndpointService, private router: Router) {
-
+  constructor(
+    private readonly fb: FormBuilder,
+    private readonly authService: AuthService,
+    private readonly router: Router
+  ) {
     this.form = this.fb.group({
-      email: ['string', [Validators.required, Validators.min(2), Validators.max(15)]],
-      password: ['string', [Validators.required, Validators.min(2), Validators.max(30)]],
+      email: ['string', [Validators.required]],
+      password: ['string', [Validators.required]]
     });
   }
 
   onLogin(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLoading) return;
 
-    this.authLoginService.handleAsync(this.form.value).subscribe({
+    this.isLoading = true;
+    this.loginError = '';
+
+    const email = String(this.form.value.email ?? '').trim();
+    const password = String(this.form.value.password ?? '');
+
+    this.authService.login(email, password).subscribe({
       next: () => {
-        console.log('Login successful');
-        this.router.navigateByUrl('/public');
+        this.router.navigate(['/public']);
       },
+      error: (error) => {
+        console.error('Login failed', error);
+        this.loginError = 'Invalid credentials or server error. Please try again.';
+        this.isLoading = false;
+      },
+      complete: () => {
+        this.isLoading = false;
+      }
     });
   }
 
