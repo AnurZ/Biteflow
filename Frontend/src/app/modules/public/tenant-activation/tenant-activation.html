@@ -1,0 +1,114 @@
+<p>tenant-activation works!</p>
+
+
+<div class="wrap">
+  <header class="header">
+    <h1 class="title">Restaurant Activation</h1>
+    <div class="status-chip" [class.s--draft]="status===0" [class.s--submitted]="status===1"
+         [class.s--approved]="status===2" [class.s--activated]="status===3" [class.s--rejected]="status===4">
+      @if (status===0) { Draft }
+      @if (status===1) { Submitted }
+      @if (status===2) { Approved }
+      @if (status===3) { Activated }
+      @if (status===4) { Rejected }
+    </div>
+  </header>
+
+  <mat-horizontal-stepper  #stepper [linear]="true">
+    <mat-step [stepControl]="restaurantForm">
+      <form [formGroup]="restaurantForm">
+        <ng-template matStepLabel>Restaurant</ng-template>
+
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Restaurant Name</mat-label>
+            <input matInput formControlName="restaurantName" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Domain </mat-label>
+            <input matInput formControlName="domain" placeholder="exampleDomain.com" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Address</mat-label>
+            <input matInput formControlName="address" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>City</mat-label>
+            <input matInput formControlName="city" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>State/Region</mat-label>
+            <input matInput formControlName="state" required>
+          </mat-form-field>
+        </div>
+
+        <div class="actions">
+          <button mat-stroked-button color="primary" (click)="saveStep1()" [disabled]="restaurantForm.invalid || isBusy">Save & Continue</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="ownerForm">
+      <form [formGroup]="ownerForm">
+        <ng-template matStepLabel>Owner</ng-template>
+
+        <div class="grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Owner Full Name</mat-label>
+            <input matInput formControlName="ownerFullName" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Owner Email</mat-label>
+            <input matInput formControlName="ownerEmail" type="email" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Owner Phone</mat-label>
+            <input matInput formControlName="ownerPhone" required>
+          </mat-form-field>
+        </div>
+
+        <div class="actions">
+          <button mat-button matStepperPrevious>Back</button>
+          <button mat-stroked-button color="primary" (click)="saveStep2()" [disabled]="ownerForm.invalid || isBusy">Save & Continue</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <mat-step>
+      <ng-template matStepLabel>Review & Submit</ng-template>
+
+      <div class="review">
+        <h3>Review your details</h3>
+        <div class="row"><strong>Name:</strong> {{ restaurantForm.value.restaurantName }}</div>
+        <div class="row"><strong>Domain:</strong> {{ restaurantForm.value.domain }}</div>
+        <div class="row"><strong>Address:</strong> {{ restaurantForm.value.address }}, {{ restaurantForm.value.city }}, {{ restaurantForm.value.state }}</div>
+        <div class="row"><strong>Owner:</strong> {{ ownerForm.value.ownerFullName }} — {{ ownerForm.value.ownerEmail }} — {{ ownerForm.value.ownerPhone }}</div>
+      </div>
+
+      <div class="actions">
+        <button mat-button matStepperPrevious [disabled]="status === 1">Back</button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="submit()"
+          [disabled]="isBusy || status === 1">
+          Submit Request
+        </button>
+
+      </div>
+    </mat-step>
+  </mat-horizontal-stepper>
+
+  @if (status===1) {
+    <div class="after-submit">
+      <mat-icon>mark_email_read</mat-icon>
+      <div>Your activation request is submitted. We’ll email you when it’s approved.</div>
+    </div>
+  }
+</div>

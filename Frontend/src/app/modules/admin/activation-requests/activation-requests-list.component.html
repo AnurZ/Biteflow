@@ -1,0 +1,67 @@
+<section class="activation-list">
+  <header class="activation-list__header">
+    <h2>Activation Requests</h2>
+    <div class="activation-list__controls">
+      <button mat-raised-button color="primary" class="refresh-button" (click)="load()">
+        <mat-icon>refresh</mat-icon>
+        Refresh
+      </button>
+      <mat-form-field appearance="outline" class="status-select">
+        <mat-label>Status</mat-label>
+        <mat-select [(ngModel)]="statusFilter" (selectionChange)="load()">
+          <mat-option [value]="undefined">All</mat-option>
+          <mat-option [value]="0">Draft</mat-option>
+          <mat-option [value]="1">Submitted</mat-option>
+          <mat-option [value]="2">Approved</mat-option>
+          <mat-option [value]="3">Activated</mat-option>
+          <mat-option [value]="4">Rejected</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </header>
+
+  @if (loading()) {
+    <div class="activation-list__loading">
+      <mat-icon>hourglass_empty</mat-icon>
+      <span>Loading...</span>
+    </div>
+  } @else if (rows().length === 0) {
+    <div class="activation-list__empty">
+      <mat-icon>inbox</mat-icon>
+      <p>No activation requests match the selected filter.</p>
+    </div>
+  } @else {
+    <div class="activation-list__items">
+      @for (req of rows(); track req.id) {
+        <article class="activation-card">
+          <div class="activation-card__main">
+            <h3>{{ req.restaurantName }}</h3>
+            <div class="activation-card__domain">{{ req.domain }}</div>
+            <div class="activation-card__line">
+              <mat-icon aria-hidden="true">location_on</mat-icon>
+              <span>{{ req.address }}, {{ req.city }}, {{ req.state }}</span>
+            </div>
+            <div class="activation-card__line">
+              <mat-icon aria-hidden="true">person</mat-icon>
+              <span>{{ req.ownerFullName }} · {{ req.ownerEmail }} · {{ req.ownerPhone }}</span>
+            </div>
+            <div class="activation-card__status">Status: {{ statusText(req.status) }}</div>
+          </div>
+
+          <div class="activation-card__actions">
+            @if (req.status === 1) {
+              <button mat-flat-button color="primary" (click)="approve(req.id)">
+                <mat-icon>check_circle</mat-icon>
+                Approve
+              </button>
+              <button mat-button color="warn" (click)="reject(req.id)">
+                <mat-icon>cancel</mat-icon>
+                Reject
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

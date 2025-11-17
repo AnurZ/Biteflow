@@ -11,11 +11,20 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
     {
         public async Task<int> Handle(CreateDraftCommand r, CancellationToken ct)
         {
-            var exists = await db.TenantActivationRequests.AnyAsync(x => x.Domain == r.Domain, ct);
-            if (exists) throw new ValidationException("Domain already in use.");
+            var domain = r.Domain.Trim().ToLowerInvariant();
+
+            var exists = await db.TenantActivationRequests
+                .AnyAsync(x => x.Domain.ToLower() == domain, ct);
+
+            if (exists)
+                throw new MarketConflictException("Domain already in use.");
 
             var e = new TenantActivationRequest();
-            e.EditDraft(r.RestaurantName, r.Domain, r.OwnerFullName, r.OwnerEmail, r.OwnerPhone, r.Address, r.City, r.State);
+            e.EditDraft(
+                r.RestaurantName, domain,
+                r.OwnerFullName, r.OwnerEmail, r.OwnerPhone,
+                r.Address, r.City, r.State
+            );
 
             db.TenantActivationRequests.Add(e);
             await db.SaveChangesAsync(ct);
