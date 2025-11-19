@@ -22,7 +22,10 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                     IsAvailable = m.IsAvailable,
                     IsFeatured = m.IsFeatured,
                     ImageField = m.ImageField,
-                    IngredientsCount = m.Ingredients.Count
+                    StockManaged = m.StockManaged,
+                    IngredientsCount = m.Ingredients.Count,
+                    CategoryId = m.CategoryId,
+
                 })
                 .ToListAsync(cancellationToken);
 

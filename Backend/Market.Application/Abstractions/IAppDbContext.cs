@@ -1,6 +1,7 @@
 ﻿using Market.Domain.Entities.ActivationLinkEntity;
 using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Meal;
+using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.MealIngredient;
 using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.Tenants;
@@ -21,6 +22,8 @@ public interface IAppDbContext
     DbSet<InventoryItem> InventoryItems { get; }
     DbSet<Meal> Meals { get; }
     DbSet<MealIngredient> MealIngredients { get; }
+    DbSet<MealCategory> MealCategories { get; }
+
 
     Task<int> SaveChangesAsync(CancellationToken ct);
 }
