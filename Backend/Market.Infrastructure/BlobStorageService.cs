@@ -21,29 +21,38 @@ namespace Market.Infrastructure
 
         public async Task<string> UploadAsync(IFormFile file)
         {
-            // Initialize container lazily
-            if (_containerClient == null)
+            try
             {
-                var connectionString = _configuration["AzureBlobStorage:ConnectionString"];
-                var containerName = _configuration["AzureBlobStorage:ContainerName"];
+                if (_containerClient == null)
+                {
+                    var connectionString = _configuration["AzureBlobStorage:ConnectionString"];
+                    var containerName = _configuration["AzureBlobStorage:ContainerName"];
 
-                if (string.IsNullOrWhiteSpace(connectionString) || string.IsNullOrWhiteSpace(containerName))
-                    throw new Exception("Azure Blob configuration missing!");
+                    if (string.IsNullOrWhiteSpace(connectionString) || string.IsNullOrWhiteSpace(containerName))
+                        throw new Exception("Azure Blob configuration missing!");
 
-                var blobServiceClient = new BlobServiceClient(connectionString);
-                _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
+                    var blobServiceClient = new BlobServiceClient(connectionString);
+                    _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
-                await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+                    await _containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
+                }
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                var blobClient = _containerClient.GetBlobClient(fileName);
+
+                using var stream = file.OpenReadStream();
+                await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
+
+                return blobClient.Uri.ToString();
             }
-
-            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-            var blobClient = _containerClient.GetBlobClient(fileName);
-
-            using var stream = file.OpenReadStream();
-            await blobClient.UploadAsync(stream, new BlobHttpHeaders { ContentType = file.ContentType });
-
-            return blobClient.Uri.ToString(); // Public URL to the image
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Blob upload failed: {ex}");
+                throw;
+            }
         }
+
+
 
         public string GetBlobUrl(string fileName)
         {

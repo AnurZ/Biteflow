@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, Inject, inject, OnInit, ViewChild, viewChild} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { InventoryItemService } from './inventory-item.servise';
-import { InventoryItemDto, UnitTypes } from './inventory-item-model';
+import { InventoryItemDto } from './inventory-item-model';
 import {MatPaginator} from '@angular/material/paginator';
 import {MatTableDataSource} from '@angular/material/table';
 import {InventoryItemListEndpoint} from '../../endpoints/inventory-items-crud-endpoints/inventory-item-list-endpoint';
@@ -17,6 +17,7 @@ import {InventoryItemsFormDialogComponent} from './inventory-items-form-dialog/i
 import {
   InventoryItemsConfirmDialogComponent
 } from './confirm-dialog-component/inventory-items-confirm-dialog-component';
+import {UnitTypes} from '../meals/meals-model';
 
 
 

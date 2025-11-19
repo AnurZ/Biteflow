@@ -36,7 +36,8 @@ namespace Market.Application.Modules.Meal.Commands.Create
                 IsAvailable = request.IsAvailable,
                 IsFeatured = request.IsFeatured,
                 ImageField = request.ImageField?.Trim() ?? string.Empty,
-                StockManaged = request.StockManaged
+                StockManaged = request.StockManaged,
+                CategoryId = request.CategoryId,
 
             };
 

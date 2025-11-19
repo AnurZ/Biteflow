@@ -45,8 +45,6 @@ export class AddIngredientsDialog implements OnInit {
         x => x.inventoryItemId !== ingredient.inventoryItemId
       );
     }
-
-    console.log('Currently selected ingredients:', this.data.selectedIngredientsList);
   }
 
   save() {
@@ -75,8 +73,6 @@ export class AddIngredientsDialog implements OnInit {
 
   loadItemsByName(name: string) {
     const filter = name.toLowerCase();
-    console.log('filter');
-    console.log(this.data.selectedIngredientsList);
     this.getInventoryItemsListEp.handleAsync().subscribe({
       next: (result) => {
         this.listIngredients = result.items
@@ -95,10 +91,6 @@ export class AddIngredientsDialog implements OnInit {
   loadItems() {
     this.loading = true;
 
-    // Step 1: Get all inventory items
-
-    console.log("SELEKTEDINGREDEINTS")
-    console.log(this.data.selectedIngredientsList);
       this.getInventoryItemsListEp.handleAsync().subscribe({
         next: (result) => {
           // assuming your endpoint returns { items: [...] }
@@ -112,8 +104,6 @@ export class AddIngredientsDialog implements OnInit {
               selected: !!existing
             };
           });
-          console.log('INGREDIENTS');
-          console.log(this.listIngredients);
           this.loading = false;
         },
         error: (err) => {

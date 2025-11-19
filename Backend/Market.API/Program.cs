@@ -44,6 +44,8 @@ public partial class Program
                 .AddInfrastructure(builder.Configuration, builder.Environment)
                 .AddApplication();
 
+            builder.Services.AddSingleton<BlobStorageService>();
+
             builder.Services
                 .AddIdentityServer(options =>
                 {
@@ -79,13 +81,14 @@ public partial class Program
 
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("AllowAngularDev", policy =>
-                {
-                    policy.WithOrigins(allowedOrigins)
-                          .AllowAnyMethod()
-                          .AllowAnyHeader()
-                          .AllowCredentials();
-                });
+                options.AddPolicy("AllowAngularDev",
+                    policy =>
+                    {
+                        policy.WithOrigins("http://localhost:4200")
+                              .AllowAnyHeader()
+                              .AllowAnyMethod()
+                              .AllowCredentials(); // If you need cookies/auth
+                    });
             });
 
             var app = builder.Build();
@@ -93,7 +96,12 @@ public partial class Program
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.OAuthClientId("biteflow-angular");
+                    options.OAuthScopeSeparator(" ");
+                    options.OAuthUsePkce(); // optional
+                });
             }
 
             app.UseExceptionHandler();

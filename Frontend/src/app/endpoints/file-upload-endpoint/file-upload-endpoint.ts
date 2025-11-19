@@ -12,7 +12,7 @@ export class FileUploadEndpoint {
 
   uploadFile(file: File): Observable<{ url: string }> {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('File', file);
     return this.http.post<{ url: string }>(`${this.baseUrl}/upload`, formData);
   }
 

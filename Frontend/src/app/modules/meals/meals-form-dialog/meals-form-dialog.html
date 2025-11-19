@@ -21,10 +21,24 @@
               <mat-label>Base price</mat-label>
               <input type="number" matInput formControlName="basePrice" required>
             </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Category</mat-label>
+              <select matNativeControl formControlName="categoryId">
+                <option *ngFor="let category of mealCategories" [ngValue]="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+            </mat-form-field>
+
+
+
+
+
+
           </div>
           <div style="display: flex; gap: 8px">
             <mat-form-field appearance="outline" class="notesClass hide-subscript">
-              <mat-label>Notes</mat-label>
+              <mat-label>Description</mat-label>
               <textarea matInput rows="6" formControlName="description"></textarea>
             </mat-form-field>
             <div style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -42,7 +56,7 @@
       <div class="card-header">
         <div class="title">Manage Ingredients</div>
         <div class="actions">
-          <button (click)="addIngredient(this.form.get('id')?.value)" mat-flat-button color="primary">
+          <button (click)="addIngredient()" mat-flat-button color="primary">
             <mat-icon>add</mat-icon>&nbsp;Add ingredient
           </button>
           <mat-form-field appearance="outline" class="search hide-subscript">
@@ -91,7 +105,7 @@
                     type="number"
                     matInput
                     min="0"
-                    [formControl]="getIngredientControl(i)"
+                    [value]="element.quantity"
                     (change)="onQuantityChange(i, $event.target.value)"
                   />
                 </mat-form-field>

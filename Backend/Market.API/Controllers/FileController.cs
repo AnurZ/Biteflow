@@ -20,13 +20,20 @@ public class FileController : ControllerBase
         if (dto.File == null || dto.File.Length == 0)
             return BadRequest("No file uploaded");
 
-        var url = await _blobService.UploadAsync(dto.File);
-
-        // Extract file name from URL
-        var fileName = Path.GetFileName(new Uri(url).LocalPath);
-
-        return Ok(new { Url = url, FileName = fileName });
+        try
+        {
+            var url = await _blobService.UploadAsync(dto.File);
+            var fileName = Path.GetFileName(new Uri(url).LocalPath);
+            return Ok(new { Url = url, FileName = fileName });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload failed: {ex}");
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
+
+
 
     [HttpGet("{fileName}")]
     public IActionResult GetImageUrl(string fileName)
