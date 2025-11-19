@@ -1,30 +1,11 @@
 ﻿// inventory-item.model.ts
+import {UnitTypes} from '../meals/meals-model';
+
 export interface PageResult<T> {
   total: number;
   items: T[];
 }
 
-export enum UnitTypes {
-  Kilogram,
-  Gram,
-  Milligram,
-  Liter,
-  Milliliter,
-  Unit,
-  Slice,
-  Teaspoon,
-  Tablespoon,
-  Cup,
-  Pinch,
-  Drop,
-  Meter,
-  Centimeter,
-  Pack,
-  Bottle,
-  Can,
-  Box,
-  Bag
-}
 
 export interface InventoryItemDto {
   id: number;

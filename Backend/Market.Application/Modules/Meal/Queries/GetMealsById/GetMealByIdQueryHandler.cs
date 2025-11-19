@@ -28,7 +28,9 @@ namespace Market.Application.Modules.Meal.Queries.GetMealsById
                 BasePrice = meal.BasePrice,
                 IsAvailable = meal.IsAvailable,
                 IsFeatured = meal.IsFeatured,
+                StockManaged = meal.StockManaged,
                 ImageField = meal.ImageField,
+                CategoryId = meal.CategoryId,
                 Ingredients = meal.Ingredients.Select(mi => new MealIngredientQueryDto
                 {
                     InventoryItemId = mi.InventoryItemId,
