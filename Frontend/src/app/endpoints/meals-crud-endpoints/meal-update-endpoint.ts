@@ -12,6 +12,7 @@ export class MealUpdateEndpoint implements BaseEndpointAsync<UpdateMealCommand, 
   constructor(private http: HttpClient) {}
 
   handleAsync(body: UpdateMealCommand): Observable<void> {
+    console.log(body);
     return this.http.put<void>(`${this.base}/${body.id}`, body);
   }
 }

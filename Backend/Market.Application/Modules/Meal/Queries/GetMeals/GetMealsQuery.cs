@@ -15,7 +15,9 @@ namespace Market.Application.Modules.Meal.Queries.GetList
         public double BasePrice { get; set; }
         public bool IsAvailable { get; set; }
         public bool IsFeatured { get; set; }
+        public bool StockManaged { get; set; }
         public string ImageField { get; set; } = string.Empty;
+        public int? CategoryId { get; set; }
 
         // Optional: include ingredients count
         public int IngredientsCount { get; set; }

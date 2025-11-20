@@ -162,6 +162,17 @@ mat-paginator {
   background: #fff;
 }
 
+/* Default active color */
+td[mat-cell] mat-icon {
+  color: #198754; /* green for active */
+}
+
+/* Inactive color */
+td[mat-cell] mat-icon.inactive {
+  color: #dc3545; /* red for inactive */
+}
+
+
 /* --- Responsive tweaks --- */
 @media (max-width: 992px) {
   .card-header .actions .search {

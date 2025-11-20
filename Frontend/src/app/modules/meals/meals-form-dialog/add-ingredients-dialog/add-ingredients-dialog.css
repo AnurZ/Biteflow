@@ -1,0 +1,105 @@
+.card {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+  width: auto;
+  padding: 16px 18px;
+}
+
+.card-header {
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #212529;
+  white-space: nowrap;
+  margin-left: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Ingredients list container */
+.ingredients-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* Each row uses a grid */
+.ingredient-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 100px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.qty-col {
+  width: 90px;
+}
+
+.unit-col {
+  width: 100px;
+}
+
+.quantity-field {
+  width: 100%;
+}
+
+.unit-type {
+  text-align: left;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.no-ingredients {
+  text-align: center;
+  color: gray;
+  padding: 16px;
+}
+
+/* --- SCROLLING NAME --- */
+.text-container {
+  display: inline-block;
+  width: 200px;         /* visible width */
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+::ng-deep .hide-subscript .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.scrolling-text {
+  display: inline-block;
+  transition: transform 0.5s linear;
+  /* show ellipsis if short */
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.text-container:hover .scrolling-text {
+  animation: scroll-left 5s linear forwards;
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-1 * (100% - 200px))); }
+}
+

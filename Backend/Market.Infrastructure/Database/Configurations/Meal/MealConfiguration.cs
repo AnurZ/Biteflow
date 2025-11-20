@@ -35,6 +35,14 @@ namespace Market.Infrastructure.Database.Configurations.Meals
             builder.Property(m => m.StockManaged)
                 .HasDefaultValue(true);
 
+            builder.Property(m => m.CategoryId)
+               .IsRequired(false); 
+
+            builder.HasOne(m => m.Category)
+                .WithMany() 
+                .HasForeignKey(m => m.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
         }
     }
 }
