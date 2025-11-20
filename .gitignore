@@ -543,3 +543,4 @@ http-client.private.env.json
 
 # Secret configuration files
 appsettings.Secrets.json
+Backend/Market.API/appsettings.json
