@@ -122,7 +122,7 @@ export interface CreateMealCommand {
   isFeatured: boolean;
   imageField?: string;
   stockManaged: boolean;
-  categoryId: number;
+  categoryId?: number | null;
   ingredients: MealIngredientApiDto[];
 }
 
@@ -135,7 +135,7 @@ export interface UpdateMealCommand {
   isFeatured: boolean;
   imageField?: string;
   stockManaged: boolean;
-  categoryId: number;
+  categoryId?: number | null;
   ingredients: MealIngredientApiDto[];
 }
 

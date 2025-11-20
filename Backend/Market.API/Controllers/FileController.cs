@@ -19,6 +19,8 @@ public class FileController : ControllerBase
     {
         if (dto.File == null || dto.File.Length == 0)
             return BadRequest("No file uploaded");
+        Console.WriteLine("FILE RECEIVED? => " + (dto.File != null));
+
 
         try
         {
