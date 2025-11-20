@@ -12,6 +12,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
         public bool IsFeatured { get; init; }
         public string ImageField { get; init; } = string.Empty;
         public bool StockManaged { get; init; }
+        public int? CategoryId { get; set; }
 
         // Ingredients for this meal
         public List<MealIngredientDto> Ingredients { get; init; } = new();

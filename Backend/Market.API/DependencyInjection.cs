@@ -90,7 +90,37 @@ public static class DependencyInjection
                 Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             };
             c.AddSecurityDefinition("Bearer", bearer);
+            c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.OAuth2,
+                Flows = new OpenApiOAuthFlows
+                {
+                    Password = new OpenApiOAuthFlow
+                    {
+                        TokenUrl = new Uri("https://localhost:7260/connect/token"),
+                        Scopes = new Dictionary<string, string>
+            {
+                { "openid", "OpenID" },
+                { "profile", "Profile" },
+                { "email", "Email" },
+                { "roles", "Roles" },
+                { "biteflow.api", "Biteflow API" }
+            }
+                    }
+                }
+            });
+
             c.AddSecurityRequirement(new OpenApiSecurityRequirement { { bearer, Array.Empty<string>() } });
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "oauth2" }
+                        },
+                        new[] { "biteflow.api", "roles", "openid", "profile", "email" }
+                    }
+                });
         });
 
         services.AddExceptionHandler<MarketExceptionHandler>();

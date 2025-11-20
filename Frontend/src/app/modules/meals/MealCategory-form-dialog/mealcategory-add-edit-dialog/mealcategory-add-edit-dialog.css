@@ -1,0 +1,53 @@
+mat-dialog-content {
+  padding: 20px 24px 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 24px;
+}
+
+.section-card {
+  grid-column: 1 / -1;
+  padding: 16px 18px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.inner-grid {
+  gap: 16px 18px;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.my-3 { margin: 12px 0; }
+
+.full {
+  grid-column: 1 / -1;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+mat-checkbox {
+  align-self: center;
+  margin: 8px 0;
+}
+
+mat-dialog-actions {
+  padding: 12px 24px 20px;
+}
+
+@media (max-width: 600px) {
+  mat-dialog-content { padding: 16px 16px 8px; }
+  .section-card { padding: 14px 14px; border-radius: 10px; }
+}

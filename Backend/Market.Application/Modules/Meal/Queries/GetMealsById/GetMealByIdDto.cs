@@ -8,6 +8,9 @@ public sealed class GetMealByIdDto
     public double BasePrice { get; set; }
     public bool IsAvailable { get; set; }
     public bool IsFeatured { get; set; }
+    public bool StockManaged { get; set; }
     public string ImageField { get; set; } = string.Empty;
+    public int? CategoryId { get; set; }
+
     public List<MealIngredientQueryDto> Ingredients { get; set; } = new();
 }
