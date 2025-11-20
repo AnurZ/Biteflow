@@ -235,7 +235,7 @@ export class MealsFormDialog implements OnInit {
         isFeatured: raw.isFeatured ?? false,
         imageField: raw.imageField?.trim(),
         stockManaged: raw.stockManaged ?? false,
-        categoryId: raw.categoryId ?? 0,
+        categoryId: raw.categoryId ?? null,
         ingredients: mappedIngredients
       };
 
@@ -252,7 +252,7 @@ export class MealsFormDialog implements OnInit {
         isFeatured: raw.isFeatured ?? false,
         imageField: raw.imageField?.trim(),
         stockManaged: raw.stockManaged ?? false,
-        categoryId: raw.categoryId ?? 0,
+        categoryId: raw.categoryId ?? null,
         ingredients: mappedIngredients
       };
 
