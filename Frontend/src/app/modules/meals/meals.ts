@@ -149,7 +149,7 @@ export class Meals implements OnInit {
   createMeal() {
     const ref = this.dialog.open(MealsFormDialog, {
       width: '1200px',       // desired width
-      height: '800px',
+      height: '830px',
       maxWidth: 'none',      // remove Angular Material's default max-width
       data: { mode: 'create' }
     });
@@ -159,7 +159,7 @@ export class Meals implements OnInit {
   editMeal(id: number) {
     const ref = this.dialog.open(MealsFormDialog, {
       width: '1200px',
-      height: '800px',
+      height: '830px',
       maxWidth: 'none',
       data: { mode: 'edit', id: id }
     });
