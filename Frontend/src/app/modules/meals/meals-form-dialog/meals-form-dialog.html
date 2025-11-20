@@ -1,0 +1,146 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+
+    <!-- Meal image + details -->
+    <div class="section-card">
+      <div class="image-name-price-holder" style="display: flex; justify-content: space-between">
+        <div class="image-preview" (click)="fileInput.click()">
+          <img [src]="form.get('imageField')?.value" alt="Meal image" width="250" height="250" />
+        </div>
+        <input type="file" #fileInput style="display: none;" (change)="onFileSelected($event)" />
+        <div style="width: 75%; justify-content: space-between; flex-direction: column; display: flex;">
+          <div class="inner-grid">
+            <mat-form-field appearance="outline" class="inputInFlex">
+              <mat-label>Meal name</mat-label>
+              <input matInput formControlName="name" type="name" required>
+              <mat-error *ngIf="form.controls.name.hasError('required')">Meal name is required.</mat-error>
+              <mat-error *ngIf="form.controls.name.value && form.controls.name.hasError('nameExists')">Meal with that name already exists.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="inputInFlex">
+              <mat-label>Base price</mat-label>
+              <input type="number" matInput formControlName="basePrice" required>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Category</mat-label>
+              <select matNativeControl formControlName="categoryId">
+                <option *ngFor="let category of mealCategories" [ngValue]="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+            </mat-form-field>
+
+
+
+
+
+
+          </div>
+          <div style="display: flex; gap: 8px">
+            <mat-form-field appearance="outline" class="notesClass hide-subscript">
+              <mat-label>Description</mat-label>
+              <textarea matInput rows="6" formControlName="description"></textarea>
+            </mat-form-field>
+            <div style="display: flex; flex-direction: column; justify-content: space-between;">
+              <mat-checkbox style="align-self: flex-start" formControlName="isAvailable">Available</mat-checkbox>
+              <mat-checkbox style="align-self: flex-start" formControlName="isFeatured">Featured</mat-checkbox>
+              <mat-checkbox style="align-self: flex-start" formControlName="stockManaged">Stock managed</mat-checkbox>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ingredients management card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="title">Manage Ingredients</div>
+        <div class="actions">
+          <button (click)="addIngredient()" mat-flat-button color="primary">
+            <mat-icon>add</mat-icon>&nbsp;Add ingredient
+          </button>
+          <mat-form-field appearance="outline" class="search hide-subscript">
+            <mat-label>Search</mat-label>
+            <input #mealsInput matInput placeholder="Ingredients" (input)="onNameSearch(mealsInput.value)" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading-container">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+
+      <div *ngIf="!loading && inventoryItemsList.data.length !== 0">
+        <table mat-table [dataSource]="inventoryItemsList" class="table-wrap">
+
+          <!-- Name Column -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef class="mat-column-quantity">Name</th>
+            <td mat-cell *matCellDef="let element; let i = index">
+              <div class="cell-content">
+                <span #ingredientName class="ingredient-name" >
+                  <span class="scrolling-text">{{ element.inventoryItemName }}</span>
+                </span>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Unit Column -->
+          <ng-container matColumnDef="unitType">
+            <th mat-header-cell *matHeaderCellDef class="mat-column-quantity">Unit</th>
+            <td mat-cell *matCellDef="let element" class="unit-column">
+              <div class="cell-content">{{ element.unitType }}</div>
+            </td>
+          </ng-container>
+
+          <!-- Quantity Column -->
+          <ng-container matColumnDef="quantity">
+            <th mat-header-cell *matHeaderCellDef>Quantity</th>
+            <td mat-cell *matCellDef="let element; let i = index">
+              <div class="cell-content">
+                <mat-form-field appearance="outline" class="quantity-field" style="padding: 0px; width: 110px; height: 50px">
+                  <mat-label>Qty</mat-label>
+                  <input
+                    style="height: 20px; text-align: center"
+                    type="number"
+                    matInput
+                    min="0"
+                    [value]="element.quantity"
+                    (change)="onQuantityChange(i, $event.target.value)"
+                  />
+                </mat-form-field>
+              </div>
+            </td>
+          </ng-container>
+
+          <!-- Actions Column -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="mat-column-quantity">Actions</th>
+            <td mat-cell *matCellDef="let element; let i = index">
+              <div class="cell-content action-buttons">
+                <button mat-icon-button class="red-icon" (click)="removeIngredient(element)">
+                  <mat-icon style="color: red">delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && inventoryItemsList.data.length === 0" class="no-ingredients">
+        <p style="text-align: center">No available ingredients found.</p>
+      </div>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || loading">
+    {{ data.mode === 'create' ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>

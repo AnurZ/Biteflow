@@ -5,33 +5,45 @@ export interface PageResult<T> {
   items: T[];
 }
 
+export interface MealCategory{
+  id: number;
+  name: string;
+  description: string;
+}
+
+export interface MealCategoryCreateDto{
+  name: string;
+  description: string;
+}
+
 // UnitTypes enum (matches backend exactly)
 export enum UnitTypes {
-  Kilogram = 'Kilogram',
-  Gram = 'Gram',
-  Milligram = 'Milligram',
+  Kilogram = 0,
+  Gram = 1,
+  Milligram = 2,
 
-  Liter = 'Liter',
-  Milliliter = 'Milliliter',
+  Liter = 3,
+  Milliliter = 4,
 
-  Unit = 'Unit',
-  Slice = 'Slice',
+  Unit = 5,
+  Slice = 6,
 
-  Teaspoon = 'Teaspoon',
-  Tablespoon = 'Tablespoon',
-  Cup = 'Cup',
-  Pinch = 'Pinch',
-  Drop = 'Drop',
+  Teaspoon = 7,
+  Tablespoon = 8,
+  Cup = 9,
+  Pinch = 10,
+  Drop = 11,
 
-  Meter = 'Meter',
-  Centimeter = 'Centimeter',
+  Meter = 12,
+  Centimeter = 13,
 
-  Pack = 'Pack',
-  Bottle = 'Bottle',
-  Can = 'Can',
-  Box = 'Box',
-  Bag = 'Bag'
+  Pack = 14,
+  Bottle = 15,
+  Can = 16,
+  Box = 17,
+  Bag = 18
 }
+
 
 // =======================
 // Meal DTOs for listing
@@ -39,12 +51,21 @@ export enum UnitTypes {
 export interface MealDto {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   basePrice: number;
   isAvailable: boolean;
   isFeatured: boolean;
   imageField: string;
+  categoryId: number;
   ingredientsCount?: number; // optional
+}
+
+export interface addIngredientDto{
+  inventoryItemId: number;
+  inventoryItemName: string;
+  quantity: number;
+  unitType: string;
+  selected: boolean;
 }
 
 // =======================
@@ -65,6 +86,8 @@ export interface GetMealByNameDto {
   isAvailable: boolean;
   isFeatured: boolean;
   imageField: string;
+  ingredientsCount?: number;
+  categoryId: number;
   ingredients: MealIngredientQueryDto[];
 }
 
@@ -75,7 +98,9 @@ export interface GetMealByIdDto {
   basePrice: number;
   isAvailable: boolean;
   isFeatured: boolean;
+  stockManaged: boolean;
   imageField: string;
+  categoryId: number;
   ingredients: MealIngredientQueryDto[];
 }
 
@@ -84,32 +109,42 @@ export interface GetMealByIdDto {
 // =======================
 export interface MealIngredientDto {
   inventoryItemId: number;
+  inventoryItemName: string;
   quantity: number;
   unitType: UnitTypes;
 }
 
 export interface CreateMealCommand {
   name: string;
-  description: string;
+  description?: string;
   basePrice: number;
   isAvailable: boolean;
   isFeatured: boolean;
-  imageField: string;
+  imageField?: string;
   stockManaged: boolean;
-  ingredients: MealIngredientDto[];
+  categoryId: number;
+  ingredients: MealIngredientApiDto[];
 }
 
 export interface UpdateMealCommand {
   id: number;
   name: string;
-  description: string;
+  description?: string;
   basePrice: number;
   isAvailable: boolean;
   isFeatured: boolean;
-  imageField: string;
+  imageField?: string;
   stockManaged: boolean;
-  ingredients: MealIngredientDto[];
+  categoryId: number;
+  ingredients: MealIngredientApiDto[];
 }
+
+export interface MealIngredientApiDto {
+  inventoryItemId: number;
+  quantity: number;
+  unitType: number; // or string depending on API
+}
+
 
 // =======================
 // Command for deleting a meal

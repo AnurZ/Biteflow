@@ -11,7 +11,7 @@ import {
   InventoryItemGetByIdEndpoint
 } from '../../../endpoints/inventory-items-crud-endpoints/inventory-item-getbyid-endpoint';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {CreateInventoryItemDto, InventoryItemDto, UnitTypes, UpdateInventoryItemDto} from '../inventory-item-model';
+import {CreateInventoryItemDto, InventoryItemDto, UpdateInventoryItemDto} from '../inventory-item-model';
 
 type DialogData = { mode: 'create' } | { mode: 'edit'; id: number };
 

@@ -20,8 +20,8 @@ namespace Market.Application.Modules.Meal.Commands.Update
             if (meal is null)
                 throw new KeyNotFoundException($"Meal with ID {request.Id} not found.");
 
-            var nameExists = await db.Meals
-                .AnyAsync(m => m.Id != request.Id && m.Name.ToLower() == request.Name.Trim().ToLower(), cancellationToken);
+           var nameExists = await db.Meals
+             .AnyAsync(m => m.Id != request.Id && m.Name == meal.Name, cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal with the name '{request.Name.Trim()}' already exists.");
@@ -29,6 +29,7 @@ namespace Market.Application.Modules.Meal.Commands.Update
             if (request.BasePrice < 0)
                 throw new ValidationException("BasePrice cannot be negative.");
 
+            // Update meal basic properties
             meal.Name = request.Name.Trim();
             meal.Description = request.Description?.Trim() ?? string.Empty;
             meal.BasePrice = request.BasePrice;
@@ -36,11 +37,25 @@ namespace Market.Application.Modules.Meal.Commands.Update
             meal.IsFeatured = request.IsFeatured;
             meal.ImageField = request.ImageField?.Trim() ?? string.Empty;
             meal.StockManaged = request.StockManaged;
+            meal.CategoryId = request.CategoryId;
 
+            // Remove all existing ingredients
             db.MealIngredients.RemoveRange(meal.Ingredients);
 
+            // Check for duplicates in request itself
+            var duplicateIds = request.Ingredients
+                .GroupBy(i => i.InventoryItemId)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateIds.Any())
+                throw new ValidationException($"Duplicate ingredients in request: {string.Join(", ", duplicateIds)}");
+
+            // Add new ingredients
             foreach (var ingredientDto in request.Ingredients)
             {
+                // Validate InventoryItem exists
                 var exists = await db.InventoryItems
                     .AnyAsync(i => i.Id == ingredientDto.InventoryItemId, cancellationToken);
 
@@ -50,12 +65,6 @@ namespace Market.Application.Modules.Meal.Commands.Update
                 if (ingredientDto.Quantity <= 0)
                     throw new ValidationException($"Quantity for InventoryItemId {ingredientDto.InventoryItemId} must be greater than zero.");
 
-                var alreadyAdded = await db.MealIngredients
-                    .AnyAsync(mi => mi.MealId == meal.Id && mi.InventoryItemId == ingredientDto.InventoryItemId, cancellationToken);
-
-                if (alreadyAdded)
-                    throw new ValidationException($"Ingredient with InventoryItemId {ingredientDto.InventoryItemId} is already added to this meal.");
-
                 db.MealIngredients.Add(new MealIngredient
                 {
                     MealId = meal.Id,
@@ -64,7 +73,6 @@ namespace Market.Application.Modules.Meal.Commands.Update
                     UnitTypes = ingredientDto.UnitType
                 });
             }
-
 
             await db.SaveChangesAsync(cancellationToken);
         }
