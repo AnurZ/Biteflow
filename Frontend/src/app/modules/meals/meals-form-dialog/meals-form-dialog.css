@@ -217,6 +217,10 @@ th[mat-mdc-header-cell] {
   }
 }
 
+.mat-mdc-dialog-content {
+  max-height: none;
+}
+
 .quantity-field{
   background: white;
   border-radius: 6px;
