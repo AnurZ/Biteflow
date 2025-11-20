@@ -75,6 +75,7 @@ table[mat-table] {
   border-collapse: separate;
   border-spacing: 0;
   background: #fff;
+  table-layout: auto;
 }
 
 tr[mat-header-row] {
@@ -115,10 +116,14 @@ td[mat-cell] {
 
 /* Wrap cell content for buttons/icons */
 td[mat-cell] .cell-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  display: inline-block;
+  text-align: center;
+}
+
+.mat-column-name .cell-content {
+  display: block;        /* important! */
+  white-space: normal;   /* allow wrapping */
+  word-break: break-word; /* ensures long words also wrap */
 }
 
 table[mat-table] tr[mat-row]:nth-child(even) td[mat-cell] {
@@ -175,4 +180,38 @@ mat-paginator {
   .card-header { flex-direction: column; align-items: stretch; gap: 8px; }
   .card-header .actions { margin-left: 0; }
   .card-header .actions .search { width: 100%; min-width: 0; }
+}
+
+#mealCategoryPicker {
+  border-left: 0px;
+  width: 200px;
+  font-size: 15px;
+  height: 40px;
+  text-align: center;
+  border-bottom-right-radius: 10px;
+  border-top-right-radius: 10px;
+  background: #f8f9fa;
+  appearance: progress-bar;
+}
+
+.addButtonClass{
+  border-bottom-left-radius: 10px;
+  border-top-left-radius: 10px;
+  height: 40px;
+  width: 45px;
+  border-right: 0px;
+  background-color: #B014B0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.addButtonClass:hover{
+  background-color: #9e339e;
+  cursor: pointer;
+}
+
+.plusButtonClass{
+
 }

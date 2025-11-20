@@ -12,6 +12,7 @@ using Serilog;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.Linq;
+using Market.Domain.Entities.BlobStorageSettings;
 
 public partial class Program
 {
@@ -27,6 +28,26 @@ public partial class Program
 
             var builder = WebApplication.CreateBuilder(args);
 
+            // Load configuration
+            builder.Configuration
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .AddUserSecrets<Program>();
+
+            // --- DEBUG WRAPPER FOR BLOB SETTINGS ---
+            BlobStorageSettings blobSettings = null;
+            try
+            {
+                blobSettings = builder.Configuration.GetSection("AzureBlobStorage").Get<BlobStorageSettings>();
+                Console.WriteLine($"BlobSettings loaded: {blobSettings.ConnectionString}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load BlobSettings: {ex}");
+                throw;
+            }
+
+
             builder.Host.UseSerilog((ctx, services, cfg) =>
             {
                 cfg.ReadFrom.Configuration(ctx.Configuration)
@@ -39,51 +60,61 @@ public partial class Program
 
             builder.Logging.ClearProviders();
 
-            builder.Services
-                .AddAPI(builder.Configuration, builder.Environment)
-                .AddInfrastructure(builder.Configuration, builder.Environment)
-                .AddApplication();
-
-            builder.Services
-                .AddIdentityServer(options =>
-                {
-                    options.Events.RaiseSuccessEvents = true;
-                    options.Events.RaiseFailureEvents = true;
-                    options.Events.RaiseErrorEvents = true;
-                    options.EmitStaticAudienceClaim = true;
-                    options.Cors.CorsPolicyName = "AllowAngularDev";
-                })
-                .AddAspNetIdentity<ApplicationUser>()
-                .AddInMemoryIdentityResources(Config.IdentityResources)
-                .AddInMemoryApiScopes(Config.ApiScopes)
-                .AddInMemoryApiResources(Config.ApiResources)
-                .AddInMemoryClients(Config.Clients)
-                .AddDeveloperSigningCredential()
-                .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
-                .AddProfileService<CustomProfileService>();
-
-            builder.Services.AddSingleton<ICorsPolicyService>(sp =>
+            // --- WRAP SERVICE REGISTRATION ---
+            try
             {
-                var logger = sp.GetRequiredService<ILogger<DefaultCorsPolicyService>>();
-                return new DefaultCorsPolicyService(logger)
-                {
-                    AllowedOrigins =
+                builder.Services
+                    .AddAPI(builder.Configuration, builder.Environment)
+                    .AddInfrastructure(builder.Configuration, builder.Environment)
+                    .AddApplication();
+
+                builder.Services.AddSingleton<BlobStorageService>();
+                Log.Information("Services registered successfully.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error registering services");
+                throw;
+            }
+
+            // --- IdentityServer ---
+            try
+            {
+                builder.Services
+                    .AddIdentityServer(options =>
                     {
-                        "http://localhost:4200",
-                        "https://localhost:4200"
-                    }
-                };
-            });
+                        options.Events.RaiseSuccessEvents = true;
+                        options.Events.RaiseFailureEvents = true;
+                        options.Events.RaiseErrorEvents = true;
+                        options.EmitStaticAudienceClaim = true;
+                        options.Cors.CorsPolicyName = "AllowAngularDev";
+                    })
+                    .AddAspNetIdentity<ApplicationUser>()
+                    .AddInMemoryIdentityResources(Config.IdentityResources)
+                    .AddInMemoryApiScopes(Config.ApiScopes)
+                    .AddInMemoryApiResources(Config.ApiResources)
+                    .AddInMemoryClients(Config.Clients)
+                    .AddDeveloperSigningCredential()
+                    .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
+                    .AddProfileService<CustomProfileService>();
 
+                Log.Information("IdentityServer configured successfully.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error configuring IdentityServer");
+                throw;
+            }
+
+            // CORS
             var allowedOrigins = new[] { "http://localhost:4200", "https://localhost:4200" };
-
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAngularDev", policy =>
                 {
                     policy.WithOrigins(allowedOrigins)
-                          .AllowAnyMethod()
                           .AllowAnyHeader()
+                          .AllowAnyMethod()
                           .AllowCredentials();
                 });
             });
@@ -93,7 +124,12 @@ public partial class Program
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.OAuthClientId("biteflow-angular");
+                    options.OAuthScopeSeparator(" ");
+                    options.OAuthUsePkce();
+                });
             }
 
             app.UseExceptionHandler();
@@ -102,6 +138,7 @@ public partial class Program
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors("AllowAngularDev");
+
             app.Use(async (context, next) =>
             {
                 if (HttpMethods.IsOptions(context.Request.Method))
@@ -122,14 +159,10 @@ public partial class Program
                     }
 
                     var requestHeaders = context.Request.Headers["Access-Control-Request-Headers"].ToString();
-                    if (!string.IsNullOrWhiteSpace(requestHeaders))
-                    {
-                        context.Response.Headers["Access-Control-Allow-Headers"] = requestHeaders;
-                    }
-                    else
-                    {
-                        context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
-                    }
+                    context.Response.Headers["Access-Control-Allow-Headers"] =
+                        !string.IsNullOrWhiteSpace(requestHeaders)
+                            ? requestHeaders
+                            : "Content-Type, Authorization";
 
                     context.Response.StatusCode = StatusCodes.Status204NoContent;
                     await context.Response.CompleteAsync();
@@ -151,20 +184,31 @@ public partial class Program
 
                 await next();
             });
+
             app.UseIdentityServer();
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
 
-            await app.Services.InitializeDatabaseAsync(app.Environment);
+            // --- Wrap database initialization ---
+            try
+            {
+                await app.Services.InitializeDatabaseAsync(app.Environment);
+                Log.Information("Database initialized successfully.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Database initialization failed.");
+                throw;
+            }
 
             Log.Information("Market API started successfully.");
             app.Run();
         }
         catch (HostAbortedException)
         {
-            Log.Information("Host aborted by EF Core tooling (design-time) - its ok.");
+            Log.Information("Host aborted by EF Core tooling (design-time) - it's ok.");
         }
         catch (Exception ex)
         {

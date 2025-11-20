@@ -14,6 +14,8 @@ namespace Market.Application.Modules.Meal.Commands.Update
         public bool IsFeatured { get; init; }
         public string ImageField { get; init; } = string.Empty;
         public bool StockManaged { get; init; }
+        public int? CategoryId { get; set; }
+
 
         public List<UpdateMealIngredientDto> Ingredients { get; init; } = new();
     }

@@ -1,0 +1,74 @@
+<h2 mat-dialog-title>
+  {{ data.mode === 'create' ? 'Add Ingredients' : 'Edit Ingredients' }}
+</h2>
+
+<mat-dialog-content class="dialog-content no-padding">
+  <div class="card">
+
+    <!-- Search bar -->
+    <div class="card-header actions">
+      <mat-form-field appearance="outline" class="search" class = "hide-subscript" style="flex: 1;">
+        <mat-label>Search</mat-label>
+        <input
+          matInput
+          #searchInput
+          placeholder="Name"
+          (input)="loadItemsByName(searchInput.value)" />
+      </mat-form-field>
+    </div>
+
+    <!-- Loading state -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- No ingredients -->
+    <div *ngIf="!loading && listIngredients.length === 0" class="no-ingredients">
+      <p>No available ingredients found.</p>
+    </div>
+
+    <!-- Ingredients list -->
+    <div *ngIf="!loading && listIngredients.length > 0" class="ingredients-list">
+      <div *ngFor="let ing of listIngredients" class="ingredient-row">
+
+        <!-- Checkbox + ingredient name -->
+        <div class="col checkbox-col">
+          <mat-checkbox [(ngModel)]="ing.selected" (ngModelChange)="onIngredientChange(ing)">
+            <span style="padding-top: 6px;" class="scrolling-text">{{ ing.inventoryItemName }}</span>
+          </mat-checkbox>
+        </div>
+
+        <!-- Quantity input -->
+        <div class="col qty-col">
+          <mat-form-field appearance="outline" class="quantity-field hide-subscript">
+            <mat-label>Qty</mat-label>
+            <input
+              type="number"
+              matInput
+              min="0"
+              [(ngModel)]="ing.quantity"
+              [disabled]="!ing.selected"
+              (input)="onInputQty(ing)" />
+          </mat-form-field>
+        </div>
+
+        <!-- Unit type -->
+        <div class="col unit-col">
+          <span class="unit-type">{{ ing.unitType }}</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="save()"
+    [disabled]="loading">
+    {{ data.mode === 'create' ? 'Add Selected' : 'Save' }}
+  </button>
+</mat-dialog-actions>
