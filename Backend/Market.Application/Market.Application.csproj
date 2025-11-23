@@ -22,4 +22,17 @@
     <ProjectReference Include="..\Market.Shared\Market.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Modules\DiningTable\Commands\DeleteDiningTablle\" />
+    <Folder Include="Modules\DiningTable\Commands\UpdateDiningTable\" />
+    <Folder Include="Modules\DiningTable\Querries\GetDiningTableById\" />
+    <Folder Include="Modules\DiningTable\Querries\GetDiningTableBySectionList\" />
+    <Folder Include="Modules\DiningTable\Querries\GetDiningTableByStatusList\" />
+    <Folder Include="Modules\TableReservation\Commands\DeleteTableReservation\" />
+    <Folder Include="Modules\TableReservation\Commands\UpdateTableReservation\" />
+    <Folder Include="Modules\TableReservation\Querries\GetByIdTableReservation\" />
+    <Folder Include="Modules\TableReservation\Querries\GetByTableIdTableReservation\" />
+    <Folder Include="Modules\TableReservation\Querries\GetByTimeAvailableTableReservation\" />
+  </ItemGroup>
+
 </Project>
