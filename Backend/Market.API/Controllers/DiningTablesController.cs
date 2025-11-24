@@ -1,10 +1,12 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Market.Application.Modules.DiningTable.Commands.CreateDiningTable;
+using Market.Application.Modules.DiningTable.Commands.UpdateDiningTable;
 using Market.Application.Modules.DiningTable.Querries.GetDiningTableList;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Market.Domain.Common.Enums;
+using Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle;
 
 namespace Market.API.Controllers
 {
@@ -27,6 +29,28 @@ namespace Market.API.Controllers
         {
             var result = await _mediator.Send(command);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Update an existing dining table
+        /// </summary>
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateDiningTable(int id, [FromBody] UpdateDiningTableCommandDto command)
+        {
+            command.Id = id;
+            await _mediator.Send(command);
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Delete a dining table
+        /// </summary>
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteDiningTable(int id)
+        {
+            var command = new DeleteDiningTableCommandDto { Id = id };
+            await _mediator.Send(command);
+            return NoContent();
         }
 
         /// <summary>
