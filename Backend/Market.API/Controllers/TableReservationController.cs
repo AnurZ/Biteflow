@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Market.Application.Modules.TableReservation.Commands.CreateTableReservation;
 using Market.Application.Modules.TableReservation.Queries.GetTableReservations;
+using Market.Application.Modules.TableReservation.Commands.DeleteTableReservation;
+using Market.Shared.Constants;
+using Market.Application.Modules.TableReservation.Commands.UpdateTableReservation;
 
 namespace Market.API.Controllers
 {
@@ -47,6 +50,23 @@ namespace Market.API.Controllers
 
             var reservations = await _mediator.Send(query);
             return Ok(reservations);
+        }
+
+        [HttpDelete("{id:int}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
+        public async Task<IActionResult> Delete(int id, CancellationToken ct)
+        {
+            await _mediator.Send(new DeleteTableReservationCommandDto { Id = id }, ct);
+            return NoContent();
+        }
+
+        [HttpPut("{id:int}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
+        public async Task<IActionResult> Update(int id, UpdateTableReservationCommandDto cmd, CancellationToken ct)
+        {
+            cmd.Id = id;
+            await _mediator.Send(cmd, ct);
+            return NoContent();
         }
     }
 }

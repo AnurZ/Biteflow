@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Market.Domain.Entities.IdentityV2;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,19 +12,22 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
     public sealed class CreateTableReservationCommandHandler : IRequestHandler<CreateTableReservationCommandDto, int>
     {
         private readonly IAppDbContext _db;
-        private readonly IAppCurrentUser _currentUser;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CreateTableReservationCommandHandler(IAppDbContext db, IAppCurrentUser currentUser)
+        public CreateTableReservationCommandHandler(IAppDbContext db, UserManager<ApplicationUser> userManager)
         {
             _db = db;
-            _currentUser = currentUser;
+            _userManager = userManager;
         }
 
         public async Task<int> Handle(CreateTableReservationCommandDto request, CancellationToken cancellationToken)
         {
-            if (!_currentUser.IsAuthenticated)
-                throw new InvalidOperationException("User is not authenticated.");
+            var user = await _userManager.FindByIdAsync(request.ApplicationUserId.ToString());
 
+            if (user == null)
+                throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+
+            // Basic validation (move to FluentValidation if possible)
             if (request.NumberOfGuests <= 0)
                 throw new ArgumentException("Number of guests must be greater than zero.");
 
@@ -33,19 +38,18 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
             if (table == null)
                 throw new InvalidOperationException("Dining table not found.");
 
-            var overlappingReservation = _db.TableReservations
-                .Where(r => r.DiningTableId == request.DiningTableId)
-                .Any(r =>
-                    (request.ReservationStart < r.ReservationEnd) &&
-                    (request.ReservationEnd > r.ReservationStart)
-                ); 
-            Console.WriteLine(".--------------------------------------------------------------------------");
-
-            Console.WriteLine(_currentUser.UserId);
+            var overlappingReservation = await _db.TableReservations
+                .AnyAsync(r =>
+                    r.DiningTableId == request.DiningTableId &&
+                    request.ReservationStart < r.ReservationEnd &&
+                    request.ReservationEnd > r.ReservationStart,
+                    cancellationToken);
 
             if (overlappingReservation)
                 throw new InvalidOperationException("The table is already reserved during the requested time.");
 
+            if (request.NumberOfGuests > table.NumberOfSeats)
+                throw new ValidationException("Too many guests for this table.");
 
             var reservation = new Domain.Entities.TableReservations.TableReservation
             {
@@ -63,6 +67,7 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
 
             return reservation.Id;
         }
+
     }
 
 
