@@ -1,0 +1,102 @@
+.card {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+/* --- Header --- */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-header .title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #212529;
+}
+
+/* --- Initial inline display --- */
+.table-layout-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.table-layout-container.hidden {
+  height: 0px;
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+.table-layout-card {
+  display: inline-block;
+  width: 200px;
+  height: 150px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.table-layout-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.table-layout-title {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* --- After selection: left + right --- */
+.table-layout-main {
+  display: flex;
+  gap: 20px;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.table-layout-main.active {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.table-layout-full {
+  flex: 1;
+  min-width: 300px;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  background-color: #f9f9f9;
+  height: 500px;
+
+  /* transition for smooth expansion */
+  transform: scale(0.95); /* start slightly smaller */
+  transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.table-layout-full.animate {
+  transition: all 0.4s ease;
+  transform: scale(1);
+}
+
+.table-layout-sidebar {
+  justify-content: center;
+  width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
