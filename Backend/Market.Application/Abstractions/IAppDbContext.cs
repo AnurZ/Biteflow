@@ -1,9 +1,12 @@
 ﻿using Market.Domain.Entities.ActivationLinkEntity;
+using Market.Domain.Entities.DiningTables;
+using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.MealIngredient;
 using Market.Domain.Entities.Staff;
+using Market.Domain.Entities.TableReservations;
 using Market.Domain.Entities.Tenants;
 
 namespace Market.Application.Abstractions;
@@ -23,6 +26,9 @@ public interface IAppDbContext
     DbSet<Meal> Meals { get; }
     DbSet<MealIngredient> MealIngredients { get; }
     DbSet<MealCategory> MealCategories { get; }
+    DbSet<DiningTable> DiningTables { get; }
+    DbSet<TableReservation> TableReservations { get; }
+    DbSet<ApplicationUser> ApplicationUsers { get; }
 
 
     Task<int> SaveChangesAsync(CancellationToken ct);
