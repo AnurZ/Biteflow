@@ -29,16 +29,27 @@ namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
             if (request.MinimumSeats.HasValue)
                 query = query.Where(t => t.NumberOfSeats >= request.MinimumSeats.Value);
 
+            if (request.TableLayoutId.HasValue)
+                query = query.Where(t => t.TableLayoutId == request.TableLayoutId.Value);
+
             return await query
                 .Select(t => new GetDiningTableListQueryDto
                 {
                     Id = t.Id,
+                    TableLayoutId = t.TableLayoutId,
                     SectionName = t.SectionName,
                     Number = t.Number,
                     NumberOfSeats = t.NumberOfSeats,
                     TableType = t.TableType,
                     Status = t.Status,
-                    IsActive = t.IsActive
+                    IsActive = t.IsActive,
+                    X = t.X,
+                    Y = t.Y,
+                    Width = t.Width,
+                    Height = t.Height,
+                    Shape = t.Shape,
+                    Color = t.Color,
+                    LastUsedAt = t.LastUsedAt
                 })
                 .ToListAsync(cancellationToken);
         }

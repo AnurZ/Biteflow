@@ -19,9 +19,10 @@ import {MatCheckbox} from '@angular/material/checkbox';
 import {AddIngredientsDialog} from './modules/meals/meals-form-dialog/add-ingredients-dialog/add-ingredients-dialog';
 import {MatTableModule} from '@angular/material/table';
 import {MealcategoryFormDialog} from './modules/meals/MealCategory-form-dialog/mealcategory-form-dialog';
+import { TableLayoutComponent } from './modules/table-layout/table-layout';
 
 @NgModule({
-  declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog, AddIngredientsDialog, InventoryItemsFormDialogComponent],
+  declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog, AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent],
   imports: [
     BrowserModule,
     HttpClientModule,
