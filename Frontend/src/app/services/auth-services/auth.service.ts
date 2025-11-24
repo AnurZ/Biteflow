@@ -168,7 +168,5 @@ export class AuthService {
     }
   }
 
-  logout(): void {
-    this.setLoggedInUser(null);
-  }
+
 }
