@@ -29,6 +29,33 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.IsActive)
                 .HasDefaultValue(true);
 
+            builder.Property(t => t.TableLayoutId)
+                .IsRequired();
+
+            builder.Property(t => t.X)
+                .IsRequired();
+
+            builder.Property(t => t.Y)
+                .IsRequired();
+
+            builder.Property(t => t.Width)
+                .HasDefaultValue(100)
+                .IsRequired();
+
+            builder.Property(t => t.Height)
+                .HasDefaultValue(100)
+                .IsRequired();
+
+            builder.Property(t => t.Shape)
+                .HasMaxLength(20)
+                .HasDefaultValue("rectangle")
+                .IsRequired();
+
+            builder.Property(t => t.Color)
+                .HasMaxLength(20)
+                .HasDefaultValue("#00ff00")
+                .IsRequired();
+
             builder.Property(t => t.TableType)
                 .IsRequired();
 
@@ -39,6 +66,7 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.LastUsedAt)
                 .IsRequired(false);
 
+            // Relationships
             builder.HasMany(t => t.Reservations)
                 .WithOne(r => r.DiningTable)
                 .HasForeignKey(r => r.DiningTableId)
@@ -49,6 +77,7 @@ namespace Market.Infrastructure.Persistence.Configurations
                 .HasForeignKey(o => o.DiningTableId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Index for Section + Number uniqueness
             builder.HasIndex(t => new { t.SectionName, t.Number })
                 .IsUnique();
         }
