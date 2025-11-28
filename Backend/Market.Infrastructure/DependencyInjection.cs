@@ -107,6 +107,20 @@ public static class DependencyInjection
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
         })
+        .AddCookie(IdentityConstants.ApplicationScheme, options =>
+        {
+            options.LoginPath = "/account/login";
+            options.LogoutPath = "/account/logout";
+            options.AccessDeniedPath = "/account/login";
+            options.SlidingExpiration = true;
+            options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        })
+        .AddCookie(IdentityConstants.ExternalScheme, options =>
+        {
+            options.Cookie.Name = "biteflow.external";
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
+            options.SlidingExpiration = false;
+        })
         .AddJwtBearer(options =>
         {
             options.Authority = authority;

@@ -76,6 +76,15 @@ namespace Market.Infrastructure.Migrations
                     table.PrimaryKey("PK_TableLayouts", x => x.Id);
                 });
 
+            // Seed a default layout and point existing dining tables to it to satisfy the FK.
+            migrationBuilder.Sql(@"
+                INSERT INTO TableLayouts (Name, BackgroundColor, FloorImageUrl)
+                VALUES ('Default layout', '#ffffff', NULL);
+
+                DECLARE @defaultLayoutId INT = (SELECT TOP (1) Id FROM TableLayouts ORDER BY Id);
+                UPDATE DiningTables SET TableLayoutId = @defaultLayoutId WHERE TableLayoutId = 0;
+            ");
+
             migrationBuilder.CreateIndex(
                 name: "IX_DiningTables_TableLayoutId",
                 table: "DiningTables",

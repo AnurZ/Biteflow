@@ -50,9 +50,22 @@ namespace Market.API.Identity
             {
                 ClientId = "biteflow-angular",
                 ClientName = "Biteflow Angular SPA",
-                AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                AllowedGrantTypes = GrantTypes.Code,
+                RequirePkce = true,
                 RequireClientSecret = false,
                 AllowOfflineAccess = true,
+                RedirectUris =
+                {
+                    "http://localhost:4200/auth/callback",
+                    "https://localhost:4200/auth/callback"
+                },
+                PostLogoutRedirectUris =
+                {
+                    "http://localhost:4200",
+                    "http://localhost:4200/public",
+                    "https://localhost:4200",
+                    "https://localhost:4200/public"
+                },
                 AllowedCorsOrigins =
                 {
                     "http://localhost:4200",
@@ -68,7 +81,42 @@ namespace Market.API.Identity
                     IdentityServerConstants.StandardScopes.OfflineAccess
                 },
                 AccessTokenLifetime = 1200,
-                AlwaysIncludeUserClaimsInIdToken = false
+                AlwaysIncludeUserClaimsInIdToken = false,
+                RequireConsent = false
+            },
+            new Client
+            {
+                ClientId = "swagger-ui",
+                ClientName = "Swagger UI",
+                AllowedGrantTypes = GrantTypes.Code,
+                RequirePkce = true,
+                RequireClientSecret = false,
+                AllowOfflineAccess = true,
+                RedirectUris =
+                {
+                    "https://localhost:7260/swagger/oauth2-redirect.html",
+                    "http://localhost:5177/swagger/oauth2-redirect.html"
+                },
+                PostLogoutRedirectUris =
+                {
+                    "https://localhost:7260/swagger",
+                    "http://localhost:5177/swagger"
+                },
+                AllowedCorsOrigins =
+                {
+                    "https://localhost:7260",
+                    "http://localhost:5177"
+                },
+                AllowedScopes =
+                {
+                    IdentityServerConstants.StandardScopes.OpenId,
+                    IdentityServerConstants.StandardScopes.Profile,
+                    IdentityServerConstants.StandardScopes.Email,
+                    "roles",
+                    "biteflow.api",
+                    IdentityServerConstants.StandardScopes.OfflineAccess
+                },
+                RequireConsent = false
             }
             };
     }
