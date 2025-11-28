@@ -17,7 +17,7 @@ public static class DependencyInjection
         IHostEnvironment env)
     {
         // Controllers + uniform BadRequest
-        services.AddControllers()
+        services.AddControllersWithViews()
             .ConfigureApiBehaviorOptions(opts =>
             {
                 opts.InvalidModelStateResponseFactory = ctx =>
@@ -70,7 +70,7 @@ public static class DependencyInjection
             });
         });
 
-        // Swagger with Bearer auth
+        // Swagger with OAuth2 (authorization code)
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(c =>
         {
@@ -79,24 +79,14 @@ public static class DependencyInjection
             if (File.Exists(xml))
                 c.IncludeXmlComments(xml, includeControllerXmlComments: true);
 
-            var bearer = new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Description = "Unesi JWT token.", // Format: **Bearer {token}** -> Format je samo token Bearer dio se dodaje automatski na swaggeru
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            };
-            c.AddSecurityDefinition("Bearer", bearer);
             c.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
             {
                 Type = SecuritySchemeType.OAuth2,
                 Flows = new OpenApiOAuthFlows
                 {
-                    Password = new OpenApiOAuthFlow
+                    AuthorizationCode = new OpenApiOAuthFlow
                     {
+                        AuthorizationUrl = new Uri("https://localhost:7260/connect/authorize"),
                         TokenUrl = new Uri("https://localhost:7260/connect/token"),
                         Scopes = new Dictionary<string, string>
             {
@@ -110,7 +100,6 @@ public static class DependencyInjection
                 }
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement { { bearer, Array.Empty<string>() } });
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {

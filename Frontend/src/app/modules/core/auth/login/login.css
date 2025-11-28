@@ -17,14 +17,10 @@
   letter-spacing: 0.3px;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-app-input-text {
-  width: 100%;
+.helper-text {
+  color: #555;
+  margin: 0.5rem 0 1.5rem;
+  font-size: 0.95rem;
 }
 
 .login-button {
@@ -34,14 +30,13 @@ app-input-text {
   width: 100%;
 }
 
-
 button[mat-stroked-button][color="primary"] {
-  border-color: #9c27b0;
-  color: #9c27b0;
+  border-color: #111827;
+  color: #111827;
 }
 
 button[mat-stroked-button][color="primary"]:hover {
-  background-color: rgba(156, 39, 176, 0.05);
-  border-color: #7b1fa2;
-  color: #7b1fa2;
+  background-color: rgba(17, 24, 39, 0.06);
+  border-color: #0f172a;
+  color: #0f172a;
 }

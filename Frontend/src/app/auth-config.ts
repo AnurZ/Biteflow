@@ -2,12 +2,13 @@ import { AuthConfig } from 'angular-oauth2-oidc';
 
 export const authConfig: AuthConfig = {
   issuer: 'https://localhost:7260',
-  tokenEndpoint: 'https://localhost:7260/connect/token',
+  redirectUri: `${window.location.origin}/auth/callback`,
+  postLogoutRedirectUri: `${window.location.origin}/public`,
   clientId: 'biteflow-angular',
-  dummyClientSecret: '',
   scope: 'openid profile email roles biteflow.api offline_access',
+  responseType: 'code',
   requireHttps: false,
   showDebugInformation: true,
   useSilentRefresh: false,
-  oidc: false
+  oidc: true
 };
