@@ -35,17 +35,26 @@ public partial class Program
                 .AddUserSecrets<Program>();
 
             // --- DEBUG WRAPPER FOR BLOB SETTINGS ---
-            BlobStorageSettings blobSettings = null;
-            try
+            var blobSection = builder.Configuration.GetSection("AzureBlobStorage");
+            var blobSettings = blobSection.Get<BlobStorageSettings>();
+
+            if (blobSettings is null ||
+                string.IsNullOrWhiteSpace(blobSettings.ConnectionString) ||
+                string.IsNullOrWhiteSpace(blobSettings.ContainerName))
             {
-                blobSettings = builder.Configuration.GetSection("AzureBlobStorage").Get<BlobStorageSettings>();
-                Console.WriteLine($"BlobSettings loaded: {blobSettings.ConnectionString}");
+                Log.Warning("AzureBlobStorage configuration missing or invalid. Blob storage will not be configured.");
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine($"Failed to load BlobSettings: {ex}");
-                throw;
+                Log.Information("AzureBlobStorage configuration loaded successfully.");
+
+                // Register strongly-typed settings
+                builder.Services.AddSingleton(blobSettings);
+
+                // If your BlobStorageService depends on BlobStorageSettings, e.g. ctor(BlobStorageSettings settings)
+                builder.Services.AddSingleton<BlobStorageService>();
             }
+
 
 
             builder.Host.UseSerilog((ctx, services, cfg) =>
@@ -88,6 +97,10 @@ public partial class Program
                         options.Events.RaiseErrorEvents = true;
                         options.EmitStaticAudienceClaim = true;
                         options.Cors.CorsPolicyName = "AllowAngularDev";
+                        options.Authentication.CookieAuthenticationScheme = IdentityConstants.ApplicationScheme;
+                        options.Authentication.CookieLifetime = TimeSpan.FromHours(8);
+                        options.UserInteraction.LoginUrl = "/account/login";
+                        options.UserInteraction.LogoutUrl = "/account/logout";
                     })
                     .AddAspNetIdentity<ApplicationUser>()
                     .AddInMemoryIdentityResources(Config.IdentityResources)
@@ -126,7 +139,8 @@ public partial class Program
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
-                    options.OAuthClientId("biteflow-angular");
+                    options.OAuthClientId("swagger-ui");
+                    options.OAuthScopes("openid", "profile", "email", "roles", "biteflow.api", "offline_access");
                     options.OAuthScopeSeparator(" ");
                     options.OAuthUsePkce();
                 });
@@ -136,6 +150,7 @@ public partial class Program
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
             app.UseCors("AllowAngularDev");
 

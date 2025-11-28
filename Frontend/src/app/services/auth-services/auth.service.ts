@@ -23,38 +23,50 @@ export class AuthService {
 
     this.discoveryDocumentPromise = this.oauthService
       .loadDiscoveryDocument()
-      .then(() => void 0)
+      .then(() => this.oauthService.tryLoginCodeFlow())
+      .then(async () => {
+        const profile = await this.fetchUserInfo();
+        this.zone.run(() => this.updateAuthInfoFromToken(profile));
+      })
       .catch((error) => {
-        console.warn('Failed to load OAuth discovery document.', error);
+        console.warn('Failed to initialize OAuth code flow.', error);
+        this.zone.run(() => this.updateAuthInfoFromToken());
       });
-
-    this.oauthService.tryLogin().catch(() => void 0);
 
     this.oauthService.events.subscribe(() => {
       this.zone.run(() => this.updateAuthInfoFromToken());
     });
-    this.updateAuthInfoFromToken();
   }
 
-  login(username: string, password: string): Observable<MyAuthInfo> {
-    return from(this.ensureDiscoveryDocumentLoaded()
-      .then(() => this.oauthService.fetchTokenUsingPasswordFlow(username, password))
-      .then(() => this.fetchUserInfo())
-      .then(profile => this.zone.run(() => this.updateAuthInfoFromToken(profile)))
-    ).pipe(
-      map(() => {
-        const info = this.getMyAuthInfo();
-        if (!info) {
-          throw new Error('Authentication failed.');
-        }
-        return info;
-      })
-    );
+  startLogin(returnUrl?: string): void {
+    const target = returnUrl ?? window.location.pathname;
+    this.oauthService.initLoginFlow(target);
+  }
+
+  async handleLoginCallback(): Promise<MyAuthInfo | null> {
+    await this.ensureDiscoveryDocumentLoaded();
+    const loggedIn = await this.oauthService.tryLoginCodeFlow().catch(() => false);
+    const profile = loggedIn ? await this.fetchUserInfo() : undefined;
+    this.zone.run(() => this.updateAuthInfoFromToken(profile));
+    return this.authInfo;
+  }
+
+  getPostLoginRedirect(): string | null {
+    const state = this.oauthService.state;
+    if (!state) return null;
+
+    try {
+      const maybeUrl = new URL(state, window.location.origin);
+      return `${maybeUrl.pathname}${maybeUrl.search}${maybeUrl.hash}`;
+    } catch {
+      return state;
+    }
   }
 
   logout(): Observable<void> {
     return from(this.ensureDiscoveryDocumentLoaded().then(() => {
-      this.oauthService.logOut(true);
+      const postLogoutRedirectUri = authConfig.postLogoutRedirectUri ?? window.location.origin;
+      this.oauthService.logOut({ postLogoutRedirectUri });
       this.zone.run(() => this.updateAuthInfoFromToken());
     })).pipe(map(() => void 0));
   }
