@@ -1,6 +1,7 @@
-﻿using Market.Application.Modules.Auth.Commands.Login;
+using Market.Application.Modules.Auth.Commands.Login;
 using Market.Application.Modules.Auth.Commands.Logout;
 using Market.Application.Modules.Auth.Commands.Refresh;
+using Market.Application.Modules.Auth.Commands.RegisterCustomer;
 using Market.Infrastructure.Database;
 
 [ApiController]
@@ -28,11 +29,18 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
         await mediator.Send(command, ct);
     }
 
+    [HttpPost("register/customer")]
+    [AllowAnonymous]
+    public async Task<IActionResult> RegisterCustomer([FromBody] RegisterCustomerCommand command, CancellationToken ct)
+    {
+        await mediator.Send(command, ct);
+        return Ok();
+    }
+
     [HttpPost("test")]
     [AllowAnonymous]
     public IActionResult Test()
     {
         return Ok();
     }
-
 }

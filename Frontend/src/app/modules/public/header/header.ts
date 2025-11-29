@@ -13,6 +13,15 @@ export class Header {
   constructor(public authService: AuthService, public router: Router) {
   }
 
+  get isAdmin(): boolean {
+    const roles = this.authService.getRoles();
+    return roles.includes('admin') || roles.includes('superadmin');
+  }
+
+  get isStaff(): boolean {
+    const roles = this.authService.getRoles();
+    return roles.includes('staff') || this.isAdmin;
+  }
 
   isOnLoginPage():boolean{
     return this.router.url.includes('auth/login');

@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Logging;
 
 
 namespace Market.Infrastructure;
@@ -27,8 +28,6 @@ public static class DependencyInjection
         IConfiguration configuration,
         IHostEnvironment env)
     {
-        const string AppOrBearerScheme = "ApplicationOrBearer";
-
         // Typed ConnectionStrings + validation
         services.AddOptions<ConnectionStringsOptions>()
             .Bind(configuration.GetSection(ConnectionStringsOptions.SectionName))
@@ -105,25 +104,14 @@ public static class DependencyInjection
                 ? "https://localhost:7260"
                 : throw new InvalidOperationException("IdentityServer:Authority must be configured for non-development environments.");
         }
+        authority = authority.TrimEnd('/');
 
         services.AddAuthentication(options =>
         {
-            options.DefaultScheme = AppOrBearerScheme;
-            options.DefaultChallengeScheme = AppOrBearerScheme;
-        })
-        .AddPolicyScheme(AppOrBearerScheme, AppOrBearerScheme, options =>
-        {
-            options.ForwardDefaultSelector = context =>
-            {
-                var authHeader = context.Request.Headers["Authorization"].ToString();
-                if (!string.IsNullOrWhiteSpace(authHeader) &&
-                    authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-                {
-                    return JwtBearerDefaults.AuthenticationScheme;
-                }
-
-                return IdentityConstants.ApplicationScheme;
-            };
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultSignInScheme = IdentityConstants.ApplicationScheme;
+            options.DefaultSignOutScheme = IdentityConstants.ApplicationScheme;
         })
         .AddCookie(IdentityConstants.ApplicationScheme, options =>
         {
@@ -158,7 +146,11 @@ public static class DependencyInjection
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = true,
-                ValidAudience = "biteflow.api",
+                ValidAudiences = new[]
+                {
+                    "biteflow.api",
+                    $"{authority}/resources"
+                },
                 ValidateIssuer = true,
                 ValidIssuer = authority,
                 NameClaimType = JwtClaimTypes.Name,
@@ -166,6 +158,39 @@ public static class DependencyInjection
                 ClockSkew = TimeSpan.Zero
             };
             options.MapInboundClaims = false;
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = ctx =>
+                {
+                    var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("JwtAuth");
+                    var hasAuth = ctx.HttpContext.Request.Headers.ContainsKey("Authorization");
+                    logger.LogInformation("JWT message received. HasAuthHeader={HasAuth}", hasAuth);
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = ctx =>
+                {
+                    var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("JwtAuth");
+                    logger.LogInformation("JWT token validated for subject {Sub}", ctx.Principal?.FindFirst(JwtClaimTypes.Subject)?.Value);
+                    return Task.CompletedTask;
+                },
+                OnAuthenticationFailed = ctx =>
+                {
+                    var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("JwtAuth");
+                    logger.LogWarning(ctx.Exception, "JWT authentication failed");
+                    return Task.CompletedTask;
+                },
+                OnChallenge = ctx =>
+                {
+                    var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("JwtAuth");
+                    logger.LogWarning("JWT authentication challenge. Error={Error} Desc={Desc} Uri={Uri} Failure={Failure}",
+                        ctx.Error, ctx.ErrorDescription, ctx.ErrorUri, ctx.AuthenticateFailure?.Message);
+                    return Task.CompletedTask;
+                }
+            };
         });
 
         // Token service (reads JwtOptions via IOptions<JwtOptions>)

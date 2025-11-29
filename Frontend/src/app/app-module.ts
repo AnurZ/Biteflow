@@ -30,7 +30,7 @@ import { TableLayoutComponent } from './modules/table-layout/table-layout';
     ReactiveFormsModule,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: ['https://localhost:7260/api'],
+        allowedUrls: ['https://localhost:7260/api', 'http://localhost:7260/api'],
         sendAccessToken: true
       }
     }),

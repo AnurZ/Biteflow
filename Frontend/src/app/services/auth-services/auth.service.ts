@@ -5,6 +5,7 @@ import { from, lastValueFrom, map, Observable } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
 import { authConfig } from '../../auth-config';
 import { MyAuthInfo } from './auth.info';
+import { MyConfig } from '../../my-config';
 
 @Injectable({
   providedIn: 'root'
@@ -50,7 +51,11 @@ export class AuthService {
 
   async handleLoginCallback(): Promise<MyAuthInfo | null> {
     await this.ensureDiscoveryDocumentLoaded();
-    const loggedIn = await this.oauthService.tryLoginCodeFlow().catch(() => false);
+    let loggedIn = this.oauthService.hasValidAccessToken();
+    if (!loggedIn) {
+      loggedIn = await this.oauthService.tryLoginCodeFlow().catch(() => false) || false;
+    }
+
     const profile = loggedIn ? await this.fetchUserInfo() : undefined;
     this.zone.run(() => this.updateAuthInfoFromToken(profile));
     return this.authInfo;
@@ -185,5 +190,9 @@ export class AuthService {
     }
   }
 
+  registerCustomer(payload: { email: string; password: string; displayName?: string }): Promise<void> {
+    const url = `${MyConfig.api_address}/auth/register/customer`;
+    return lastValueFrom(this.http.post<void>(url, payload));
+  }
 
 }
