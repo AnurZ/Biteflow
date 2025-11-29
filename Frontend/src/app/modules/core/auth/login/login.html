@@ -1,12 +1,4 @@
 <div class="login-container">
-  <h2>Sign in to Biteflow</h2>
-  <p class="helper-text">You'll be redirected to the secure login page to enter your credentials.</p>
-
-  @if (loginError) {
-    <div class="error-message">{{ loginError }}</div>
-  }
-
-  <button mat-stroked-button color="primary" class="login-button" type="button" [disabled]="isLoading" (click)="onLogin()">
-    {{ isLoading ? 'Redirecting...' : 'Continue to login' }}
-  </button>
+  <h2>Redirecting…</h2>
+  <p class="helper-text">If you are not redirected, please go back and try again.</p>
 </div>

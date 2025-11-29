@@ -12,14 +12,15 @@
             margin: 0;
             padding: 0;
         }
-        .shell {
-            max-width: 420px;
-            margin: 48px auto;
-            padding: 32px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
-        }
+    .shell {
+        max-width: 420px;
+        margin: 48px auto;
+        padding: 32px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+        box-sizing: border-box;
+    }
         h1 {
             margin: 0 0 12px;
             font-size: 24px;
@@ -53,32 +54,79 @@
             margin-bottom: 12px;
             font-size: 14px;
         }
-        .actions {
-            margin-top: 20px;
+    .actions {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    button {
+        padding: 12px 18px;
+        background: #111827;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #0b1222;
+    }
+    .remember {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #111827;
+    }
+        .divider {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            margin: 20px 0 10px;
+            color: #6b7280;
+            font-size: 14px;
         }
-        button {
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02));
+        }
+        .google-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
             padding: 12px 18px;
-            background: #111827;
-            color: #fff;
-            border: none;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            color: #1f2937;
             border-radius: 10px;
             font-weight: 700;
-            cursor: pointer;
+            text-decoration: none;
+            box-sizing: border-box;
+            margin-top: 6px;
         }
-        button:hover {
-            background: #0b1222;
+        .google-btn:hover {
+            background: #f9fafb;
         }
-        .remember {
-            display: flex;
+        .google-icon {
+            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #111827;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            color: #db4437;
+            font-weight: 800;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #fff;
         }
-    </style>
+</style>
 </head>
 <body>
     <div class="shell">
@@ -113,6 +161,15 @@
                 </label>
             </div>
         </form>
+
+        <div class="divider">
+            <span>or</span>
+        </div>
+
+        <a class="google-btn" href="@Url.Action("ExternalGoogle", "Account", new { returnUrl = Model.ReturnUrl })">
+            <span class="google-icon">G</span>
+            <span>Sign in with Google</span>
+        </a>
     </div>
 </body>
 </html>
