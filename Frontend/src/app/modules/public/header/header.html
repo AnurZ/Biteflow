@@ -5,9 +5,13 @@
     @if (authService.isLoggedIn()) {
 
       <div class="ComponentButtons">
-        <button mat-raised-button color="primary" routerLink="/admin">Admin</button>
-        <button mat-raised-button color="primary" routerLink="/public">Waiter</button>
-        <button mat-raised-button color="primary" routerLink="/public">Kitchen</button>
+        @if (isAdmin) {
+          <button mat-raised-button color="primary" routerLink="/admin">Admin</button>
+        }
+        @if (isStaff) {
+          <button mat-raised-button color="primary" routerLink="/public">Waiter</button>
+          <button mat-raised-button color="primary" routerLink="/public">Kitchen</button>
+        }
       </div>
     } @else {
       <div>
@@ -21,6 +25,7 @@
       <span>{{ authService.getDisplayName() }}</span>
       <button mat-stroked-button color="warn" routerLink="/auth/logout">Logout</button>
     } @else if (!isOnLoginPage()) {
+      <button mat-button routerLink="/auth/register">Register</button>
       <button mat-raised-button color="primary" routerLink="/auth/login">Login</button>
     }
   </div>

@@ -10,12 +10,14 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { LogoutConfirmDialogComponent } from './logout/logout-confirm-dialog.component';
 import { MatButtonModule } from '@angular/material/button';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RegisterComponent } from './register/register';
 
 @NgModule({
   declarations: [
     Login,
     LogoutComponent,
-    AuthCallbackComponent
+    AuthCallbackComponent,
+    RegisterComponent
   ],
   imports: [
     CommonModule,

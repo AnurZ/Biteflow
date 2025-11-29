@@ -1,0 +1,47 @@
+<div class="register-shell">
+  <h2>Create your Biteflow account</h2>
+  <p class="helper-text">Use this form to register as a customer.</p>
+
+  @if (errorMessage) {
+    <div class="error">{{ errorMessage }}</div>
+  }
+
+  @if (successMessage) {
+    <div class="success">
+      <div>{{ successMessage }}</div>
+      <button mat-raised-button color="primary" type="button" (click)="goToLogin()">Continue to login</button>
+    </div>
+  }
+
+  @if (!successMessage) {
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <label>Email</label>
+      <input type="email" formControlName="email" placeholder="you@example.com" />
+      @if (emailControl?.touched && emailControl?.invalid) {
+        <div class="field-error">Valid email is required.</div>
+      }
+
+      <label>Password</label>
+      <input type="password" formControlName="password" placeholder="At least 6 characters" />
+      @if (passwordControl?.touched && passwordControl?.invalid) {
+        <div class="field-error">Password must be at least 6 characters.</div>
+      }
+
+      <label>Display name</label>
+      <input type="text" formControlName="displayName" placeholder="Optional" />
+
+      <button mat-raised-button color="primary" type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Creating account...' : 'Create account' }}
+      </button>
+    </form>
+
+    <div class="divider">
+      <span>or</span>
+    </div>
+
+    <button mat-stroked-button type="button" class="google-btn" (click)="onGoogleLogin()" [disabled]="isSubmitting">
+      <span class="google-icon">G</span>
+      <span>Sign in with Google</span>
+    </button>
+  }
+</div>
