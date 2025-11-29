@@ -42,7 +42,7 @@ public sealed class IdentitySeeder
 
     private async Task EnsureRolesAsync(CancellationToken ct)
     {
-        var roles = new[] { RoleNames.SuperAdmin, RoleNames.Admin, RoleNames.Staff };
+        var roles = new[] { RoleNames.SuperAdmin, RoleNames.Admin, RoleNames.Staff, RoleNames.Customer };
         foreach (var role in roles)
         {
             if (await _roleManager.RoleExistsAsync(role))
