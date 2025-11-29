@@ -43,6 +43,11 @@ export class AuthService {
     this.oauthService.initLoginFlow(target);
   }
 
+  startGoogleLogin(returnUrl?: string): void {
+    const target = returnUrl ?? window.location.pathname;
+    this.oauthService.initLoginFlow(target, { idp: 'Google' });
+  }
+
   async handleLoginCallback(): Promise<MyAuthInfo | null> {
     await this.ensureDiscoveryDocumentLoaded();
     const loggedIn = await this.oauthService.tryLoginCodeFlow().catch(() => false);

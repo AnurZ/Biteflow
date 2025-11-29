@@ -32,8 +32,35 @@ public sealed class AccountController : Controller
     }
 
     [HttpGet("login")]
-    public IActionResult Login([FromQuery] string? returnUrl)
+    public async Task<IActionResult> Login([FromQuery] string? returnUrl)
     {
+        var ctx = string.IsNullOrWhiteSpace(returnUrl)
+            ? null
+            : await _interaction.GetAuthorizationContextAsync(returnUrl);
+
+        var idp = ctx?.IdP;
+        if (string.IsNullOrWhiteSpace(idp) && !string.IsNullOrWhiteSpace(returnUrl))
+        {
+            var idx = returnUrl.IndexOf('?', StringComparison.Ordinal);
+            if (idx >= 0)
+            {
+                var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(returnUrl[idx..]);
+                if (query.TryGetValue("idp", out var idpValues))
+                {
+                    idp = idpValues.FirstOrDefault();
+                }
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(idp))
+        {
+            // Single external provider requested; short-circuit to Google flow
+            if (string.Equals(idp, "Google", StringComparison.OrdinalIgnoreCase))
+            {
+                return RedirectToAction(nameof(ExternalGoogle), new { returnUrl });
+            }
+        }
+
         var vm = new LoginInputModel
         {
             ReturnUrl = returnUrl ?? string.Empty,
