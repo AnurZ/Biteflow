@@ -2,9 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using Duende.IdentityServer.Services;
 using Market.Domain.Entities.IdentityV2;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 [AllowAnonymous]
 [Route("account")]
@@ -119,6 +121,36 @@ public sealed class AccountController : Controller
         }
 
         return Redirect("~/");
+    }
+
+    [HttpGet("external/google")]
+    public IActionResult ExternalGoogle([FromQuery] string? returnUrl)
+    {
+        var redirectUrl = Url.Action(nameof(ExternalGoogleCallback), new { returnUrl });
+        var props = _signInManager.ConfigureExternalAuthenticationProperties(
+            GoogleDefaults.AuthenticationScheme,
+            redirectUrl);
+
+        return Challenge(props, GoogleDefaults.AuthenticationScheme);
+    }
+
+    [HttpGet("external/google/callback")]
+    public async Task<IActionResult> ExternalGoogleCallback([FromQuery] string? returnUrl)
+    {
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info == null)
+        {
+            _logger.LogWarning("Google callback did not return external login info.");
+            return RedirectToAction(nameof(Login), new { returnUrl });
+        }
+
+        var email = info.Principal?.FindFirstValue(ClaimTypes.Email) ?? "(no email)";
+        var name = info.Principal?.Identity?.Name ?? "(no name)";
+
+        // Clear the temporary external cookie
+        await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+
+        return Content($"Google authentication succeeded for {email} ({name}).");
     }
 }
 

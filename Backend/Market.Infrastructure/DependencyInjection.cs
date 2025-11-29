@@ -14,6 +14,8 @@ using Microsoft.AspNetCore.Identity;
 using Market.Infrastructure.Database.Seeders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication;
 
 
 namespace Market.Infrastructure;
@@ -120,6 +122,18 @@ public static class DependencyInjection
             options.Cookie.Name = "biteflow.external";
             options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
             options.SlidingExpiration = false;
+        })
+        .AddGoogle(options =>
+        {
+            options.SignInScheme = IdentityConstants.ExternalScheme;
+            options.ClientId = configuration["Authentication:Google:ClientId"]
+                ?? throw new InvalidOperationException("Authentication:Google:ClientId is not configured.");
+            options.ClientSecret = configuration["Authentication:Google:ClientSecret"]
+                ?? throw new InvalidOperationException("Authentication:Google:ClientSecret is not configured.");
+            options.SaveTokens = true;
+            options.Scope.Add("email");
+            options.Scope.Add("profile");
+            options.ClaimActions.MapJsonKey("picture", "picture");
         })
         .AddJwtBearer(options =>
         {
