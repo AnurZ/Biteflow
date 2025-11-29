@@ -2,11 +2,13 @@ using System.ComponentModel.DataAnnotations;
 using Duende.IdentityServer.Services;
 using Market.Domain.Entities.IdentityV2;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Duende.IdentityModel;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authentication.Google;
 
 [AllowAnonymous]
 [Route("account")]
@@ -126,10 +128,10 @@ public sealed class AccountController : Controller
     [HttpGet("external/google")]
     public IActionResult ExternalGoogle([FromQuery] string? returnUrl)
     {
-        var redirectUrl = Url.Action(nameof(ExternalGoogleCallback), new { returnUrl });
+        var callback = Url.Action(nameof(ExternalGoogleCallback), new { returnUrl });
         var props = _signInManager.ConfigureExternalAuthenticationProperties(
             GoogleDefaults.AuthenticationScheme,
-            redirectUrl);
+            callback);
 
         return Challenge(props, GoogleDefaults.AuthenticationScheme);
     }
@@ -137,20 +139,86 @@ public sealed class AccountController : Controller
     [HttpGet("external/google/callback")]
     public async Task<IActionResult> ExternalGoogleCallback([FromQuery] string? returnUrl)
     {
+        // Retrieve info from the external provider
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info == null)
         {
-            _logger.LogWarning("Google callback did not return external login info.");
+            _logger.LogWarning("External login info missing in Google callback.");
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
             return RedirectToAction(nameof(Login), new { returnUrl });
         }
 
-        var email = info.Principal?.FindFirstValue(ClaimTypes.Email) ?? "(no email)";
-        var name = info.Principal?.Identity?.Name ?? "(no name)";
+        var email = info.Principal?.FindFirstValue(ClaimTypes.Email)
+                    ?? info.Principal?.FindFirstValue(JwtClaimTypes.Email);
 
-        // Clear the temporary external cookie
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning("External login rejected because email is missing. Provider={Provider}, Key={Key}", info.LoginProvider, info.ProviderKey);
+            await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+            return RedirectToAction(nameof(Login), new { returnUrl });
+        }
+
+        // Try to find user by external login or email
+        var user = await _userManager.FindByLoginAsync(info.LoginProvider, info.ProviderKey)
+                   ?? await _userManager.FindByEmailAsync(email);
+
+        if (user == null)
+        {
+            user = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = info.Principal?.Identity?.Name ?? email,
+                TenantId = Guid.Empty,
+                RestaurantId = null,
+                IsEnabled = true
+            };
+
+            var createResult = await _userManager.CreateAsync(user);
+            if (!createResult.Succeeded)
+            {
+                _logger.LogWarning("Failed creating user from Google login: {Errors}", string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+        }
+        else
+        {
+            // Ensure we have a display name saved
+            if (string.IsNullOrWhiteSpace(user.DisplayName))
+            {
+                user.DisplayName = info.Principal?.Identity?.Name ?? email;
+                await _userManager.UpdateAsync(user);
+            }
+        }
+
+        // Link external login if not already linked
+        var existingLogins = await _userManager.GetLoginsAsync(user);
+        if (!existingLogins.Any(l => l.LoginProvider == info.LoginProvider && l.ProviderKey == info.ProviderKey))
+        {
+            var addLogin = await _userManager.AddLoginAsync(user, info);
+            if (!addLogin.Succeeded)
+            {
+                _logger.LogWarning("Failed adding external login for {UserId}: {Errors}", user.Id, string.Join(", ", addLogin.Errors.Select(e => e.Description)));
+            }
+        }
+
+        // Ensure customer role
+        if (!await _userManager.IsInRoleAsync(user, RoleNames.Customer))
+        {
+            var addRole = await _userManager.AddToRoleAsync(user, RoleNames.Customer);
+            if (!addRole.Succeeded)
+            {
+                _logger.LogWarning("Failed adding customer role for {UserId}: {Errors}", user.Id, string.Join(", ", addRole.Errors.Select(e => e.Description)));
+            }
+        }
+
+        // Sign the user in locally
         await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+        await _signInManager.SignInAsync(user, isPersistent: false, authenticationMethod: info.LoginProvider);
 
-        return Content($"Google authentication succeeded for {email} ({name}).");
+        return RedirectToLocal(returnUrl ?? string.Empty);
     }
 }
 

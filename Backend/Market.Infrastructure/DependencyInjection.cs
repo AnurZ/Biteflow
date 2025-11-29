@@ -27,6 +27,8 @@ public static class DependencyInjection
         IConfiguration configuration,
         IHostEnvironment env)
     {
+        const string AppOrBearerScheme = "ApplicationOrBearer";
+
         // Typed ConnectionStrings + validation
         services.AddOptions<ConnectionStringsOptions>()
             .Bind(configuration.GetSection(ConnectionStringsOptions.SectionName))
@@ -106,8 +108,22 @@ public static class DependencyInjection
 
         services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultScheme = AppOrBearerScheme;
+            options.DefaultChallengeScheme = AppOrBearerScheme;
+        })
+        .AddPolicyScheme(AppOrBearerScheme, AppOrBearerScheme, options =>
+        {
+            options.ForwardDefaultSelector = context =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+                if (!string.IsNullOrWhiteSpace(authHeader) &&
+                    authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                {
+                    return JwtBearerDefaults.AuthenticationScheme;
+                }
+
+                return IdentityConstants.ApplicationScheme;
+            };
         })
         .AddCookie(IdentityConstants.ApplicationScheme, options =>
         {
