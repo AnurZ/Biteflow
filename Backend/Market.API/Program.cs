@@ -31,6 +31,7 @@ public partial class Program
             // Load configuration
             builder.Configuration
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
 
