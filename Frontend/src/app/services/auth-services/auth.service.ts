@@ -190,7 +190,7 @@ export class AuthService {
     }
   }
 
-  registerCustomer(payload: { email: string; password: string; displayName?: string }): Promise<void> {
+  registerCustomer(payload: { email: string; password: string; displayName?: string; captchaToken: string }): Promise<void> {
     const url = `${MyConfig.api_address}/auth/register/customer`;
     return lastValueFrom(this.http.post<void>(url, payload));
   }

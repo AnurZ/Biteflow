@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, NgZone } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { AuthService } from '../../../../services/auth-services/auth.service';
+import { hcaptchaConfig } from '../../../../../environments/environment.hcaptcha';
 
 declare global {
   interface Window {
@@ -22,7 +23,7 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   errorMessage = '';
   successMessage = '';
   private captchaWidgetId: string | number | null = null;
-  private readonly hcaptchaSiteKey = '10000000-ffff-ffff-ffff-000000000001'; // hCaptcha test key; replace per env
+  private readonly hcaptchaSiteKey = hcaptchaConfig.siteKey || '10000000-ffff-ffff-ffff-000000000001'; // replace with real key in environment.hcaptcha.ts
   private renderAttempts = 0;
   private rendered = false;
 
@@ -178,7 +179,7 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
 
     try {
       const payload = this.form.value as { email: string; password: string; displayName?: string };
-      await this.authService.registerCustomer(payload);
+      await this.authService.registerCustomer({ ...payload, captchaToken: this.captchaToken });
       this.successMessage = 'Account created. You can sign in now.';
     } catch (error: any) {
       console.error('Registration failed', error);

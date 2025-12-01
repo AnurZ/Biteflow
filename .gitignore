@@ -544,3 +544,4 @@ http-client.private.env.json
 # Secret configuration files
 appsettings.Secrets.json
 Backend/Market.API/appsettings.secrets.json
+Frontend/src/environments/environment.hcaptcha.ts
