@@ -6,6 +6,8 @@ using Market.Shared.Constants;
 using Market.Shared.Dtos;
 using Market.Shared.Options;
 using Microsoft.OpenApi.Models;
+using Market.API.Options;
+using Market.API.Services;
 
 namespace Market.API;
 
@@ -38,6 +40,11 @@ public static class DependencyInjection
         // Typed options + validation on startup
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<CaptchaOptions>()
+            .Bind(configuration.GetSection(CaptchaOptions.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -117,6 +124,8 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
+        services.AddHttpClient();
+        services.AddScoped<ICaptchaVerifier, HcaptchaVerifier>();
         return services;
     }
 

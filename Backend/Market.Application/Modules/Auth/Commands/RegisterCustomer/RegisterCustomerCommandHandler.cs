@@ -15,22 +15,31 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
     private readonly IAppDbContext _db;
     private readonly IPasswordHasher<AppUser> _hasher;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ICaptchaVerifier _captchaVerifier;
     private readonly ILogger<RegisterCustomerCommandHandler> _logger;
 
     public RegisterCustomerCommandHandler(
         IAppDbContext db,
         IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
+        ICaptchaVerifier captchaVerifier,
         ILogger<RegisterCustomerCommandHandler> logger)
     {
         _db = db;
         _hasher = hasher;
         _userManager = userManager;
+        _captchaVerifier = captchaVerifier;
         _logger = logger;
     }
 
     public async Task Handle(RegisterCustomerCommand request, CancellationToken ct)
     {
+        var captchaOk = await _captchaVerifier.VerifyAsync(request.CaptchaToken, ct);
+        if (!captchaOk)
+        {
+            throw new ValidationException("Captcha validation failed.");
+        }
+
         var email = request.Email.Trim();
         var normalizedEmail = email.ToLowerInvariant();
         var displayName = string.IsNullOrWhiteSpace(request.DisplayName)
