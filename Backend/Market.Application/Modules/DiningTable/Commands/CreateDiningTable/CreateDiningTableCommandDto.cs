@@ -6,7 +6,6 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
     public sealed class CreateDiningTableCommandDto : IRequest<int>
     {
         // Basic info
-        public string SectionName { get; set; } = string.Empty;
         public int Number { get; set; }
         public int NumberOfSeats { get; set; }
         public TableTypes TableType { get; set; }
@@ -15,7 +14,8 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
         public int TableLayoutId { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public int TableSize { get; set; } = 100;
+        public int Height { get; set; } = 50;
+        public int Width { get; set; } = 50;
         public string Shape { get; set; } = "rectangle";
         public string Color { get; set; } = "#00ff00";
 

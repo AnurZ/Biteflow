@@ -309,10 +309,6 @@
 
 
 
-.card-actions mat-icon.save:hover {
-  background-color: #146c43; /* darker green */
-}
-
 /* Delete Icon */
 .card-actions mat-icon.delete {
   background-color: #dc3545; /* red */
@@ -393,29 +389,18 @@
   touch-action: none; /* optional: improves drag on touch devices */
 }
 
-.unselected-outline {
-  color: transparent; /* Keep the fill transparent */
-  text-shadow:
-    2px 0 #575757,
-    -2px 0 #575757,
-    0 2px #575757,
-    0 -2px #575757,
-    1px 1px #575757,
-    -1px -1px #575757,
-    1px -1px #575757,
-    -1px 1px #575757;
-}
 
 
 
 
 
-.table-icon-wrapper.dragging {
+
+.table-rectangle-wrapper.dragging {
   cursor: grabbing;
   z-index: 1000; /* make sure it’s on top while dragging */
 }
 
-.table-icon-wrapper.dragging mat-icon {
+.table-rectangle-wrapper.dragging mat-icon {
   transform: scale(0.92);
 }
 
@@ -593,6 +578,8 @@
   justify-content: center;
   align-items: center;
   border-top: 1px solid #d8d8da;
+  padding-top: 10px;
+  margin-top: 10px;
 }
 
 .dining-tables-container{
@@ -626,11 +613,7 @@
   flex-wrap: nowrap; /* prevent wrapping */
 }
 
-/* Each field takes up half the row minus gap */
-.row .my-field {
-  flex: 1;
-  min-width: 0; /* prevents overflow */
-}
+
 
 /* Outer wrapper for each input */
 .my-field {
@@ -744,6 +727,7 @@
 
 .table-info {
   display: flex;
+  width: 50%;
   flex-direction: column;
 }
 
@@ -870,6 +854,7 @@
 
 
 .table-reservations-container {
+  text-align: center;
   padding: 20px;
   width: 240px;
   flex-direction: column;
@@ -880,6 +865,42 @@
   border-radius: 10px;
   background-color: white;
 }
+
+.table-rectangle-wrapper {
+  position: absolute;
+}
+
+.table-rectangle {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+  /* Make text unselectable */
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+}
+
+.table-rectangle:hover {
+  filter: brightness(0.9); /* slightly darker on hover */
+}
+
+.table-rectangle.selected {
+  box-shadow: 0 0 10px 3px #FFD44D; /* glow for selection */
+}
+
 
 
 

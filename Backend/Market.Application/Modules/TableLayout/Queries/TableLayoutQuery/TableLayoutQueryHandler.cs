@@ -36,12 +36,12 @@ namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
                     Tables = l.Tables.Select(t => new TableDto
                     {
                         Id = t.Id,
-                        SectionName = t.SectionName,
                         Number = t.Number,
                         NumberOfSeats = t.NumberOfSeats,
                         X = t.X,
                         Y = t.Y,
-                        TableSize = t.TableSize,
+                        Height = t.Height,
+                        Width = t.Width,
                         Shape = t.Shape,
                         Color = t.Color,
                         TableType = t.TableType,

@@ -63,14 +63,7 @@
         </div>
 
         <div class="create-edit-container">
-          <mat-icon id="tableIcon" class="table-icon">table_bar</mat-icon>
 
-
-          <!-- Section Name -->
-          <div class="my-field full-width">
-            <label for="inputSectionName">Section Name:</label>
-            <input type="text" id="inputSectionName" (input)="0">
-          </div>
 
           <!-- Number + Seats -->
           <div class="row">
@@ -89,20 +82,26 @@
           <div class="row">
             <div class="my-field">
               <label for="inputX">X:</label>
-              <input type="number" id="inputX" min="0" [max]="getMaxX(newTableSize)" (input)="0">
+              <input type="number" id="inputX" min="0" [max]="getMaxX()" (input)="0">
             </div>
 
             <div class="my-field">
               <label for="inputY">Y:</label>
-              <input type="number" id="inputY" min="0" [max]="getMaxY(newTableSize)" (input)="0">
+              <input type="number" id="inputY" min="0" [max]="getMaxY()" (input)="0">
             </div>
           </div>
 
-          <!-- Table Size -->
-          <div class="my-field" style="margin-bottom: 12px;">
-            <label for="inputTableSize">Table Size:</label>
-            <input type="number" id="inputTableSize" min="80" max="400"
-                   [(ngModel)]="newTableSize" #tableSizeInput (input)="0">
+
+          <div class="row" style="margin-bottom: 10px">
+            <div class="my-field">
+              <label for="inputHeight">Height:</label>
+              <input type="number" id="inputHeight" min="50" max="600" (input)="0">
+            </div>
+
+            <div class="my-field">
+              <label for="inputWidth">Width:</label>
+              <input type="number" id="inputWidth" min="50" max="600" (input)="0">
+            </div>
           </div>
 
           <!-- Item -->
@@ -115,6 +114,10 @@
               <option value="item4">Cleaning</option>
               <option value="item5">Out of service</option>
             </select>
+          </div>
+
+          <div style="margin-top: 80px;">
+            reservation info coming soon
           </div>
         </div>
 
@@ -207,25 +210,25 @@
         (click)="selectedTable = table; setTableEditValues(table)"
       >
 
-        <!-- Left icon -->
-        <mat-icon class="table-icon-container"
-                  [ngStyle]="{ color: table.color }"
-        >table_bar</mat-icon>
+
 
         <!-- Text block -->
         <div class="table-info">
-          <div class="table-title">{{ table.sectionName }} / {{ table.number }}</div>
+          <div class="table-title">{{ table.number }}</div>
           <div class="table-seats">{{ table.numberOfSeats }} seats</div>
 
           <div class="table-status" [ngStyle]="{ color: table.color }">
             {{ TableStatusEnum[table.status] }}
           </div>
+
+
         </div>
+        <div>Reservation info coming soon</div>
       </div>
     </div>
 
     <div class="table-reservations-container">
-
+      <div style="margin-top: 270px ">Reservation info coming soon</div>
     </div>
 
 
@@ -243,40 +246,27 @@
     'background-color': !selectedLayout?.floorImageUrl ? selectedLayout?.backgroundColor : null
   }"
     >
-
-
       <div *ngIf="isLoadingTables" class="loader">
         Loading tables...
       </div>
 
       <div
         *ngFor="let table of diningTables"
-        class="table-icon-wrapper"
-        [ngStyle]="{ position: 'absolute', left: table.x + 'px', top: table.y + 'px' }"
+        class="table-rectangle-wrapper"
+        [ngStyle]="{ left: table.x + 'px', top: table.y + 'px', width: table.width + 'px', height: table.height + 'px' }"
         (pointerdown)="selectThenDrag($event, table)"
       >
-
-        <!-- Table icon -->
-        <mat-icon
-          [ngClass]="selectedTable === table ? '' : 'unselected-outline'"
-          [ngStyle]="{
-      fontSize: table.tableSize + 'px',
-      width: (186 * table.tableSize / 220 + 3) + 'px',
-      height: (148 * table.tableSize / 220 + 4) + 'px',
-      lineHeight: (148 * table.tableSize / 220 + 2) + 'px',
-      color: table.color,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      filter: selectedTable === table ? 'drop-shadow(0 0 6px #FFD44D)' : 'none'
-    }"
+        <div
+          class="table-rectangle"
+          [class.selected]="selectedTable === table"
+          [style.backgroundColor]="table.color || '#90caf9'"
         >
-          table_bar
-        </mat-icon>
+          {{ table.number }}
+        </div>
       </div>
-
-
     </div>
+
+
 
 
     <!-- Sidebar -->
