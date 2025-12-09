@@ -29,7 +29,8 @@ namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
         public int NumberOfSeats { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public int TableSize { get; set; }
+        public int Height { get; set; }
+        public int Width { get; set; }
         public string Shape { get; set; } = "rectangle";
         public string Color { get; set; } = "#00ff00";
         public TableTypes TableType { get; set; }

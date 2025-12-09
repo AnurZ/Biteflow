@@ -15,10 +15,6 @@ namespace Market.Infrastructure.Persistence.Configurations
             // Key
             builder.HasKey(t => t.Id);
 
-            // Properties
-            builder.Property(t => t.SectionName)
-                .IsRequired()
-                .HasMaxLength(50);
 
             builder.Property(t => t.Number)
                 .IsRequired();
@@ -38,8 +34,12 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.Y)
                 .IsRequired();
 
-            builder.Property(t => t.TableSize)
-                .HasDefaultValue(100)
+            builder.Property(t => t.Height)
+                .HasDefaultValue(50)
+                .IsRequired();
+
+            builder.Property(t => t.Width)
+                .HasDefaultValue(50)
                 .IsRequired();
 
             builder.Property(t => t.Shape)

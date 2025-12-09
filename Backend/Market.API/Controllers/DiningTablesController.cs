@@ -58,7 +58,7 @@ namespace Market.API.Controllers
         /// </summary>
         [HttpGet]
         public async Task<ActionResult<List<GetDiningTableListQueryDto>>> GetDiningTables(
-            [FromQuery] string? sectionName,
+            [FromQuery] string? tableLayoutName,
             [FromQuery] TableStatus? status,
             [FromQuery] int? minimumSeats,
             [FromQuery] int? tableLayoutId,
@@ -67,7 +67,7 @@ namespace Market.API.Controllers
         {
             var query = new GetDiningTableListQuery
             {
-                SectionName = sectionName,
+                TableLayoutName = tableLayoutName,
                 Status = status,
                 MinimumSeats = minimumSeats,
                 TableLayoutId = tableLayoutId,
