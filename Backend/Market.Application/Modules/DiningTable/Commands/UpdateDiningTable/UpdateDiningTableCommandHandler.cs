@@ -37,8 +37,7 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
             table.TableLayoutId = request.TableLayoutId;
             table.X = request.X;
             table.Y = request.Y;
-            table.Width = request.Width;
-            table.Height = request.Height;
+            table.TableSize = request.TableSize;
             table.Shape = request.Shape.Trim();
             table.Color = request.Color;
 

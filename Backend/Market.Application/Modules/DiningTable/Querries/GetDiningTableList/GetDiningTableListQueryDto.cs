@@ -15,6 +15,8 @@ using System.Threading.Tasks;
             public TableStatus? Status { get; set; }
             public int? MinimumSeats { get; set; }
             public int? TableLayoutId { get; set; } // optional filter by layout
+            public int? Id { get; set; }
+            public int? Number {  get; set; }
         }
 
         public sealed class GetDiningTableListQueryDto
@@ -31,8 +33,7 @@ using System.Threading.Tasks;
             // Position and visual properties
             public int X { get; set; }
             public int Y { get; set; }
-            public int Width { get; set; }
-            public int Height { get; set; }
+            public int TableSize { get; set; }
             public string Shape { get; set; }
             public string Color { get; set; }
 

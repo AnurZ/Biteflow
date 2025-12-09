@@ -1,0 +1,104 @@
+mat-dialog-content {
+  padding: 20px 24px 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px 24px;
+  height: 400px;
+}
+
+.section-card {
+  grid-column: 1 / -1;
+  padding: 16px 18px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.inner-grid {
+  gap: 16px 18px;
+}
+
+.section-title {
+  margin: 0 0 20px 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.my-3 { margin: 12px 0; }
+
+.full {
+  grid-column: 1 / -1;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+mat-checkbox {
+  align-self: center;
+  margin: 8px 0;
+}
+
+mat-dialog-actions {
+  padding: 12px 24px 20px;
+}
+
+.image-holder {
+
+}
+
+.image-holder:hover {
+  border-color: #999;
+  cursor: pointer;
+}
+
+
+.color-picker-div{
+  display: flex;
+  margin-bottom: 30px;
+  width: 474px;
+  height: 20px;
+  align-items: center;
+}
+
+.colorPickerClass {
+  width: 345px;       /* width of the color picker input */
+  height: 30px;       /* slightly taller for better click area */
+  border: 1px solid #ccc;  /* optional border */
+  border-radius: 4px;       /* rounded corners */ /* some padding inside */
+  font-weight: bold;         /* ensures padding doesn't break width */
+  cursor: pointer;           /* shows pointer when hovering */
+}
+
+.image-wrapper {
+  width: 100%;
+  max-width: 470px;
+  height: 0;
+  padding-top: 55%; /* 260/470 ≈ 0.55 => maintains ratio */
+  position: relative;
+}
+
+.image-uploader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+
+
+@media (max-width: 600px) {
+  mat-dialog-content { padding: 16px 16px 8px; }
+  .section-card { padding: 14px 14px; border-radius: 10px; }
+}

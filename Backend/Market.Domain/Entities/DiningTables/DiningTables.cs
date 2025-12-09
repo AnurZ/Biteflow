@@ -18,10 +18,10 @@ namespace Market.Domain.Entities.DiningTables
         public bool IsActive { get; set; }
 
         public int TableLayoutId { get; set; }
+        public TableLayout.TableLayout TableLayout { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public int Width { get; set; } = 100;  // default size
-        public int Height { get; set; } = 100; // default size
+        public int TableSize { get; set; } = 100; // default size
         public string Shape { get; set; } = "rectangle";
         public string Color { get; set; } = "#00ff00";
         public TableTypes TableType { get; set; }

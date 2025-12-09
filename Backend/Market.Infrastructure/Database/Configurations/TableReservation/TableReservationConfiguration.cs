@@ -36,7 +36,8 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.HasOne(tr => tr.DiningTable)
                    .WithMany(dt => dt.Reservations)
                    .HasForeignKey(tr => tr.DiningTableId)
-                   .OnDelete(DeleteBehavior.Restrict);
+                   .OnDelete(DeleteBehavior.Cascade);
+
 
             builder.HasOne(tr => tr.ApplicationUser)
                    .WithMany() 

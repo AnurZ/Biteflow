@@ -1,8 +1,14 @@
+
+
 .card {
   background: #fff;
   border: 1px solid #dee2e6;
   border-radius: 10px;
-  padding: 0.5rem 0.75rem 0.75rem;
+  padding: 1rem;
+  height: 745px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* --- Header --- */
@@ -10,8 +16,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid #e9ecef;
+  margin-bottom: 10px;
 }
 
 .card-header .title {
@@ -20,83 +27,861 @@
   color: #212529;
 }
 
-/* --- Initial inline display --- */
+/* --- Initial Grid --- */
+.table-layout-container-holder {
+  overflow: hidden;
+  transition: height 0.3s ease;
+
+}
+
 .table-layout-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 20px;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  background-color: #fff8fa;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .table-layout-container.hidden {
-  height: 0px;
+  height: 0;
   opacity: 0;
   transform: scale(0.95);
   pointer-events: none;
+  padding: 0px;
+  border: none;
 }
 
+/* --- Table Card --- */
 .table-layout-card {
-  display: inline-block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   width: 200px;
   height: 150px;
   border: 2px solid #ccc;
   border-radius: 8px;
   padding: 10px;
-  box-sizing: border-box;
   cursor: pointer;
+  box-sizing: border-box;
   transition: transform 0.2s, box-shadow 0.2s;
+  background-color: #f3ebf4;
+  margin-bottom: 15px;
+  position: relative;
+  overflow: hidden;
 }
 
+/* Card hover background overlay */
+.table-layout-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0);
+  transition: background 0.25s ease;
+  pointer-events: none;
+}
+
+.table-layout-card:hover::before {
+  background: rgba(0,0,0,0.45);
+}
+
+/* --- Card Actions Overlay --- */
+.card-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%) scale(0.8); /* slightly above center */
+  display: flex;
+  gap: 10px;
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease; /* smooth in & out */
+}
+
+.table-layout-card:hover .card-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1); /* slide down to center */
+}
+
+
+
+
+
+/* --- Action Icons --- */
+.card-actions mat-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease; /* add transform transition */
+  color: white;
+}
+
+.card-actions mat-icon:hover {
+  transform: translateY(-2px); /* small lift */
+}
+
+/* Edit Icon */
+.card-actions mat-icon.edit {
+  background-color: #146c43; /* darker green */
+}
+
+
+
+.action-icon.back {
+  width: 47%;
+  background-color: #3b82f6;
+  color: white;
+  margin-bottom: 5px;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.back:hover {
+  background-color: #0a58ca;
+  transform: translateY(-2px);
+}
+
+.action-icon.back:active {
+  background-color: #084298;
+  transform: scale(0.98);
+}
+
+.action-icon.settings {
+  width: 47%;
+  background-color: #ff9800; /* orange */
+  color: white;
+  margin-bottom: 5px;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.settings:hover {
+  background-color: #bf6a00; /* darker orange on hover */
+  transform: translateY(-2px);
+}
+
+.action-icon.settings:active {
+  background-color: #f57c00; /* even darker on active */
+  transform: scale(0.98);
+}
+
+
+
+/* Save Icon (same as edit) */
+.action-icon.save {
+  width: 30%;
+  background-color: #146c43;
+  color: white;
+  margin-bottom: 5px;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.save:hover {
+  background-color: #0f522f;
+  transform: translateY(-2px);
+}
+
+.action-icon.save:active {
+  background-color: #0b3d21;
+  transform: scale(0.98);
+}
+
+.action-icon.close {
+  width: 30%;
+  background-color: #da3b4e; /* red */
+  color: white;
+  margin-bottom: 5px;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.close:hover {
+  background-color: #a1232f;
+  transform: translateY(-2px);
+}
+
+.action-icon.close:active {
+  background-color: #7f1e28;
+  transform: scale(0.98);
+}
+
+/* REVERT Icon */
+
+/* Clear All Icon (Amber) */
+.action-icon.clear-all {
+  width: 30%;
+  height: 50px;
+  margin-bottom: 5px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: black;
+
+  background-color: #ffca28; /* normal amber */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.clear-all:hover {
+  background-color: #ca8e00; /* darker amber on hover */
+  transform: translateY(-2px);
+}
+
+.action-icon.clear-all:active {
+  background-color: #ffa000; /* pressed amber */
+  transform: scale(0.98);
+}
+
+.action-icon {
+  position: relative; /* required for tooltip positioning */
+}
+
+.action-icon::after {
+  content: attr(data-tooltip);
+  position: fixed; /* changed from absolute */
+   bottom: 50px;
+  background-color: #333;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1s ease, transform 0.2s ease;
+  z-index: 99999; /* very high */
+}
+
+
+
+/* show tooltip on hover */
+.action-icon:hover::after {
+  animation-name: showTooltip;
+  animation-duration: 0.3s;
+  animation-fill-mode: forwards;
+  animation-delay: 1s;
+}
+
+/* tooltip animation */
+@keyframes showTooltip {
+  from { opacity: 0; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(-5px); }
+}
+
+
+
+
+.card-actions mat-icon.save:hover {
+  background-color: #146c43; /* darker green */
+}
+
+/* Delete Icon */
+.card-actions mat-icon.delete {
+  background-color: #dc3545; /* red */
+}
+
+.card-actions mat-icon.delete:hover {
+  background-color: #bb2d3b; /* darker red */
+}
+
+
+/* --- Card hover animation --- */
 .table-layout-card:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 
+/* --- Table title --- */
 .table-layout-title {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
   font-weight: bold;
-  margin-bottom: 10px;
 }
 
-/* --- After selection: left + right --- */
+.selected-layout-title{
+  font-weight: bold;
+  font-size: 2.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+/* --- Selected Layout --- */
 .table-layout-main {
-  display: flex;
+  display: none;
+  flex-direction: column; /* optional, depends on layout */
   gap: 20px;
-  opacity: 0;
-  transform: translateX(20px);
+  overflow: hidden;
   transition: opacity 0.3s ease, transform 0.3s ease;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  background-color: #fff8fa;
+     /* fixed width */
+  margin: 0 auto;     /* center horizontally */
 }
 
 .table-layout-main.active {
-  opacity: 1;
-  transform: translateX(0);
+  display: flex;
+  flex-direction: row;
 }
 
+/* --- Full Layout + Sidebar --- */
 .table-layout-full {
   flex: 1;
-  min-width: 300px;
-  border: 2px solid #ccc;
   border-radius: 8px;
-  padding: 20px;
   display: flex;
   flex-wrap: wrap;
   align-content: flex-start;
   background-color: #f9f9f9;
-  height: 500px;
+  padding: 20px;
+  border: 2px solid #ccc;
+  overflow: auto;
+  max-height: 650px;
 
-  /* transition for smooth expansion */
-  transform: scale(0.95); /* start slightly smaller */
-  transition: transform 0.4s ease, opacity 0.4s ease;
+  position: relative;
+  width: 600px; /* fixed width */
+  margin: 0 auto;
+  overflow: hidden; /* hides scrollbars */
+  /* ensures absolute children stay within */
+     /* or fixed height */
 }
 
-.table-layout-full.animate {
-  transition: all 0.4s ease;
-  transform: scale(1);
+.table-icon-wrapper {
+  position: absolute; /* so left/top are respected */
+  cursor: pointer;
+  touch-action: none; /* optional: improves drag on touch devices */
 }
+
+.unselected-outline {
+  color: transparent; /* Keep the fill transparent */
+  text-shadow:
+    2px 0 #575757,
+    -2px 0 #575757,
+    0 2px #575757,
+    0 -2px #575757,
+    1px 1px #575757,
+    -1px -1px #575757,
+    1px -1px #575757,
+    -1px 1px #575757;
+}
+
+
+
+
+
+.table-icon-wrapper.dragging {
+  cursor: grabbing;
+  z-index: 1000; /* make sure it’s on top while dragging */
+}
+
+.table-icon-wrapper.dragging mat-icon {
+  transform: scale(0.92);
+}
+
+
 
 .table-layout-sidebar {
-  justify-content: center;
+  padding: 20px;
   width: 220px;
-  display: flex;
   flex-direction: column;
   gap: 15px;
+  overflow-y: auto;
+  max-height: 650px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
 }
+
+.table-layout-controls {
+  padding: 20px;
+  width: 220px;
+  flex-direction: column;
+  /* overflow-y: auto; */ /* REMOVE this */
+  max-height: 650px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
+  display: flex;
+  justify-content: space-between;
+  position: relative; /* keep for positioning tooltip */
+}
+
+
+/* --- Back Button --- */
+.back-btn {
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  background-color: #f1f3f5;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s ease-out, background-color 0.2s ease;
+}
+
+.back-btn:hover {
+  background-color: #e9ecef;
+  transform: scale(1.05);
+}
+
+.back-btn:active {
+  transform: scale(0.97);
+}
+
+.options-container{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.header-buttons-holder{
+  display: flex;
+  gap: 10px;
+}
+
+/* --- Add Table Icon --- */
+.action-icon.add-table {
+  width: 30%;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  background-color: #B014B0; /* purple */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.add-table:hover {
+  background-color: #8e0e8e; /* slightly darker purple on hover */
+  transform: translateY(-2px); /* small lift effect */
+}
+
+.action-icon.add-table:active {
+  background-color: #6c0a6c; /* pressed purple */
+  transform: scale(0.98); /* slight press effect */
+}
+
+/* CHECK BUTTON (Apply Changes) */
+.action-icon.check-table {
+  width: 30%;
+  height: 50px;
+  font-size: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  background-color: #27ae60; /* green */
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.check-table:hover {
+  background-color: #1e8449; /* slightly darker green on hover */
+  transform: translateY(-2px); /* small lift effect */
+}
+
+.action-icon.check-table:active {
+  background-color: #196f3d; /* pressed green */
+  transform: scale(0.98); /* slight press effect */
+}
+
+/* DISABLED STATE */
+.action-icon.disabled {
+  background-color: #8e8e8e; /* grey */
+  cursor: not-allowed;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+
+
+.table-icon{
+  height: 130px;
+  width: 220px;
+  font-size: 190px;
+  text-align: center;
+  align-items: center;
+  transform: scale(1);  /* grow icon without changing container size */
+  display: flex;
+  color: black;
+  justify-content: center;
+
+  padding-top: 5px;
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #e9ecef;
+
+  user-select: none;      /* Prevent text selection */
+  -webkit-user-select: none; /* Chrome/Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+}
+
+.cdk-drag-preview {
+  box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+  border-radius: 6px;
+}
+
+.colorPickerClass {
+  width: 100%;
+  height: 40px;
+  padding: 0 4px;
+  border: 1px solid #c2c6cc;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #fff;
+  -webkit-appearance: none; /* remove default Chrome styling */
+  appearance: none;
+}
+
+.colorPickerClass::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.colorPickerClass::-webkit-color-swatch {
+  border-radius: 6px;
+}
+
+.create-edit-container{
+  width: 220px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  border-top: 1px solid #d8d8da;
+}
+
+.dining-tables-container{
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  width: 260px;
+  flex-direction: column;
+  gap: 15px;
+  overflow-y: auto;
+  max-height: 650px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
+  display: flex;
+  justify-content: flex-start;
+}
+
+
+
+.table-layout-controls-holder{
+  display: flex;
+  justify-content: space-around;
+  width: 220px
+}
+
+
+.row {
+  display: flex;
+  gap: 12px; /* space between inputs */
+  flex-wrap: nowrap; /* prevent wrapping */
+}
+
+/* Each field takes up half the row minus gap */
+.row .my-field {
+  flex: 1;
+  min-width: 0; /* prevents overflow */
+}
+
+/* Outer wrapper for each input */
+.my-field {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+  margin-bottom: 3px;
+}
+
+
+
+
+
+/* Input styling */
+.my-field input {
+  padding: 8px 12px;
+  border: 1px solid #c2c6cc;
+  border-radius: 6px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  box-sizing: border-box; /* prevent overflow */
+}
+
+/* Placeholder text styling */
+.my-field input::placeholder {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+/* Focus effect like Angular Material outline */
+.my-field input:focus {
+  border-color: #3f51b5;
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.15);
+}
+
+/* Full width input (Section Name) */
+.full-width {
+
+  flex: 1 1 100%; /* take full row width */
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-row label {
+  width: 100px; /* or auto */
+  font-weight: 500;
+}
+
+
+.itemPickerClass {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #c2c6cc;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  background-color: #fff;
+  appearance: none; /* remove default browser styling */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Optional: Add small arrow for dropdown */
+.itemPickerClass {
+  background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+  padding-right: 30px;
+}
+
+
+
+.dining-tables-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.dining-table-row {
+  display: flex;
+  align-items: center;
+  background: #f4f4f4;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.dining-table-row:hover {
+  background: #eaeaea;
+  border-color: #999;
+}
+
+.dining-table-row.selected {
+  background-color: #e0e7ff;
+  border-left: 4px solid #4f46e5;
+  border-radius: 4px;
+}
+
+
+.table-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.table-seats {
+  font-size: 12px;
+  color: #666;
+}
+
+
+.table-icon-container{
+  height: 35px;
+  width: 35px;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14px;
+}
+
+.search-container-full{
+  position: sticky;
+  top: 0; /* stick to the top */
+  z-index: 10; /* stay above table rows */
+  background-color: white;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+}
+
+.search-tables-container{
+  display: flex;
+}
+
+.search-tables-input {
+  height: 26px;
+  width: 80%;
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+}
+
+.search-tables-input:focus {
+  border-color: #3f51b5; /* or your theme primary color */
+  box-shadow: 0 0 4px rgba(63, 81, 181, 0.4);
+}
+
+.action-icon.filter {
+  width: 20%;
+  background-color: #3f51b5; /* blue, adjust as needed */
+  color: white;
+  margin-left: 5px;
+  height: 40px;
+  font-size: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-icon.filter:hover {
+  background-color: #303f9f; /* darker blue on hover */
+  transform: translateY(-2px);
+}
+
+.action-icon.filter:active {
+  background-color: #1c278b; /* even darker on click */
+  transform: scale(0.98);
+}
+
+.action-icon.filter mat-icon {
+  color: white;
+}
+
+.action-icon.filter::after {
+  content: none !important; /* disable the tooltip */
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.search-by-seats{
+  display: flex;
+
+  height: 26px;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  margin-top: 5px;
+}
+
+.search-by-seats:focus {
+  border-color: #3f51b5; /* or your theme primary color */
+  box-shadow: 0 0 4px rgba(63, 81, 181, 0.4);
+}
+
+.extra-categories-search {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  visibility: visible;
+  transition: all 0.3s ease;
+  margin-top: 5px;
+}
+.extra-categories-search.disabled {
+  height: 0;
+  visibility: hidden;
+  overflow: hidden;
+  margin-top: 0px;
+}
+
+
+
+
+
+.table-reservations-container {
+  padding: 20px;
+  width: 240px;
+  flex-direction: column;
+  gap: 15px;
+  overflow-y: auto;
+  max-height: 650px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: white;
+}
+
+
+
+
+

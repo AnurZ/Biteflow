@@ -15,8 +15,7 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
         public int TableLayoutId { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public int Width { get; set; } = 100;
-        public int Height { get; set; } = 100;
+        public int TableSize { get; set; } = 100;
         public string Shape { get; set; } = "rectangle";
         public string Color { get; set; } = "#00ff00";
 

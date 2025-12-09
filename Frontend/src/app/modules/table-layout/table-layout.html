@@ -1,29 +1,294 @@
 <div class="card">
+  <!-- Header -->
   <div class="card-header">
     <div class="title">Manage Table Layouts</div>
+
+    <div class="selected-layout-title" *ngIf="selectedLayout">{{ selectedLayout.name }}</div>
+
+    <button mat-flat-button color="primary" (click)="createTableLayout()">
+      <mat-icon>add</mat-icon>&nbsp;New Table Layout
+    </button>
   </div>
 
-  <!-- Initial: inline block display -->
-  <div class="table-layout-container" [class.hidden]="selectedLayout">
-    <div *ngFor="let layout of layouts" class="table-layout-card" (click)="selectLayout(layout)">
-      <div class="table-layout-title">{{ layout.title }}</div>
-      <div *ngFor="let t of layout.tableCount" class="table"></div>
-    </div>
-  </div>
 
-  <div class="table-layout-main" [class.active]="selectedLayout">
-    <div class="table-layout-full" [class.animate]="isAnimating">
-      <div class="table-layout-title">{{ selectedLayout?.title }}</div>
-      <div *ngFor="let t of selectedLayout?.tableCount" class="table"></div>
-    </div>
+  <!-- Initial Grid -->
+  <div class="table-layout-container-holder">
+    <div class="table-layout-container" [class.hidden]="selectedLayout">
+      <div
+        *ngFor="let layout of layouts"
+        class="table-layout-card"
+        [style.background]="layout.floorImageUrl ? 'url(' + layout.floorImageUrl + ') center/cover no-repeat' : layout.backgroundColor">
 
-    <div class="table-layout-sidebar">
-      <div *ngFor="let layout of otherLayouts" class="table-layout-card" (click)="selectLayout(layout)">
-        <div class="table-layout-title">{{ layout.title }}</div>
-        <div *ngFor="let t of layout.tableCount" class="table"></div>
+        <!-- Icon Overlay (grid view only) -->
+        <div class="card-actions" *ngIf="!selectedLayout" (click)="$event.stopPropagation()">
+          <mat-icon class="action-icon edit" (click)="animateSelect(layout, $event)">edit</mat-icon>
+          <mat-icon class="action-icon delete" (click)="deleteTableLayout(layout.id)">delete</mat-icon>
+        </div>
+
+        <div class="table-layout-title">{{ layout.name }}</div>
       </div>
     </div>
   </div>
 
+  <!-- Selected Layout -->
+  <div class="table-layout-main" [class.active]="selectedLayout">
+    <!-- Controls -->
+    <div class="table-layout-controls">
+      <div>
+        <div class="table-layout-controls-holder">
+          <span class="action-icon back" data-tooltip="Return back" (click)="resetLayout()">
+            <mat-icon>arrow_back</mat-icon>
+          </span>
 
+          <span class="action-icon settings" data-tooltip="Edit table layout" (click)="openLayoutBackgroundDialog()">
+            <mat-icon>edit</mat-icon>
+          </span>
+        </div>
+        <div class="table-layout-controls-holder">
+
+          <span class="action-icon save" data-tooltip="Save changes" (click)="saveAllTables()">
+            <mat-icon>save_alt</mat-icon>
+          </span>
+          <span
+            class="action-icon close"
+            [class.disabled]="!selectedTable"
+            data-tooltip="Cancel changes"
+            (click)="deleteDiningTable()">
+            <mat-icon>delete</mat-icon>
+          </span>
+
+          <span class="action-icon clear-all" data-tooltip="Clear all tables" (click)="clearAllTables()">
+            <mat-icon>cleaning_services</mat-icon>
+          </span>
+        </div>
+
+        <div class="create-edit-container">
+          <mat-icon id="tableIcon" class="table-icon">table_bar</mat-icon>
+
+
+          <!-- Section Name -->
+          <div class="my-field full-width">
+            <label for="inputSectionName">Section Name:</label>
+            <input type="text" id="inputSectionName" (input)="0">
+          </div>
+
+          <!-- Number + Seats -->
+          <div class="row">
+            <div class="my-field">
+              <label for="inputNumber">Number:</label>
+              <input type="number" id="inputNumber" min="1" (input)="0">
+            </div>
+
+            <div class="my-field">
+              <label for="inputSeats">Seats:</label>
+              <input type="number" id="inputSeats" min="1" (input)="0">
+            </div>
+          </div>
+
+          <!-- X + Y -->
+          <div class="row">
+            <div class="my-field">
+              <label for="inputX">X:</label>
+              <input type="number" id="inputX" min="0" [max]="getMaxX(newTableSize)" (input)="0">
+            </div>
+
+            <div class="my-field">
+              <label for="inputY">Y:</label>
+              <input type="number" id="inputY" min="0" [max]="getMaxY(newTableSize)" (input)="0">
+            </div>
+          </div>
+
+          <!-- Table Size -->
+          <div class="my-field" style="margin-bottom: 12px;">
+            <label for="inputTableSize">Table Size:</label>
+            <input type="number" id="inputTableSize" min="80" max="400"
+                   [(ngModel)]="newTableSize" #tableSizeInput (input)="0">
+          </div>
+
+          <!-- Item -->
+          <div class="my-field full-width" style="margin-bottom: 0">
+            <select id="inputItem" class="itemPickerClass" (change)="onItemChanged($event)">
+            <option  value="" disabled selected>Select table status</option>
+              <option value="item1">Free</option>
+              <option value="item2">Occupied</option>
+              <option value="item3">Reserved</option>
+              <option value="item4">Cleaning</option>
+              <option value="item5">Out of service</option>
+            </select>
+          </div>
+        </div>
+
+
+      </div>
+
+      <!-- Add Table Button -->
+      <span
+        *ngIf="!selectedTable"
+        style="width: 100%"
+        class="action-icon add-table"
+        data-tooltip="Add new table"
+        [class.disabled]="!isTableValid()"
+        (click)="onAddTableClicked()">
+  <mat-icon>add</mat-icon>
+</span>
+
+
+      <!-- Check Table Button -->
+      <span
+        *ngIf="selectedTable"
+        style="width: 100%"
+        class="action-icon check-table"
+        [class.disabled]="!isTableEdited() || !isTableValid()"
+        (click)="onCheckTableClicked()">
+        <mat-icon>check</mat-icon>
+      </span>
+
+
+    </div>
+
+    <!-- Dining Tables Container -->
+    <div class="dining-tables-container">
+
+      <div class="search-container-full">
+
+        <div class="search-tables-container">
+          <input
+            #textFilterInput
+            class="search-tables-input"
+            placeholder="Type to filter..."
+            (input)="onTextFilterChange($event)"
+          />
+
+          <span
+            *ngIf="!selectedTable"
+            class="action-icon filter"
+            (click)="openFilter()">
+      <mat-icon>filter_alt</mat-icon>
+    </span>
+        </div>
+
+        <div
+          class="extra-categories-search"
+          [class.disabled]="!extraSearchEnabled">
+
+          <div class="my-field full-width" style="margin-bottom: 0">
+            <select
+              #statusSelectInput
+              class="itemPickerClass"
+              (change)="onStatusChange($event)"
+            >
+              <option value="" disabled selected>Select table status</option>
+              <option value="All">Show all tables</option>
+              <option value="Free">Free</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Reserved">Reserved</option>
+              <option value="Cleaning">Cleaning</option>
+              <option value="OutOfService">Out of service</option>
+            </select>
+          </div>
+
+          <input
+            #seatsInput
+            type="number"
+            class="search-by-seats"
+            placeholder="Number of seats"
+            min="1"
+            step="1"
+            (input)="onSeatsChange($event)"
+          />
+
+        </div>
+      </div>
+
+      <div
+        class="dining-table-row"
+        *ngFor="let table of filteredTables"
+        [class.selected]="selectedTable === table"
+        (click)="selectedTable = table; setTableEditValues(table)"
+      >
+
+        <!-- Left icon -->
+        <mat-icon class="table-icon-container"
+                  [ngStyle]="{ color: table.color }"
+        >table_bar</mat-icon>
+
+        <!-- Text block -->
+        <div class="table-info">
+          <div class="table-title">{{ table.sectionName }} / {{ table.number }}</div>
+          <div class="table-seats">{{ table.numberOfSeats }} seats</div>
+
+          <div class="table-status" [ngStyle]="{ color: table.color }">
+            {{ TableStatusEnum[table.status] }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-reservations-container">
+
+    </div>
+
+
+
+    <!-- Full Layout -->
+    <div
+      class="table-layout-full"
+      #container
+      (click)="deselectTable($event)"
+      [ngStyle]="{
+    'background-image': selectedLayout?.floorImageUrl ? 'url(' + selectedLayout?.floorImageUrl + ')' : 'none',
+    'background-size': 'cover',
+    'background-position': 'center',
+    'background-repeat': 'no-repeat',
+    'background-color': !selectedLayout?.floorImageUrl ? selectedLayout?.backgroundColor : null
+  }"
+    >
+
+
+      <div *ngIf="isLoadingTables" class="loader">
+        Loading tables...
+      </div>
+
+      <div
+        *ngFor="let table of diningTables"
+        class="table-icon-wrapper"
+        [ngStyle]="{ position: 'absolute', left: table.x + 'px', top: table.y + 'px' }"
+        (pointerdown)="selectThenDrag($event, table)"
+      >
+
+        <!-- Table icon -->
+        <mat-icon
+          [ngClass]="selectedTable === table ? '' : 'unselected-outline'"
+          [ngStyle]="{
+      fontSize: table.tableSize + 'px',
+      width: (186 * table.tableSize / 220 + 3) + 'px',
+      height: (148 * table.tableSize / 220 + 4) + 'px',
+      lineHeight: (148 * table.tableSize / 220 + 2) + 'px',
+      color: table.color,
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      filter: selectedTable === table ? 'drop-shadow(0 0 6px #FFD44D)' : 'none'
+    }"
+        >
+          table_bar
+        </mat-icon>
+      </div>
+
+
+    </div>
+
+
+    <!-- Sidebar -->
+    <div class="table-layout-sidebar">
+
+      <div
+        *ngFor="let layout of otherLayouts"
+        class="table-layout-card"
+        (click)="animateSelect(layout, $event)"
+        [style.background]="layout.floorImageUrl ? 'url(' + layout.floorImageUrl + ') center/cover no-repeat' : layout.backgroundColor">
+        <div class="table-layout-title">{{ layout.name }}</div>
+      </div>
+    </div>
+  </div>
 </div>
