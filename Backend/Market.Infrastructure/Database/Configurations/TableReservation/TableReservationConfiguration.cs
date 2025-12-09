@@ -13,10 +13,26 @@ namespace Market.Infrastructure.Persistence.Configurations
             // Table name
             builder.ToTable("TableReservations");
 
-            // Key
+            // Primary key
             builder.HasKey(tr => tr.Id);
 
             // Properties
+            builder.Property(tr => tr.FirstName)
+                   .IsRequired()
+                   .HasMaxLength(100);
+
+            builder.Property(tr => tr.LastName)
+                   .IsRequired()
+                   .HasMaxLength(100);
+
+            builder.Property(tr => tr.Email)
+                   .IsRequired()
+                   .HasMaxLength(150);
+
+            builder.Property(tr => tr.PhoneNumber)
+                   .IsRequired()
+                   .HasMaxLength(50);
+
             builder.Property(tr => tr.NumberOfGuests)
                    .IsRequired();
 
@@ -28,7 +44,7 @@ namespace Market.Infrastructure.Persistence.Configurations
                    .IsRequired();
 
             builder.Property(tr => tr.ReservationEnd)
-                   .IsRequired();
+                   .IsRequired(false); 
 
             builder.Property(tr => tr.Status)
                    .IsRequired();
@@ -38,7 +54,6 @@ namespace Market.Infrastructure.Persistence.Configurations
                    .HasForeignKey(tr => tr.DiningTableId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-
             builder.HasOne(tr => tr.ApplicationUser)
                    .WithMany() 
                    .HasForeignKey(tr => tr.ApplicationUserId)
@@ -46,6 +61,8 @@ namespace Market.Infrastructure.Persistence.Configurations
 
             builder.HasIndex(tr => new { tr.DiningTableId, tr.ReservationStart })
                    .IsUnique(false);
+
+            builder.HasIndex(tr => tr.Status);
         }
     }
 }
