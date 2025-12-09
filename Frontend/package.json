@@ -22,7 +22,7 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/cdk": "^20.2.10",
+    "@angular/cdk": "^20.2.14",
     "@angular/common": "^20.3.0",
     "@angular/compiler": "^20.3.0",
     "@angular/core": "^20.3.0",
@@ -32,6 +32,7 @@
     "@angular/router": "^20.3.0",
     "angular-oauth2-oidc": "^17.0.2",
     "jwt-decode": "^4.0.0",
+    "ngx-color-picker": "^20.1.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"

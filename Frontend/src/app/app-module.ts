@@ -20,9 +20,14 @@ import {AddIngredientsDialog} from './modules/meals/meals-form-dialog/add-ingred
 import {MatTableModule} from '@angular/material/table';
 import {MealcategoryFormDialog} from './modules/meals/MealCategory-form-dialog/mealcategory-form-dialog';
 import { TableLayoutComponent } from './modules/table-layout/table-layout';
+import { TableLayoutCreateDialog } from './modules/table-layout/table-layout-create-dialog/table-layout-create-dialog';
+import {ColorPickerComponent, ColorPickerDirective} from 'ngx-color-picker';
+import {DragDropModule} from '@angular/cdk/drag-drop';
 
 @NgModule({
-  declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog, AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent],
+  declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
+    AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent,
+    TableLayoutCreateDialog, TableLayoutCreateDialog],
   imports: [
     BrowserModule,
     HttpClientModule,
@@ -37,7 +42,9 @@ import { TableLayoutComponent } from './modules/table-layout/table-layout';
     SharedModule,
     PublicModule,
     MatCheckbox,
-    MatTableModule
+    MatTableModule,
+    ColorPickerDirective,
+    DragDropModule
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),

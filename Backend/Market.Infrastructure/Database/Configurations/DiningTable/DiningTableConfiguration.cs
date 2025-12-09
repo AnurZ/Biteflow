@@ -38,11 +38,7 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.Y)
                 .IsRequired();
 
-            builder.Property(t => t.Width)
-                .HasDefaultValue(100)
-                .IsRequired();
-
-            builder.Property(t => t.Height)
+            builder.Property(t => t.TableSize)
                 .HasDefaultValue(100)
                 .IsRequired();
 
@@ -66,20 +62,28 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.LastUsedAt)
                 .IsRequired(false);
 
-            // Relationships
+            // -------------------------
+            // RELATIONSHIPS
+            // -------------------------
+
+            builder.HasOne(t => t.TableLayout)
+                .WithMany(l => l.Tables)
+                .HasForeignKey(t => t.TableLayoutId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_DiningTables_TableLayouts_TableLayoutId"); // explicit name
+
+
             builder.HasMany(t => t.Reservations)
                 .WithOne(r => r.DiningTable)
                 .HasForeignKey(r => r.DiningTableId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);  
 
             builder.HasMany(t => t.Orders)
                 .WithOne(o => o.DiningTable)
                 .HasForeignKey(o => o.DiningTableId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);   
 
-            // Index for Section + Number uniqueness
-            builder.HasIndex(t => new { t.SectionName, t.Number })
-                .IsUnique();
+
         }
     }
 }

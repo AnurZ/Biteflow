@@ -4,6 +4,7 @@ using Market.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Market.Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20251206015344_FixDiningTableFK")]
+    partial class FixDiningTableFK
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -220,6 +223,9 @@ namespace Market.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TableLayoutId");
+
+                    b.HasIndex("SectionName", "Number")
+                        .IsUnique();
 
                     b.ToTable("DiningTables", (string)null);
                 });
@@ -1023,6 +1029,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasOne("Market.Domain.Entities.TableLayout.TableLayout", "TableLayout")
                         .WithMany("Tables")
                         .HasForeignKey("TableLayoutId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("FK_DiningTables_TableLayouts_TableLayoutId");
 
@@ -1128,7 +1135,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasOne("Market.Domain.Entities.DiningTables.DiningTable", "DiningTable")
                         .WithMany("Reservations")
                         .HasForeignKey("DiningTableId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");

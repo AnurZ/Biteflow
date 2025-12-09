@@ -60,17 +60,24 @@ namespace Market.API.Controllers
         public async Task<ActionResult<List<GetDiningTableListQueryDto>>> GetDiningTables(
             [FromQuery] string? sectionName,
             [FromQuery] TableStatus? status,
-            [FromQuery] int? minimumSeats)
+            [FromQuery] int? minimumSeats,
+            [FromQuery] int? tableLayoutId,
+            [FromQuery] int? id,
+            [FromQuery] int? number) 
         {
             var query = new GetDiningTableListQuery
             {
                 SectionName = sectionName,
                 Status = status,
-                MinimumSeats = minimumSeats
+                MinimumSeats = minimumSeats,
+                TableLayoutId = tableLayoutId,
+                Id = id,
+                Number = number
             };
-
+        
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
     }
 }

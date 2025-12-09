@@ -4,6 +4,7 @@ using Market.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Market.Infrastructure.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20251125223446_ExtendFloorImageUrl")]
+    partial class ExtendFloorImageUrl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -160,6 +163,11 @@ namespace Market.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Height")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100);
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -200,16 +208,16 @@ namespace Market.Infrastructure.Migrations
                     b.Property<int>("TableLayoutId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TableSize")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(100);
-
                     b.Property<int>("TableType")
                         .HasColumnType("int");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Width")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(100);
 
                     b.Property<int>("X")
                         .HasColumnType("int");
@@ -220,6 +228,9 @@ namespace Market.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("TableLayoutId");
+
+                    b.HasIndex("SectionName", "Number")
+                        .IsUnique();
 
                     b.ToTable("DiningTables", (string)null);
                 });
@@ -1020,13 +1031,11 @@ namespace Market.Infrastructure.Migrations
 
             modelBuilder.Entity("Market.Domain.Entities.DiningTables.DiningTable", b =>
                 {
-                    b.HasOne("Market.Domain.Entities.TableLayout.TableLayout", "TableLayout")
+                    b.HasOne("Market.Domain.Entities.TableLayout.TableLayout", null)
                         .WithMany("Tables")
                         .HasForeignKey("TableLayoutId")
-                        .IsRequired()
-                        .HasConstraintName("FK_DiningTables_TableLayouts_TableLayoutId");
-
-                    b.Navigation("TableLayout");
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Identity.RefreshTokenEntity", b =>
@@ -1097,7 +1106,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasOne("Market.Domain.Entities.DiningTables.DiningTable", "DiningTable")
                         .WithMany("Orders")
                         .HasForeignKey("DiningTableId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DiningTable");
                 });
@@ -1128,7 +1137,7 @@ namespace Market.Infrastructure.Migrations
                     b.HasOne("Market.Domain.Entities.DiningTables.DiningTable", "DiningTable")
                         .WithMany("Reservations")
                         .HasForeignKey("DiningTableId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("ApplicationUser");

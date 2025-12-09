@@ -4,10 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using MediatR;
+
 namespace Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle
 {
-    public sealed class DeleteDiningTableCommandDto:IRequest
+    public class DeleteDiningTableCommandDto : IRequest
     {
         public int Id { get; set; }
     }
 }
+
