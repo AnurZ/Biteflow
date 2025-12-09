@@ -18,7 +18,10 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UpdateTableReservationCommandHandler(IAppDbContext db, UserManager<ApplicationUser> userManager, IHttpContextAccessor httpContextAccessor)
+        public UpdateTableReservationCommandHandler(
+            IAppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IHttpContextAccessor httpContextAccessor)
         {
             _db = db;
             _userManager = userManager;
@@ -27,10 +30,14 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
 
         public async Task Handle(UpdateTableReservationCommandDto request, CancellationToken cancellationToken)
         {
-            var user = await _userManager.FindByIdAsync(request.ApplicationUserId.ToString());
-            
-            if (user == null)
-                throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+            // Optional user lookup
+            ApplicationUser? user = null;
+            if (request.ApplicationUserId.HasValue)
+            {
+                user = await _userManager.FindByIdAsync(request.ApplicationUserId.Value.ToString());
+                if (user == null)
+                    throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+            }
 
             var reservation = await _db.TableReservations
                 .Include(r => r.DiningTable)
@@ -39,21 +46,23 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
             if (reservation == null)
                 throw new KeyNotFoundException($"Reservation with ID {request.Id} not found.");
 
+            // Validations
             if (request.NumberOfGuests <= 0)
                 throw new ValidationException("Number of guests must be greater than zero.");
 
-            if (request.ReservationStart >= request.ReservationEnd)
+            if (request.ReservationEnd.HasValue && request.ReservationStart >= request.ReservationEnd)
                 throw new ValidationException("Reservation start must be before reservation end.");
 
             if (request.NumberOfGuests > reservation.DiningTable.NumberOfSeats)
                 throw new ValidationException("Too many guests for this table.");
 
-            // Overlapping reservations
+            // Overlapping reservations (consider nullable ReservationEnd)
             bool overlapping = await _db.TableReservations
                 .Where(r => r.DiningTableId == request.DiningTableId && r.Id != request.Id)
                 .AnyAsync(r =>
-                    request.ReservationStart < r.ReservationEnd &&
-                    request.ReservationEnd > r.ReservationStart,
+                    (r.ReservationEnd.HasValue
+                        ? request.ReservationStart < r.ReservationEnd && request.ReservationEnd > r.ReservationStart
+                        : request.ReservationStart < r.ReservationStart),
                     cancellationToken);
 
             if (overlapping)
@@ -63,12 +72,16 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
             reservation.DiningTableId = request.DiningTableId;
             reservation.NumberOfGuests = request.NumberOfGuests;
             reservation.ApplicationUserId = request.ApplicationUserId;
+            reservation.FirstName = request.FirstName;
+            reservation.LastName = request.LastName;
+            reservation.Email = request.Email;
+            reservation.PhoneNumber = request.PhoneNumber;
             reservation.Notes = request.Notes;
             reservation.ReservationStart = request.ReservationStart;
             reservation.ReservationEnd = request.ReservationEnd;
+            reservation.Status = request.Status;
 
             await _db.SaveChangesAsync(cancellationToken);
         }
     }
-
 }
