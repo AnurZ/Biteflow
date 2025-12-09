@@ -25,14 +25,9 @@ namespace Market.Infrastructure.Persistence.Configurations
                 .HasDefaultValue("#ffffff");
 
             builder.Property(t => t.FloorImageUrl)
-                .HasMaxLength(255)
+                .HasColumnType("nvarchar(max)")
                 .IsRequired(false);
-
-            // Relationships
-            builder.HasMany(t => t.Tables)
-                .WithOne() // DiningTable already has TableLayoutId
-                .HasForeignKey(t => t.TableLayoutId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
+          
     }
 }
