@@ -1,0 +1,136 @@
+<div class="waiter-page">
+  <div class="left-pane">
+    <div class="pane-card">
+      <div class="pane-header">
+        <div>
+          <p class="eyebrow">Table Management</p>
+          <p class="subtitle">Select a table to view or manage orders</p>
+          <div class="legend">
+            <div class="legend-item" *ngFor="let status of statusLegend">
+              <span class="dot" [ngStyle]="{ 'background-color': status.color }"></span>
+              <span>{{ status.label }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="live-pill">
+          <span class="live-dot"></span>
+          Floor live
+        </div>
+      </div>
+
+      <div class="tables-ready">
+        <div class="table-sections">
+          <div class="section-card" *ngFor="let section of sections">
+            <div class="section-header">
+              <div>
+                <div class="section-title">{{ section.title }}</div>
+                <div class="section-meta">{{ section.description }}</div>
+              </div>
+            </div>
+            <div class="tables-grid">
+              <button
+                class="table-card"
+                *ngFor="let table of section.tables"
+                [ngClass]="[table.status, selectedTableId === table.id ? 'selected' : '']"
+                (click)="selectTable(table.id)"
+              >
+                <div class="table-name">{{ table.label }}</div>
+                <div class="table-guests" *ngIf="table.guests > 0">👥 {{ table.guests }}</div>
+                <div class="table-status">{{ getStatusLabel(table.status) }}</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ready-column">
+          <div class="ready-card">
+            <div class="ready-header">
+              <div>
+                <div class="section-title">Ready for pickup</div>
+                <div class="section-meta">{{ readyCount }} ticket(s)</div>
+              </div>
+              <span class="status-pill success">Ready</span>
+            </div>
+
+            <div class="ready-list">
+              <div class="ticket" *ngFor="let ticket of readyTickets">
+                <div>
+                  <div class="ticket-id">Order {{ ticket.id }}</div>
+                  <div class="ticket-table">Table {{ ticket.table }}</div>
+                </div>
+                <div class="ticket-meta">
+                  <span class="badge">{{ ticket.items }} item(s)</span>
+                  <span class="status-pill subtle">Ready</span>
+                </div>
+              </div>
+              <div class="empty-ready" *ngIf="!readyTickets.length">
+                No orders ready yet
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="order-pane">
+    <div class="order-card" *ngIf="selectedTable as table">
+      <div class="order-header">
+        <div>
+          <div class="table-label">{{ table.label }}</div>
+          <div class="table-guest-count">{{ table.guests }} guests</div>
+        </div>
+        <span class="status-pill subtle">{{ getStatusLabel(table.status) }}</span>
+      </div>
+
+      <div class="order-section">
+        <div class="section-title">Current Order</div>
+        <div class="order-items" *ngIf="currentOrder.length; else emptyOrder">
+          <div class="order-line" *ngFor="let item of currentOrder">
+            <div>
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-price">\${{ item.price | number: '1.2-2' }}</div>
+            </div>
+            <div class="qty-controls">
+              <button (click)="updateQuantity(item.name, -1)">-</button>
+              <span>{{ item.qty }}</span>
+              <button (click)="updateQuantity(item.name, 1)">+</button>
+              <button class="remove" (click)="removeItem(item.name)">×</button>
+            </div>
+          </div>
+        </div>
+        <ng-template #emptyOrder>
+          <div class="empty-order">No items ordered yet</div>
+        </ng-template>
+      </div>
+
+      <div class="order-section">
+        <div class="section-title">Add Items</div>
+        <div class="category-tabs">
+          <button
+            *ngFor="let category of menuCategories"
+            [ngClass]="{ active: category === selectedCategory }"
+            (click)="setCategory(category)"
+          >
+            {{ category }}
+          </button>
+        </div>
+
+        <div class="menu-list">
+          <div class="menu-item" *ngFor="let item of filteredMenu()">
+            <div>
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-price">\${{ item.price | number: '1.2-2' }}</div>
+            </div>
+            <button class="add" (click)="addItem(item)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="send" [disabled]="!currentOrder.length">Send to Kitchen</button>
+        <button class="print" [disabled]="!currentOrder.length">Print Bill</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="kitchen-page">
+  <div class="board-header">
+    <div class="title-group">
+      <div class="title-row">
+        <span class="icon-circle">🍳</span>
+        <div class="title">Kitchen Display System</div>
+      </div>
+      <div class="subtitle">{{ activeOrders }} active orders in progress</div>
+    </div>
+  </div>
+
+  <div class="board">
+    <div class="column" *ngFor="let column of board" [ngClass]="column.key">
+      <div class="column-header">
+        <div class="title-row">
+          <span class="icon-circle muted">{{ column.icon }}</span>
+          <div>
+            <div class="column-title">{{ column.title }}</div>
+            <div class="subtitle">{{ column.orders.length }} order{{ column.orders.length === 1 ? '' : 's' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="order-card" *ngFor="let order of column.orders">
+        <div class="order-top">
+          <div>
+            <div class="order-id">{{ order.id }}</div>
+            <div class="order-table">{{ order.table }}</div>
+          </div>
+          <div class="eta">
+            <span class="clock">⏱</span>
+            {{ order.eta }}
+          </div>
+        </div>
+
+        <div class="items">
+          <div class="item-row" *ngFor="let item of order.items">
+            <span>{{ item.name }}</span>
+            <span class="qty">×{{ item.qty }}</span>
+          </div>
+        </div>
+
+        <button class="cta" [ngClass]="order.stage">{{ actionLabel(order.stage) }}</button>
+      </div>
+    </div>
+  </div>
+</div>
