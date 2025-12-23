@@ -6,6 +6,7 @@ using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.MealIngredient;
+using Market.Domain.Entities.Orders;
 using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.TableReservations;
@@ -30,6 +31,8 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<DiningTable> DiningTables => Set<DiningTable>();
     public DbSet<TableReservation> TableReservations => Set<TableReservation>();
     public DbSet<TableLayout> TableLayouts => Set<TableLayout>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
 
     private readonly TimeProvider _clock;
     public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock) : base(options)

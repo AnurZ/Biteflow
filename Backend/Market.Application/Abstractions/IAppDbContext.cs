@@ -5,6 +5,7 @@ using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.MealIngredient;
+using Market.Domain.Entities.Orders;
 using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.TableReservations;
@@ -30,6 +31,8 @@ public interface IAppDbContext
     DbSet<DiningTable> DiningTables { get; }
     DbSet<TableReservation> TableReservations { get; }
     DbSet<TableLayout> TableLayouts { get; }
+    DbSet<Order> Orders { get; }
+    DbSet<OrderItem> OrderItems { get; }
 
 
     Task<int> SaveChangesAsync(CancellationToken ct);
