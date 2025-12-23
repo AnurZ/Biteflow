@@ -71,7 +71,7 @@
   border-color: #facc15;
 }
 
-.column.ready {
+.column.readyforpickup {
   border-color: #86efac;
 }
 
@@ -169,7 +169,7 @@
   background: linear-gradient(90deg, #0ea5e9, #06b6d4);
 }
 
-.cta.ready {
+.cta.readyforpickup {
   background: linear-gradient(90deg, #22c55e, #16a34a);
 }
 
