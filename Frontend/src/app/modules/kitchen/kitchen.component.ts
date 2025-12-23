@@ -1,25 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { OrderDto, OrderStatus, OrdersService } from '../../services/orders/orders.service';
 
-type KitchenStage = 'new' | 'cooking' | 'ready';
-
-interface KitchenItem {
-  name: string;
-  qty: number;
-}
-
-interface KitchenOrder {
-  id: string;
-  table: string;
-  eta: string;
-  items: KitchenItem[];
-  stage: KitchenStage;
-}
+type KitchenStage = OrderStatus;
 
 interface KitchenColumn {
   key: KitchenStage;
   title: string;
   icon: string;
-  orders: KitchenOrder[];
+  orders: OrderDto[];
+  cta: string;
+  next?: OrderStatus;
 }
 
 @Component({
@@ -28,105 +19,104 @@ interface KitchenColumn {
   styleUrl: './kitchen.component.css',
   standalone: false
 })
-export class KitchenComponent {
-  board: KitchenColumn[] = [
-    {
-      key: 'new',
-      title: 'New Orders',
-      icon: '📦',
-      orders: [
-        {
-          id: '#1024',
-          table: 'Table 3',
-          eta: '96m',
-          stage: 'new',
-          items: [
-            { name: 'House Burger', qty: 2 },
-            { name: 'Caesar Salad', qty: 2 }
-          ]
-        },
-        {
-          id: '#1026',
-          table: 'Table 10',
-          eta: '94m',
-          stage: 'new',
-          items: [
-            { name: 'Ribeye Steak', qty: 1 },
-            { name: 'Tomato Soup', qty: 1 }
-          ]
-        }
-      ]
-    },
-    {
-      key: 'cooking',
-      title: 'Cooking',
-      icon: '🔥',
-      orders: [
-        {
-          id: '#1025',
-          table: 'Table 4',
-          eta: '106m',
-          stage: 'cooking',
-          items: [
-            { name: 'Grilled Salmon', qty: 1 },
-            { name: 'Truffle Pasta', qty: 2 }
-          ]
-        },
-        {
-          id: '#1027',
-          table: 'Table 8',
-          eta: '111m',
-          stage: 'cooking',
-          items: [
-            { name: 'Truffle Pasta', qty: 3 },
-            { name: 'Caesar Salad', qty: 3 }
-          ]
-        }
-      ]
-    },
-    {
-      key: 'ready',
-      title: 'Ready for Pickup',
-      icon: '✅',
-      orders: [
-        {
-          id: '#1028',
-          table: 'Table 6',
-          eta: '116m',
-          stage: 'ready',
-          items: [
-            { name: 'Ribeye Steak', qty: 2 },
-            { name: 'Tiramisu', qty: 2 }
-          ]
-        },
-        {
-          id: '#1030',
-          table: 'Table 1',
-          eta: '88m',
-          stage: 'ready',
-          items: [
-            { name: 'House Burger', qty: 1 },
-            { name: 'Garden Salad', qty: 1 }
-          ]
-        }
-      ]
-    }
+export class KitchenComponent implements OnInit {
+  orders: OrderDto[] = [];
+  loading = false;
+  updatingId?: number;
+
+  columnsMeta: Omit<KitchenColumn, 'orders'>[] = [
+    { key: 'New', title: 'New Orders', icon: '📦', cta: 'Start Cooking', next: 'Cooking' },
+    { key: 'Cooking', title: 'Cooking', icon: '🔥', cta: 'Complete', next: 'ReadyForPickup' },
+    { key: 'ReadyForPickup', title: 'Ready for Pickup', icon: '✅', cta: 'Ready for pickup' }
   ];
 
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly snack: MatSnackBar
+  ) {}
+
+  private showSnack(message: string, type: 'success' | 'info' | 'warn' = 'info'): void {
+    this.snack.open(message, 'Close', {
+      duration: 3000,
+      panelClass: ['app-snackbar', `app-snackbar-${type}`]
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadOrders();
+  }
+
+  get board(): KitchenColumn[] {
+    return this.columnsMeta.map(meta => ({
+      ...meta,
+      orders: this.orders.filter(o => o.status === meta.key)
+    }));
+  }
+
   get activeOrders(): number {
-    return this.board.reduce((total, column) => total + column.orders.length, 0);
+    return this.orders.length;
+  }
+
+  statusLabel(stage: KitchenStage): string {
+    switch (stage) {
+      case 'New':
+        return 'New';
+      case 'Cooking':
+        return 'Cooking';
+      case 'ReadyForPickup':
+        return 'Ready for pickup';
+      default:
+        return stage;
+    }
   }
 
   actionLabel(stage: KitchenStage): string {
     switch (stage) {
-      case 'new':
+      case 'New':
         return 'Start Cooking';
-      case 'cooking':
+      case 'Cooking':
         return 'Complete';
-      case 'ready':
+      case 'ReadyForPickup':
         return 'Ready for pickup';
       default:
         return '';
+    }
+  }
+
+  loadOrders(): void {
+    this.loading = true;
+    this.ordersService.list(['New', 'Cooking', 'ReadyForPickup']).subscribe({
+      next: orders => {
+        this.orders = orders;
+      },
+      complete: () => (this.loading = false),
+      error: () => (this.loading = false)
+    });
+  }
+
+  advance(order: OrderDto): void {
+    const next = this.nextStatus(order.status);
+    if (!next) return;
+
+    this.updatingId = order.id;
+    this.ordersService.updateStatus(order.id, next).subscribe({
+      next: () => {
+        this.showSnack(`Order #${order.id} moved to ${this.statusLabel(next)}`, 'success');
+        this.loadOrders();
+      },
+      complete: () => (this.updatingId = undefined),
+      error: () => (this.updatingId = undefined)
+    });
+  }
+
+  nextStatus(status: OrderStatus): OrderStatus | null {
+    switch (status) {
+      case 'New':
+        return 'Cooking';
+      case 'Cooking':
+        return 'ReadyForPickup';
+      default:
+        return null;
     }
   }
 }

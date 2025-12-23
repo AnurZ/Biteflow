@@ -1,4 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  CreateOrderRequest,
+  OrderDto,
+  OrdersService
+} from '../../services/orders/orders.service';
+import { MealsService } from '../meals/meals-service';
+import { MealDto, MealCategory } from '../meals/meals-model';
+import { MealCategoryGetEndpoint } from '../../endpoints/meal-category-crud-endpoint/meal-category-get-endpoint';
+import { OrderStatus } from '../../services/orders/orders.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 type TableStatus = 'free' | 'seated' | 'serving' | 'paying';
 
@@ -27,20 +37,13 @@ interface OrderItem {
   qty: number;
 }
 
-interface ReadyTicket {
-  id: string;
-  table: number;
-  status: string;
-  items: number;
-}
-
 @Component({
   selector: 'app-waiter',
   templateUrl: './waiter.component.html',
   styleUrl: './waiter.component.css',
   standalone: false
 })
-export class WaiterComponent {
+export class WaiterComponent implements OnInit, OnDestroy {
   statusLegend: { key: TableStatus; label: string; color: string }[] = [
     { key: 'free', label: 'Free', color: '#e5e7eb' },
     { key: 'seated', label: 'Seated', color: '#e0e9ff' },
@@ -53,63 +56,181 @@ export class WaiterComponent {
       title: 'Family Section',
       description: '4 large tables',
       tables: [
-        { id: 9, label: 'Table 9', guests: 0, status: 'serving' },
-        { id: 10, label: 'Table 10', guests: 2, status: 'seated' },
-        { id: 11, label: 'Table 11', guests: 0, status: 'free' },
-        { id: 12, label: 'Table 12', guests: 0, status: 'free' }
+        { id: 9, label: 'Table 9', guests: 6, status: 'free' },
+        { id: 10, label: 'Table 10', guests: 6, status: 'free' },
+        { id: 11, label: 'Table 11', guests: 6, status: 'free' },
+        { id: 12, label: 'Table 12', guests: 6, status: 'free' }
       ]
     },
     {
       title: 'Regular Section',
       description: '6 standard tables',
       tables: [
-        { id: 1, label: 'Table 1', guests: 0, status: 'free' },
-        { id: 2, label: 'Table 2', guests: 2, status: 'seated' },
-        { id: 3, label: 'Table 3', guests: 4, status: 'seated' },
-        { id: 4, label: 'Table 4', guests: 3, status: 'serving' },
-        { id: 5, label: 'Table 5', guests: 0, status: 'free' },
-        { id: 6, label: 'Table 6', guests: 2, status: 'paying' }
+        { id: 1, label: 'Table 1', guests: 2, status: 'free' },
+        { id: 2, label: 'Table 2', guests: 2, status: 'free' },
+        { id: 3, label: 'Table 3', guests: 4, status: 'free' },
+        { id: 4, label: 'Table 4', guests: 4, status: 'free' },
+        { id: 5, label: 'Table 5', guests: 2, status: 'free' },
+        { id: 6, label: 'Table 6', guests: 2, status: 'free' }
       ]
     }
   ];
 
-  readyTickets: ReadyTicket[] = [
-    { id: '#1028', table: 6, status: 'Ready', items: 2 },
-    { id: '#1031', table: 2, status: 'Ready', items: 3 }
-  ];
+  orders: OrderDto[] = [];
+  loadingOrders = false;
+  submitting = false;
+  meals: MealDto[] = [];
+  categories: MealCategory[] = [];
+  loadingMeals = false;
+  pollHandle?: ReturnType<typeof setInterval>;
+  billingOrder?: OrderDto;
+  billTipRate = 0.1;
+  tableStatusOverrides: Record<number, TableStatus> = {};
 
   selectedTableId: number = this.sections[0].tables[0].id;
-  selectedCategory: MenuItem['category'] = 'Mains';
+  selectedCategoryId?: number;
 
   tableOrders: Record<number, OrderItem[]> = {};
 
-  menuCategories: MenuItem['category'][] = ['Starters', 'Mains', 'Desserts', 'Drinks'];
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly mealsService: MealsService,
+    private readonly mealCategoryEndpoint: MealCategoryGetEndpoint,
+    private readonly snack: MatSnackBar
+  ) {}
 
-  menuItems: MenuItem[] = [
-    { name: 'House Burger', price: 14.99, category: 'Mains' },
-    { name: 'Truffle Pasta', price: 18.99, category: 'Mains' },
-    { name: 'Grilled Salmon', price: 24.99, category: 'Mains' },
-    { name: 'Caesar Salad', price: 11.5, category: 'Starters' },
-    { name: 'Caprese Skewers', price: 9.5, category: 'Starters' },
-    { name: 'Tomato Soup', price: 8.25, category: 'Starters' },
-    { name: 'Cheesecake', price: 7.75, category: 'Desserts' },
-    { name: 'Tiramisu', price: 7.95, category: 'Desserts' },
-    { name: 'Chocolate Lava Cake', price: 8.5, category: 'Desserts' },
-    { name: 'Espresso', price: 3.5, category: 'Drinks' },
-    { name: 'Iced Tea', price: 4.25, category: 'Drinks' },
-    { name: 'Sparkling Water', price: 3.25, category: 'Drinks' }
-  ];
+  private showSnack(message: string, type: 'success' | 'info' | 'warn' = 'info'): void {
+    this.snack.open(message, 'Close', {
+      duration: 3000,
+      panelClass: ['app-snackbar', `app-snackbar-${type}`]
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadOrders();
+    this.loadMenu();
+    this.pollHandle = setInterval(() => this.loadOrders(), 10000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.pollHandle) {
+      clearInterval(this.pollHandle);
+    }
+  }
+
+  loadOrders(): void {
+    this.loadingOrders = true;
+    this.ordersService.list(['New', 'Cooking', 'ReadyForPickup', 'Completed']).subscribe({
+      next: orders => {
+        this.orders = orders;
+        this.updateTableStatuses();
+      },
+      complete: () => (this.loadingOrders = false),
+      error: () => (this.loadingOrders = false)
+    });
+  }
+
+  loadMenu(): void {
+    this.loadingMeals = true;
+    this.mealCategoryEndpoint.handleAsync().subscribe({
+      next: categories => {
+        this.categories = categories;
+        if (categories.length && this.selectedCategoryId === undefined) {
+          this.selectedCategoryId = categories[0].id;
+        }
+      }
+    });
+
+    this.mealsService.getMeals().subscribe({
+      next: meals => {
+        this.meals = meals.filter(m => m.isAvailable);
+      },
+      complete: () => (this.loadingMeals = false),
+      error: () => (this.loadingMeals = false)
+    });
+  }
 
   get selectedTable(): TableTile | undefined {
     return this.sections.flatMap(section => section.tables).find(t => t.id === this.selectedTableId);
   }
 
   get currentOrder(): OrderItem[] {
-    return this.tableOrders[this.selectedTableId] || [];
+    const local = this.tableOrders[this.selectedTableId];
+    if (local && local.length) return local;
+
+    const latest = this.latestOrderForSelectedTable(this.selectedTable?.status === 'paying' ? false : true);
+    if (latest) {
+      return latest.items.map(i => ({
+        name: i.name,
+        price: i.unitPrice,
+        qty: i.quantity
+      }));
+    }
+
+    return [];
   }
 
   get readyCount(): number {
-    return this.readyTickets.length;
+    return this.readyOrders.length;
+  }
+
+  get readyOrders(): OrderDto[] {
+    return this.orders.filter(o => o.status === 'ReadyForPickup');
+  }
+
+  get isEditingLocal(): boolean {
+    const local = this.tableOrders[this.selectedTableId];
+    return !!(local && local.length);
+  }
+
+  get hasActiveOrderForSelectedTable(): boolean {
+    const tableId = this.selectedTableId;
+    return this.orders.some(
+      o =>
+        (o.tableNumber ?? o.diningTableId) === tableId &&
+        this.isActiveStatus(o.status)
+    );
+  }
+
+  private isActiveStatus(status: OrderStatus): boolean {
+    return status === 'New' || status === 'Cooking' || status === 'ReadyForPickup';
+  }
+
+  private updateTableStatuses(): void {
+    const statusByTable: Record<number, TableStatus> = {};
+
+    const activeOrders = this.orders.filter(o => this.isActiveStatus(o.status));
+    const latestByTable = new Map<number, OrderDto>();
+    for (const order of activeOrders) {
+      const tableNum = order.tableNumber ?? order.diningTableId;
+      if (!tableNum) continue;
+      const existing = latestByTable.get(tableNum);
+      if (!existing || new Date(order.createdAtUtc) > new Date(existing.createdAtUtc)) {
+        latestByTable.set(tableNum, order);
+      }
+    }
+
+    latestByTable.forEach((order, tableNum) => {
+      let status: TableStatus = 'free';
+      if (order.status === 'New' || order.status === 'Cooking') {
+        status = 'seated';
+      } else if (order.status === 'ReadyForPickup') {
+        status = 'serving';
+      }
+      statusByTable[tableNum] = status;
+    });
+
+    Object.entries(this.tableStatusOverrides).forEach(([tableId, status]) => {
+      statusByTable[Number(tableId)] = status;
+    });
+
+    this.sections = this.sections.map(section => ({
+      ...section,
+      tables: section.tables.map(table => ({
+        ...table,
+        status: statusByTable[table.id] ?? 'free'
+      }))
+    }));
   }
 
   selectTable(tableId: number): void {
@@ -119,18 +240,18 @@ export class WaiterComponent {
     }
   }
 
-  setCategory(category: MenuItem['category']): void {
-    this.selectedCategory = category;
+  setCategory(categoryId: number): void {
+    this.selectedCategoryId = categoryId;
   }
 
-  addItem(item: MenuItem): void {
+  addItem(item: MealDto): void {
     const current = this.tableOrders[this.selectedTableId] || [];
     const existing = current.find(orderItem => orderItem.name === item.name);
 
     if (existing) {
       existing.qty += 1;
     } else {
-      current.push({ name: item.name, price: item.price, qty: 1 });
+      current.push({ name: item.name, price: item.basePrice, qty: 1 });
     }
 
     this.tableOrders[this.selectedTableId] = [...current];
@@ -171,7 +292,111 @@ export class WaiterComponent {
     }
   }
 
-  filteredMenu(): MenuItem[] {
-    return this.menuItems.filter(item => item.category === this.selectedCategory);
+  filteredMenu(): MealDto[] {
+    if (!this.selectedCategoryId) {
+      return this.meals;
+    }
+
+    return this.meals.filter(item => item.categoryId === this.selectedCategoryId);
+  }
+
+  sendToKitchen(): void {
+    if (!this.currentOrder.length || this.submitting) {
+      return;
+    }
+
+    const payload: CreateOrderRequest = {
+      tableNumber: this.selectedTable?.label ? Number(this.selectedTable.label.replace(/\D/g, '')) : this.selectedTableId,
+      items: this.currentOrder.map(item => ({
+        name: item.name,
+        quantity: item.qty,
+        unitPrice: item.price
+      }))
+    };
+
+    this.submitting = true;
+    this.ordersService.create(payload).subscribe({
+      next: () => {
+        this.tableOrders[this.selectedTableId] = [];
+        this.tableStatusOverrides[this.selectedTableId] = 'seated';
+        this.loadOrders();
+        this.showSnack(`Order sent to kitchen for ${this.selectedTable?.label ?? 'table'}`, 'success');
+      },
+      error: () => {
+        this.submitting = false;
+      },
+      complete: () => {
+        this.submitting = false;
+      }
+    });
+  }
+
+  markPickedUp(order: OrderDto): void {
+    this.ordersService.updateStatus(order.id, 'Completed').subscribe({
+      next: () => {
+        const tableNum = order.tableNumber ?? order.diningTableId;
+        if (tableNum) {
+          this.tableStatusOverrides[tableNum] = 'paying';
+        }
+        this.loadOrders();
+        this.showSnack(`Order #${order.id} picked up. Table set to paying.`, 'info');
+      }
+    });
+  }
+
+  printBill(): void {
+    const order = this.latestOrderForSelectedTable(false);
+    if (!order) return;
+    this.billingOrder = order;
+  }
+
+  closeBill(): void {
+    this.billingOrder = undefined;
+  }
+
+  payBill(): void {
+    if (!this.billingOrder) return;
+    const order = this.billingOrder;
+    this.ordersService.updateStatus(order.id, 'Completed').subscribe({
+      next: () => {
+        const tableNum = order.tableNumber ?? order.diningTableId;
+        if (tableNum) {
+          this.tableStatusOverrides[tableNum] = 'free';
+        }
+        this.loadOrders();
+        this.closeBill();
+        this.showSnack(`Bill paid for ${this.selectedTable?.label ?? 'table'}.`, 'success');
+      },
+      error: () => this.closeBill()
+    });
+  }
+
+  latestOrderForSelectedTable(activeOnly: boolean = true): OrderDto | undefined {
+    const tableId = this.selectedTableId;
+    const matching = this.orders
+      .filter(
+        o =>
+          (o.tableNumber ?? o.diningTableId) === tableId &&
+          (!activeOnly || this.isActiveStatus(o.status))
+      )
+      .sort((a, b) => new Date(b.createdAtUtc).getTime() - new Date(a.createdAtUtc).getTime());
+    return matching[0];
+  }
+
+  get billSubtotal(): number {
+    if (!this.billingOrder) return 0;
+    return this.billingOrder.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  }
+
+  get billTax(): number {
+    return this.billSubtotal * 0.08;
+  }
+
+  get billTip(): number {
+    return this.billSubtotal * this.billTipRate;
+  }
+
+  get billTotal(): number {
+    return this.billSubtotal + this.billTax + this.billTip;
   }
 }
