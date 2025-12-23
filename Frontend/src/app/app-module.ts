@@ -23,6 +23,8 @@ import { TableLayoutComponent } from './modules/table-layout/table-layout';
 import { TableLayoutCreateDialog } from './modules/table-layout/table-layout-create-dialog/table-layout-create-dialog';
 import {ColorPickerComponent, ColorPickerDirective} from 'ngx-color-picker';
 import {DragDropModule} from '@angular/cdk/drag-drop';
+import { WaiterModule } from './modules/waiter/waiter-module';
+import { KitchenModule } from './modules/kitchen/kitchen-module';
 
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
@@ -41,6 +43,8 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
     }),
     SharedModule,
     PublicModule,
+    WaiterModule,
+    KitchenModule,
     MatCheckbox,
     MatTableModule,
     ColorPickerDirective,
