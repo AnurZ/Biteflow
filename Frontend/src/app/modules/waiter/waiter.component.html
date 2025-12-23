@@ -35,7 +35,7 @@
                 (click)="selectTable(table.id)"
               >
                 <div class="table-name">{{ table.label }}</div>
-                <div class="table-guests" *ngIf="table.guests > 0">👥 {{ table.guests }}</div>
+                <div class="table-guests" *ngIf="table.guests > 0"><span class="people-icon">👥</span> {{ table.guests }}</div>
                 <div class="table-status">{{ getStatusLabel(table.status) }}</div>
               </button>
             </div>
@@ -43,32 +43,33 @@
         </div>
 
         <div class="ready-column">
-          <div class="ready-card">
-            <div class="ready-header">
-              <div>
-                <div class="section-title">Ready for pickup</div>
-                <div class="section-meta">{{ readyCount }} ticket(s)</div>
-              </div>
-              <span class="status-pill success">Ready</span>
+        <div class="ready-card">
+          <div class="ready-header">
+            <div>
+              <div class="section-title">Ready for pickup</div>
+              <div class="section-meta">{{ readyCount }} ticket(s)</div>
             </div>
+            <span class="status-pill success">Ready</span>
+          </div>
 
-            <div class="ready-list">
-              <div class="ticket" *ngFor="let ticket of readyTickets">
-                <div>
-                  <div class="ticket-id">Order {{ ticket.id }}</div>
-                  <div class="ticket-table">Table {{ ticket.table }}</div>
-                </div>
-                <div class="ticket-meta">
-                  <span class="badge">{{ ticket.items }} item(s)</span>
-                  <span class="status-pill subtle">Ready</span>
-                </div>
+          <div class="ready-list">
+            <div class="ticket" *ngFor="let ticket of readyOrders">
+              <div>
+                <div class="ticket-id">Order #{{ ticket.id }}</div>
+                <div class="ticket-table">Table {{ ticket.tableNumber || ticket.diningTableId }}</div>
               </div>
-              <div class="empty-ready" *ngIf="!readyTickets.length">
-                No orders ready yet
+              <div class="ticket-meta">
+                <span class="badge">{{ ticket.items.length }} item(s)</span>
+                <span class="status-pill subtle">Ready</span>
+                <button class="mark-btn" (click)="markPickedUp(ticket)">Clear</button>
               </div>
+            </div>
+            <div class="empty-ready" *ngIf="!readyOrders.length">
+              No orders ready yet
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
@@ -83,22 +84,27 @@
         <span class="status-pill subtle">{{ getStatusLabel(table.status) }}</span>
       </div>
 
-      <div class="order-section">
-        <div class="section-title">Current Order</div>
-        <div class="order-items" *ngIf="currentOrder.length; else emptyOrder">
-          <div class="order-line" *ngFor="let item of currentOrder">
-            <div>
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-price">\${{ item.price | number: '1.2-2' }}</div>
-            </div>
-            <div class="qty-controls">
-              <button (click)="updateQuantity(item.name, -1)">-</button>
-              <span>{{ item.qty }}</span>
-              <button (click)="updateQuantity(item.name, 1)">+</button>
-              <button class="remove" (click)="removeItem(item.name)">×</button>
+        <div class="order-section">
+          <div class="section-title">Current Order</div>
+          <div class="order-items" *ngIf="currentOrder.length; else emptyOrder">
+            <div class="order-line" *ngFor="let item of currentOrder">
+              <div>
+                <div class="item-name">{{ item.name }}</div>
+                <div class="item-price">$ {{ (item.price * item.qty) | number: '1.2-2' }}</div>
+              </div>
+            <ng-container *ngIf="isEditingLocal; else readonlyQty">
+              <div class="qty-controls">
+                <button (click)="updateQuantity(item.name, -1)">-</button>
+                <span>{{ item.qty }}</span>
+                <button (click)="updateQuantity(item.name, 1)">+</button>
+                <button class="remove" (click)="removeItem(item.name)">×</button>
+              </div>
+            </ng-container>
+            <ng-template #readonlyQty>
+              <div class="qty-display">x{{ item.qty }}</div>
+            </ng-template>
             </div>
           </div>
-        </div>
         <ng-template #emptyOrder>
           <div class="empty-order">No items ordered yet</div>
         </ng-template>
@@ -108,29 +114,83 @@
         <div class="section-title">Add Items</div>
         <div class="category-tabs">
           <button
-            *ngFor="let category of menuCategories"
-            [ngClass]="{ active: category === selectedCategory }"
-            (click)="setCategory(category)"
+            *ngFor="let category of categories"
+            [ngClass]="{ active: category.id === selectedCategoryId }"
+            (click)="setCategory(category.id)"
           >
-            {{ category }}
+            {{ category.name }}
           </button>
         </div>
 
         <div class="menu-list">
           <div class="menu-item" *ngFor="let item of filteredMenu()">
-            <div>
+            <div class="menu-left">
+              <span class="meal-avatar">{{ item.name.charAt(0) }}</span>
               <div class="item-name">{{ item.name }}</div>
-              <div class="item-price">\${{ item.price | number: '1.2-2' }}</div>
+              <div class="item-price">$ {{ item.basePrice | number: '1.2-2' }}</div>
             </div>
             <button class="add" (click)="addItem(item)">+</button>
+          </div>
+          <div class="empty-order" *ngIf="!filteredMenu().length && !loadingMeals">
+            No menu items available
           </div>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button class="send" [disabled]="!currentOrder.length">Send to Kitchen</button>
-        <button class="print" [disabled]="!currentOrder.length">Print Bill</button>
+        <div class="action-buttons">
+          <button
+            class="send"
+            (click)="sendToKitchen()"
+            [disabled]="!currentOrder.length || submitting || hasActiveOrderForSelectedTable || billingOrder || selectedTable?.status === 'paying'"
+          >
+            Send to Kitchen
+          </button>
+          <button
+            class="print"
+            [disabled]="selectedTable?.status !== 'paying' || !latestOrderForSelectedTable(false)"
+            (click)="printBill()"
+          >
+            Print Bill
+          </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bill-modal-backdrop" *ngIf="billingOrder">
+    <div class="bill-modal">
+      <div class="bill-header">
+        <div>
+          <div class="bill-title">Bill Summary</div>
+          <div class="bill-table">Table {{ billingOrder?.tableNumber || billingOrder?.diningTableId }}</div>
+        </div>
+        <button class="close" (click)="closeBill()">×</button>
+      </div>
+
+      <div class="bill-items">
+        <div class="bill-row" *ngFor="let item of billingOrder?.items">
+          <span>{{ item.name }} ×{{ item.quantity }}</span>
+          <span>$ {{ (item.quantity * item.unitPrice) | number: '1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="bill-summary">
+        <div class="bill-row"><span>Subtotal</span><span>$ {{ billSubtotal | number: '1.2-2' }}</span></div>
+        <div class="bill-row"><span>Tax (8%)</span><span>$ {{ billTax | number: '1.2-2' }}</span></div>
+        <div class="bill-row">
+          <span>Tip ({{ (billTipRate * 100) | number:'1.0-0' }}%)</span>
+          <div class="tip-input">
+            <input type="range" min="0" max="0.3" step="0.01" [(ngModel)]="billTipRate" />
+            <span>$ {{ billTip | number: '1.2-2' }}</span>
+          </div>
+        </div>
+        <div class="bill-total bill-row"><span>Total</span><span>$ {{ billTotal | number: '1.2-2' }}</span></div>
+      </div>
+
+      <div class="bill-actions">
+        <button class="pay" (click)="payBill()">Pay</button>
+        <button class="cancel" (click)="closeBill()">Cancel</button>
       </div>
     </div>
   </div>
 </div>
+
