@@ -5,6 +5,7 @@ using Market.Application.Modules.TableReservation.Queries.GetTableReservations;
 using Market.Application.Modules.TableReservation.Commands.DeleteTableReservation;
 using Market.Shared.Constants;
 using Market.Application.Modules.TableReservation.Commands.UpdateTableReservation;
+using Market.Application.Modules.TableReservation.Commands.UpdateTableReservation.UpdateTableReservationStatus;
 
 namespace Market.API.Controllers
 {
@@ -68,5 +69,13 @@ namespace Market.API.Controllers
             await _mediator.Send(cmd, ct);
             return NoContent();
         }
+
+        [HttpPatch("update-status")]
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateTableReservationStatusDto dto)
+        {
+            await _mediator.Send(dto);
+            return NoContent();
+        }
+
     }
 }

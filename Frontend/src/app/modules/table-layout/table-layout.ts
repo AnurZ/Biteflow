@@ -45,12 +45,15 @@ export class TableLayoutComponent implements OnInit {
   selectedTable?: UpdateDiningTableDto;
 
   statusColors: Record<TableStatus, string> = {
-    [TableStatus.Free]: '#4CAF50',        // green
-    [TableStatus.Occupied]: '#F44336',    // red
-    [TableStatus.Reserved]: '#2196F3',    // orange
-    [TableStatus.Cleaning]: '#eae230',    // blue
-    [TableStatus.OutOfService]: '#9E9E9E' // gray
+    [TableStatus.Free]: '#66BB6A',        // medium soft green
+    [TableStatus.Occupied]: '#EF5350',    // medium soft red
+    [TableStatus.Reserved]: '#42A5F5',    // medium soft blue
+    [TableStatus.Cleaning]: '#FDD835',    // medium soft yellow
+    [TableStatus.OutOfService]: '#9E9E9E' // medium gray
   };
+
+
+
 
   private getInputNumberValue(id: string, defaultValue = 0): number {
     const el = document.getElementById(id) as HTMLInputElement | null;
@@ -74,6 +77,8 @@ export class TableLayoutComponent implements OnInit {
     if (!this.selectedTable) return;
 
     const table = this.selectedTable;
+
+    console.log(this.getInputNumberValue('inputSeats', 1));
 
     table.number        = this.getInputNumberValue('inputNumber', 1);
     table.numberOfSeats = this.getInputNumberValue('inputSeats', 1);
@@ -177,7 +182,7 @@ export class TableLayoutComponent implements OnInit {
 
   getMaxX(): number {
     const width = this.getInputNumberValue('inputWidth', 50);
-    return Math.round(640 - width);
+    return Math.round(840 - width);
   }
 
   getMaxY(): number {
@@ -335,7 +340,19 @@ export class TableLayoutComponent implements OnInit {
     const width = this.getInputNumberValue('inputWidth', table.width);
     const height = this.getInputNumberValue('inputHeight', table.height);
 
-    const color = (document.getElementById('inputColor') as HTMLInputElement)?.value || table.color;
+    // Read status select
+    const statusSelect = document.getElementById('inputItem') as HTMLSelectElement | null;
+    const selectedOption = statusSelect ? statusSelect.value : '';
+
+    const statusMap: Record<string, TableStatus> = {
+      'item1': TableStatus.Free,
+      'item2': TableStatus.Occupied,
+      'item3': TableStatus.Reserved,
+      'item4': TableStatus.Cleaning,
+      'item5': TableStatus.OutOfService,
+    };
+
+    const selectedStatus = statusMap[selectedOption];
 
     return (
       number !== table.number ||
@@ -344,9 +361,10 @@ export class TableLayoutComponent implements OnInit {
       y !== table.y ||
       width !== table.width ||
       height !== table.height ||
-      color !== table.color
+      selectedStatus !== table.status   // <<< status change detection
     );
   }
+
 
 
 

@@ -1,0 +1,160 @@
+<h2 mat-dialog-title *ngIf="data.mode === 'create'">
+  Create Reservation
+</h2>
+
+<h2 mat-dialog-title *ngIf="data.mode === 'edit'">
+  Edit Reservation
+</h2>
+
+<h2 mat-dialog-title *ngIf="data.mode === 'createForSelectedTable'">
+  Create reservation for {{ data.tableLayoutName }} / {{ data.diningTableNumber }}
+</h2>
+
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+
+    <!-- Reservation Info Section -->
+    <!-- Reservation Info Section -->
+    <div class="section-card">
+      <h3 class="section-title">Reservation Info</h3>
+      <div class="inner-grid">
+
+        <div>
+          <!-- 1) DATE PICKER -->
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Reservation Date</mat-label>
+            <input matInput [matDatepicker]="pickerStart"
+                   formControlName="reservationDate"
+                   (dateChange)="onDateChange($event.value)"
+                   required>
+            <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+            <mat-datepicker #pickerStart></mat-datepicker>
+
+            <mat-error *ngIf="form.controls.reservationDate.hasError('required')">
+              Reservation date is required
+            </mat-error>
+          </mat-form-field>
+
+          <!-- 2) TIME SLOTS (DISPLAYED AFTER DATE SELECTED) -->
+          <div class="time-slot-container full">
+            <label class="time-slot-title">Select Start Time</label>
+
+            <div *ngIf="timeSlots.length > 0" class="time-slots">
+              <div
+                *ngFor="let slot of timeSlots"
+                class="time-slot"
+                [class.selected]="slot === form.controls.reservationStartTime.value"
+                (click)="selectTime(slot)">
+                {{ slot }}
+              </div>
+            </div>
+
+            <div *ngIf="timeSlots.length === 0" class="no-times-available">
+              No available time slots for the selected table and date.
+            </div>
+
+          </div>
+        </div>
+
+
+
+
+        <!-- 3) NUMBER OF SEATS -->
+        <mat-form-field appearance="outline">
+          <mat-label>Number of Guests</mat-label>
+          <input matInput type="number" formControlName="numberOfGuests" min="1" max="{{getMaxNumberOfGuests()}}" required>
+          <mat-error *ngIf="form.controls.numberOfGuests.hasError('required')">
+            Number of guests is required
+          </mat-error>
+          <mat-error *ngIf="form.controls.numberOfGuests.hasError('min')">
+            Number of guests must be at least 1
+          </mat-error>
+          <mat-error *ngIf="form.controls.numberOfGuests.hasError('max')">
+            Number of guests exceeds the capacity of the selected table.
+          </mat-error>
+        </mat-form-field>
+
+
+        <!-- 3) TABLE LAYOUT SELECTOR -->
+        <mat-form-field appearance="outline">
+          <mat-label>Table Layout</mat-label>
+          <mat-select
+            formControlName="tableLayoutId"
+            (selectionChange)="onLayoutChange($event.value)"
+            required>
+            <mat-option *ngFor="let layout of data.layouts" [value]="layout.id">
+              {{ layout.name }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls.tableLayoutId.hasError('required')">
+            Layout is required
+          </mat-error>
+        </mat-form-field>
+
+        <!-- 4) TABLE SELECTOR -->
+        <mat-form-field appearance="outline">
+          <mat-label>Table</mat-label>
+          <mat-select
+            formControlName="diningTableId"
+            required>
+            <mat-option *ngFor="let table of filteredTables" [value]="table.id">
+              Table {{ table.number }} - ({{table.numberOfSeats}} seat{{table.numberOfSeats===1?'':'s'}})
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="form.controls.diningTableId.hasError('required')">
+            Table is required
+          </mat-error>
+        </mat-form-field>
+
+
+      </div>
+    </div>
+
+
+    <!-- Guest Info Section -->
+    <div class="section-card">
+      <h3 class="section-title">Guest Info</h3>
+      <div class="inner-grid">
+
+        <mat-form-field appearance="outline">
+          <mat-label>First Name</mat-label>
+          <input matInput formControlName="firstName" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Last Name</mat-label>
+          <input matInput formControlName="lastName" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phoneNumber">
+        </mat-form-field>
+
+      </div>
+    </div>
+
+    <!-- Notes Section -->
+    <div class="section-card">
+      <h3 class="section-title">Notes</h3>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Notes</mat-label>
+        <textarea matInput rows="3" formControlName="notes"></textarea>
+      </mat-form-field>
+    </div>
+
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || loading">
+    {{ data.mode === 'create' ? 'Create' : 'Save' }}
+  </button>
+</mat-dialog-actions>

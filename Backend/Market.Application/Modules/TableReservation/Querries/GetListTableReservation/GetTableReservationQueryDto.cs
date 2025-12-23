@@ -18,6 +18,9 @@ namespace Market.Application.Modules.TableReservation.Queries.GetTableReservatio
     {
         public int Id { get; set; }
         public int DiningTableId { get; set; }
+        public int DiningTableNumber { get; set; }
+        public int TableLayoutId { get; set; }
+        public string TableLayoutName { get; set; }
         public Guid? ApplicationUserId { get; set; } // nullable, matches entity
         public string FirstName { get; set; } = string.Empty; // include customer info
         public string LastName { get; set; } = string.Empty;

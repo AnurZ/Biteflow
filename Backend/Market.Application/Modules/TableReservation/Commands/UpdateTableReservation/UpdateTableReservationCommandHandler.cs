@@ -53,8 +53,14 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
             if (request.ReservationEnd.HasValue && request.ReservationStart >= request.ReservationEnd)
                 throw new ValidationException("Reservation start must be before reservation end.");
 
-            if (request.NumberOfGuests > reservation.DiningTable.NumberOfSeats)
-                throw new ValidationException("Too many guests for this table.");
+            var newTable = await _db.DiningTables
+                .FirstOrDefaultAsync(t => t.Id == request.DiningTableId, cancellationToken);
+
+            if (newTable == null)
+                throw new KeyNotFoundException($"Dining table with ID {request.DiningTableId} not found.");
+
+            if (request.NumberOfGuests > newTable.NumberOfSeats)
+                throw new ValidationException($"Too many guests ({request.NumberOfGuests}) for this table (Id: {newTable.Id} ({newTable.NumberOfSeats})).");
 
             // Overlapping reservations (consider nullable ReservationEnd)
             bool overlapping = await _db.TableReservations

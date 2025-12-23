@@ -36,7 +36,7 @@
 
 .table-layout-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
   padding: 10px;
   border: 1px solid #dee2e6;
@@ -60,7 +60,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 200px;
+  width: 240px;
   height: 150px;
   border: 2px solid #ccc;
   border-radius: 8px;
@@ -373,10 +373,10 @@
   padding: 20px;
   border: 2px solid #ccc;
   overflow: auto;
-  max-height: 650px;
+  max-height: 600px;
 
   position: relative;
-  width: 600px; /* fixed width */
+  width: 800px; /* fixed width */
   margin: 0 auto;
   overflow: hidden; /* hides scrollbars */
   /* ensures absolute children stay within */
@@ -408,7 +408,7 @@
 
 .table-layout-sidebar {
   padding: 20px;
-  width: 220px;
+  width: 250px;
   flex-direction: column;
   gap: 15px;
   overflow-y: auto;
@@ -420,7 +420,7 @@
 
 .table-layout-controls {
   padding: 20px;
-  width: 220px;
+  width: 260px;
   flex-direction: column;
   /* overflow-y: auto; */ /* REMOVE this */
   max-height: 650px;
@@ -527,7 +527,7 @@
 
 .table-icon{
   height: 130px;
-  width: 220px;
+  width: 270px;
   font-size: 190px;
   text-align: center;
   align-items: center;
@@ -573,7 +573,7 @@
 }
 
 .create-edit-container{
-  width: 220px;
+  width: 260px;
   text-align: center;
   justify-content: center;
   align-items: center;
@@ -586,7 +586,7 @@
   position: relative;
   z-index: 1;
   padding: 20px;
-  width: 260px;
+  width: 290px;
   flex-direction: column;
   gap: 15px;
   overflow-y: auto;
@@ -603,7 +603,7 @@
 .table-layout-controls-holder{
   display: flex;
   justify-content: space-around;
-  width: 220px
+  width: 260px
 }
 
 

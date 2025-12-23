@@ -1,0 +1,394 @@
+<div class="card">
+  <!-- Header -->
+  <div class="card-header">
+    <div class="title">Manage Table Reservations</div>
+
+
+    <button mat-flat-button color="primary" (click)="openReservationDialog('create')">
+      <mat-icon>add</mat-icon>&nbsp;New Table Reservation
+    </button>
+  </div>
+
+  <div class="reservations-header">
+
+
+    <div class="list-reservations-container">
+
+      <span class="reservations-count">
+        Showing {{ tableReservations.length }} reservation{{ tableReservations.length !== 1 ? 's' : '' }}
+      </span>
+
+      <mat-form-field appearance="outline" class="search">
+        <mat-label>Search</mat-label>
+        <input
+          matInput
+          placeholder="Search by guest name"
+          [(ngModel)]="filters.search"
+          (ngModelChange)="applyFilters()"
+        />
+      </mat-form-field>
+
+      <div class="date-time-filters">
+        <mat-form-field appearance="outline" class="filter-date">
+          <mat-label>Filter by date</mat-label>
+          <input matInput [matDatepicker]="picker" [(ngModel)]="filters.date" (dateChange)="getTableReservations()" (change)="onDateTimeChange()">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="time-picker">
+          <mat-label>From</mat-label>
+          <input matInput type="time" [(ngModel)]="filters.timeFrom" (change)="applyFilters()" (change)="onDateTimeChange()">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="time-picker">
+          <mat-label>To</mat-label>
+          <input matInput type="time" [(ngModel)]="filters.timeTo" (change)="applyFilters()" (change)="onDateTimeChange()">
+        </mat-form-field>
+      </div>
+
+
+
+
+      <div class="checkboxes">
+        <mat-checkbox
+          [(ngModel)]="filters.showPast"
+          (change)="applyFilters()"
+        >
+          Show past reservations
+        </mat-checkbox>
+
+        <mat-checkbox
+          [(ngModel)]="filters.onlySelectedLayout"
+          (change)="applyFilters()"
+        >
+          Filter by selected layout
+        </mat-checkbox>
+      </div>
+
+
+
+
+      <!-- Show message if no reservations -->
+      <div *ngIf="tableReservations.length === 0" class="no-reservations">
+        There are no reservations.
+      </div>
+
+
+      <!-- List of reservations -->
+      <div *ngFor="let reservation of tableReservations"
+           class="reservation-item"
+           [ngClass]="{ 'reservation-past': isPastReservation(reservation) }">
+
+        <!-- LEFT: main info -->
+        <div class="reservation-item-text">
+
+          <div class="reservation-name">
+            {{ reservation.firstName }} {{ reservation.lastName }}
+          </div>
+
+          <div class="reservation-table">
+            Table: {{ reservation.tableLayoutName }} / {{ reservation.diningTableNumber }}
+          </div>
+
+          <div class="reservation-date-and-time">
+            <div class="reservation-date">
+              <mat-icon style="display: flex">event</mat-icon>
+              {{ reservation.reservationStart | date:'EEEE, MMM d, y' }}
+            </div>
+
+            <div class="reservation-time">
+              <mat-icon>schedule</mat-icon>
+              {{ reservation.reservationStart | date:'hh:mm a' }}
+              –
+              {{ reservation.reservationEnd | date:'hh:mm a' }}
+            </div>
+          </div>
+
+
+          <div class="status-and-guests">
+            <div class="reservation-meta">
+              <span>Guests: {{ reservation.numberOfGuests }}</span>
+            </div>
+
+            <!-- STATUS AT BOTTOM (part of text) -->
+            <div class="reservation-status-inline">
+              <span class="status-label">Status:</span>
+              <mat-form-field appearance="fill">
+                <mat-select
+                  [(value)]="reservation.status"
+                  (selectionChange)="onStatusChange(reservation, $event.value)">
+                  <mat-option [value]="0">Pending</mat-option>
+                  <mat-option [value]="1">Confirmed</mat-option>
+                  <mat-option [value]="2">Completed</mat-option>
+                  <mat-option [value]="3">Cancelled</mat-option>
+                  <mat-option [value]="4">No show</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+
+
+          <div *ngIf="reservation.notes" class="reservation-notes">
+              <mat-icon>notes</mat-icon>
+            <span>
+              {{ showFullNotes ? reservation.notes : (reservation.notes | slice:0:100) }}
+                  <button *ngIf="reservation.notes.length > 100" mat-button color="primary" (click)="toggleNotes()">
+                {{ showFullNotes ? 'Show less' : 'Load more' }}
+                </button>
+            </span>
+          </div>
+
+
+
+
+        </div>
+
+        <!-- RIGHT: buttons only -->
+        <div class="reservation-actions">
+    <span class="reservation-item-edit" (click)="editReservation(reservation)">
+      <mat-icon>edit</mat-icon>
+    </span>
+          <span class="reservation-item-remove" (click)="delete(reservation.id)">
+      <mat-icon>delete</mat-icon>
+    </span>
+        </div>
+
+      </div>
+
+
+
+    </div>
+
+
+
+    <div class="tables-and-layouts-container">
+
+      <div class="date-time-filters view-time-picker">
+
+        <!-- View Date -->
+
+
+        <div class="layouts-wrapper-with-controls">
+
+          <!-- LEFT BUTTON -->
+          <button
+            class="layout-scroll-btn left"
+            (click)="scrollLayouts(-200)"
+            aria-label="Scroll left"
+          >
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <!-- VIEWPORT -->
+          <div class="layouts-viewport">
+            <div
+              class="layouts-container"
+              #layoutsContainer
+              [ngStyle]="{
+              'justify-content': tableLayouts.length === 0 ? 'center' : 'flex-start'
+  }"
+            >
+
+            <div *ngIf="tableLayouts.length === 0" class="no-layouts">
+                There are no table layouts.
+              </div>
+
+              <div
+                *ngFor="let layout of tableLayouts"
+                class="layout-item"
+                [class.selected]="layout === selectedLayout"
+                (click)="selectLayout(layout)"
+              >
+                <div class="layout-name">{{ layout.name }}</div>
+                <div class="layout-info">
+                  {{ getNumberOfFreeTables(layout.id) }} / {{ layout.tables.length }} tables occupied
+                </div>
+                <div class="layout-progress">
+                  <div
+                    class="layout-progress-fill"
+                    [style.width.%]="getNumberOfFreeTables(layout.id) / layout.tables.length * 100"
+                  ></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- RIGHT BUTTON -->
+          <button
+            class="layout-scroll-btn right"
+            (click)="scrollLayouts(200)"
+            aria-label="Scroll right"
+          >
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+
+      <div class="layout-and-selected-table-reservations-container">
+
+
+      <div
+        class="table-layout-full"
+        #container
+        (click)="deselectTable($event)"
+        [ngStyle]="{
+    'background-image': selectedLayout?.floorImageUrl ? 'url(' + selectedLayout?.floorImageUrl + ')' : 'none',
+    'background-size': 'cover',
+    'background-position': 'center',
+    'background-repeat': 'no-repeat',
+    'background-color': !selectedLayout?.floorImageUrl ? selectedLayout?.backgroundColor : null
+  }"
+      >
+        <div *ngIf="isLoadingTables" class="loader">
+          Loading tables...
+        </div>
+
+        <div
+          *ngFor="let table of diningTables"
+          class="table-rectangle-wrapper"
+          [ngStyle]="{ left: table.x + 'px', top: table.y + 'px', width: table.width + 'px', height: table.height + 'px' }"
+        >
+          <!-- Table rectangle -->
+          <div
+            class="table-rectangle"
+            [class.selected]="selectedTable === table"
+            [class.has-reservation]="tableHasUpcomingReservation(table)"
+            [style.backgroundColor]="statusColors[tableStatuses[table.id!]] || '#90caf9'"
+            (click)="onTableClick(table, $event)"
+          >
+            {{ table.number }}
+          </div>
+
+
+
+
+
+        </div>
+
+      </div>
+
+        <div class="selected-table-reservations">
+
+          <div class="selected-table-reservations-only">
+            <div *ngIf="selectedTable && selectedTableReservations.length === 0" class="no-reservations">
+              There are no reservations for selected table.
+            </div>
+
+            <div *ngIf="!selectedTable" class="no-reservations">
+              Select a table to see reservations.
+            </div>
+
+            <div *ngFor="let reservation of selectedTableReservations"
+                 class="reservation-item"
+                 [ngClass]="{ 'reservation-past': isPastReservation(reservation) }">
+
+              <!-- LEFT: main info -->
+              <div class="reservation-item-text">
+
+                <div class="reservation-name">
+                  {{ reservation.firstName }} {{ reservation.lastName }}
+                </div>
+
+                <div class="reservation-table">
+                  Table: {{ reservation.tableLayoutName }} / {{ reservation.diningTableNumber }}
+                </div>
+
+                <div class="reservation-date-and-time">
+                  <div class="reservation-date">
+                    <mat-icon style="display: flex">event</mat-icon>
+                    {{ reservation.reservationStart | date:'EEEE, MMM d, y' }}
+                  </div>
+
+                  <div class="reservation-time">
+                    <mat-icon>schedule</mat-icon>
+                    {{ reservation.reservationStart | date:'hh:mm a' }}
+                    –
+                    {{ reservation.reservationEnd | date:'hh:mm a' }}
+                  </div>
+
+                </div>
+
+
+                <div class="status-and-guests">
+                  <div class="reservation-meta">
+                    <span>Guests: {{ reservation.numberOfGuests }}</span>
+                  </div>
+
+                  <!-- STATUS AT BOTTOM (part of text) -->
+                  <div class="reservation-status-inline">
+                    <span class="status-label">Status:</span>
+                    <mat-form-field appearance="fill">
+                      <mat-select
+                        [(value)]="reservation.status"
+                        (selectionChange)="onStatusChange(reservation, $event.value)">
+                        <mat-option [value]="0">Pending</mat-option>
+                        <mat-option [value]="1">Confirmed</mat-option>
+                        <mat-option [value]="2">Completed</mat-option>
+                        <mat-option [value]="3">Cancelled</mat-option>
+                        <mat-option [value]="4">No show</mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+
+
+                <div *ngIf="reservation.notes" class="reservation-notes">
+                  <mat-icon>notes</mat-icon>
+                  <span>
+              {{ showFullNotes ? reservation.notes : (reservation.notes | slice:0:100) }}
+                    <button *ngIf="reservation.notes.length > 100" mat-button color="primary" (click)="toggleNotes()">
+                {{ showFullNotes ? 'Show less' : 'Load more' }}
+                </button>
+            </span>
+                </div>
+
+
+
+
+              </div>
+
+              <!-- RIGHT: buttons only -->
+              <div class="reservation-actions">
+    <span class="reservation-item-edit" (click)="editReservation(reservation)">
+      <mat-icon>edit</mat-icon>
+    </span>
+                <span class="reservation-item-remove" (click)="delete(reservation.id)">
+      <mat-icon>delete</mat-icon>
+    </span>
+              </div>
+
+            </div>
+
+            <div *ngIf="selectedTable" class="button-space">
+            <span class="add-table-button" (click)="createReservationForSelectedTable()">
+              <mat-icon>add</mat-icon>
+            </span>
+            </div>
+          </div>
+
+
+
+
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+  </div>
+</div>
+
+
+

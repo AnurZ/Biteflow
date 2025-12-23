@@ -23,11 +23,15 @@ import { TableLayoutComponent } from './modules/table-layout/table-layout';
 import { TableLayoutCreateDialog } from './modules/table-layout/table-layout-create-dialog/table-layout-create-dialog';
 import {ColorPickerComponent, ColorPickerDirective} from 'ngx-color-picker';
 import {DragDropModule} from '@angular/cdk/drag-drop';
+import { TableReservation } from './modules/table-reservation/table-reservation';
+import { TableReservationFormDialog } from './modules/table-reservation/table-reservation-form-dialog/table-reservation-form-dialog';
+import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {MatMenu, MatMenuTrigger} from '@angular/material/menu';
 
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
     AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent,
-    TableLayoutCreateDialog, TableLayoutCreateDialog],
+    TableLayoutCreateDialog, TableLayoutCreateDialog, TableReservation, TableReservationFormDialog],
   imports: [
     BrowserModule,
     HttpClientModule,
@@ -44,7 +48,12 @@ import {DragDropModule} from '@angular/cdk/drag-drop';
     MatCheckbox,
     MatTableModule,
     ColorPickerDirective,
-    DragDropModule
+    DragDropModule,
+    MatDatepickerInput,
+    MatDatepickerToggle,
+    MatDatepicker,
+    MatMenu,
+    MatMenuTrigger
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),
