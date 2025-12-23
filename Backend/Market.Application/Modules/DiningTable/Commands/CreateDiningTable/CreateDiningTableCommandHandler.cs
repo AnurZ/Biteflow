@@ -21,23 +21,21 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            // Trim section name to normalize
-            var sectionNameTrimmed = request.SectionName.Trim();
-
-            // Check if a table with the same SectionName + Number already exists
+            
             var exists = await _db.DiningTables
-                .AnyAsync(t => t.SectionName == sectionNameTrimmed
+                .AnyAsync(t => t.TableLayoutId == request.TableLayoutId
                                && t.Number == request.Number
-                               && !t.IsDeleted, // if soft delete is used
+                               && !t.IsDeleted,   
                                cancellationToken);
 
             if (exists)
-                throw new InvalidOperationException($"A table with Section '{sectionNameTrimmed}' and Number '{request.Number}' already exists.");
+                throw new InvalidOperationException(
+                    $"A table with Number '{request.Number}' already exists in this layout.");
+
+
 
             var table = new Domain.Entities.DiningTables.DiningTable
             {
-                // Basic info
-                SectionName = sectionNameTrimmed,
                 Number = request.Number,
                 NumberOfSeats = request.NumberOfSeats,
                 TableType = request.TableType,
@@ -48,7 +46,8 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
                 TableLayoutId = request.TableLayoutId,
                 X = request.X,
                 Y = request.Y,
-                TableSize = request.TableSize,
+                Height = request.Height,
+                Width = request.Width,
                 Shape = request.Shape.Trim(),
                 Color = request.Color
             };

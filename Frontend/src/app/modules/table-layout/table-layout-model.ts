@@ -26,12 +26,12 @@ export interface GetTableLayoutListDto {
 
 export interface TableDto {
   id: number;
-  sectionName: string;
   number: number;
   numberOfSeats: number;
   x:number;
   y:number;
-  TableSize:number;
+  height:number;
+  width:number;
   shape:string;
   color:string;
   tableType: TableType,
@@ -41,12 +41,12 @@ export interface TableDto {
 
 export interface CreateDiningTableDto {
   tableLayoutId: number;
-  sectionName: string;
   number: number;
   numberOfSeats: number;
   x: number;
   y: number;
-  tableSize: number;
+  height:number;
+  width:number;
   shape: string;
   color: string;
   tableType: TableType;
@@ -56,12 +56,12 @@ export interface CreateDiningTableDto {
 export interface UpdateDiningTableDto {
   id?: number;
   tableLayoutId: number;
-  sectionName: string;
   number: number;
   numberOfSeats: number;
   x: number;
   y: number;
-  tableSize: number;
+  height:number;
+  width:number;
   shape: string;
   color: string;
   tableType: TableType;

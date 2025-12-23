@@ -9,10 +9,9 @@ namespace Market.Domain.Common.Enums
     public enum TableStatus
     {
         Free = 0,
-        Occupied = 1,
-        Reserved = 2,
-        Cleaning = 3,
-        OutOfService = 4
+        Seated = 1,
+        Serving = 2,
+        Paying = 3
     }
 
 }

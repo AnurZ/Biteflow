@@ -52,6 +52,14 @@ export class TableLayoutComponent implements OnInit {
     [TableStatus.OutOfService]: '#9E9E9E' // gray
   };
 
+  private getInputNumberValue(id: string, defaultValue = 0): number {
+    const el = document.getElementById(id) as HTMLInputElement | null;
+    if (!el) return defaultValue;
+    const value = parseInt(el.value.trim());
+    return isNaN(value) ? defaultValue : value;
+  }
+
+
 
   // -------------------------------------------------------
   // COLOR NORMALIZER - THE FIX
@@ -67,13 +75,12 @@ export class TableLayoutComponent implements OnInit {
 
     const table = this.selectedTable;
 
-    // Update basic table properties
-    table.sectionName   = (document.getElementById('inputSectionName') as HTMLInputElement).value;
-    table.number        = parseInt((document.getElementById('inputNumber') as HTMLInputElement).value || "0");
-    table.numberOfSeats = parseInt((document.getElementById('inputSeats') as HTMLInputElement).value || "0");
-    table.x             = parseInt((document.getElementById('inputX') as HTMLInputElement).value || "0");
-    table.y             = parseInt((document.getElementById('inputY') as HTMLInputElement).value || "0");
-    table.tableSize     = parseInt((document.getElementById('inputTableSize') as HTMLInputElement).value || "100");
+    table.number        = this.getInputNumberValue('inputNumber', 1);
+    table.numberOfSeats = this.getInputNumberValue('inputSeats', 1);
+    table.x             = this.getInputNumberValue('inputX', 0);
+    table.y             = this.getInputNumberValue('inputY', 0);
+    table.height        = this.getInputNumberValue('inputHeight', 50);
+    table.width         = this.getInputNumberValue('inputWidth', 50);
 
     // Update table status from dropdown
     const statusEl = document.getElementById('inputItem') as HTMLSelectElement | null;
@@ -97,7 +104,9 @@ export class TableLayoutComponent implements OnInit {
 
 
 
+
   async onAddTableClicked() {
+    console.log(this.isTableValid())
     if (!this.isTableValid()) return;
 
     const ok = await this.validateTableBeforeAction();
@@ -164,19 +173,20 @@ export class TableLayoutComponent implements OnInit {
 
 
 
-  newTableSize: number = 100;
-  readonly LAYOUT_USABLE_WIDTH = 640;
-  readonly LAYOUT_USABLE_HEIGHT = 582;
 
-  getMaxX(tableSize: number): number {
-    const wrapperWidth = 186 * tableSize / 220;
-    return Math.round(this.LAYOUT_USABLE_WIDTH - wrapperWidth);
+
+  getMaxX(): number {
+    const width = this.getInputNumberValue('inputWidth', 50);
+    return Math.round(640 - width);
   }
 
-  getMaxY(tableSize: number): number {
-    const wrapperHeight = 148 * tableSize / 220;
-    return Math.round(this.LAYOUT_USABLE_HEIGHT - wrapperHeight) - 2;
+  getMaxY(): number {
+    const height = this.getInputNumberValue('inputHeight', 50);
+    return Math.round(640 - height - 2);
   }
+
+
+
 
 
   async saveAllTables() {
@@ -278,12 +288,12 @@ export class TableLayoutComponent implements OnInit {
 
   setTableEditValues(table: UpdateDiningTableDto) {
     setTimeout(() => {
-      (document.getElementById('inputSectionName') as HTMLInputElement).value = table.sectionName || "";
       (document.getElementById('inputNumber') as HTMLInputElement).value = String(table.number);
       (document.getElementById('inputSeats') as HTMLInputElement).value = String(table.numberOfSeats);
       (document.getElementById('inputX') as HTMLInputElement).value = String(table.x);
       (document.getElementById('inputY') as HTMLInputElement).value = String(table.y);
-      (document.getElementById('inputTableSize') as HTMLInputElement).value = String(table.tableSize);
+      (document.getElementById('inputHeight') as HTMLInputElement).value = String(table.height);
+      (document.getElementById('inputWidth') as HTMLInputElement).value = String(table.width);
 
       // Set table status
       const statusEl = document.getElementById('inputItem') as HTMLSelectElement | null;
@@ -316,27 +326,28 @@ export class TableLayoutComponent implements OnInit {
 
   isTableEdited(): boolean {
     if (!this.selectedTable) return false;
-
     const table = this.selectedTable;
 
-    const sectionName = (document.getElementById('inputSectionName') as HTMLInputElement)?.value || '';
-    const number = parseInt((document.getElementById('inputNumber') as HTMLInputElement)?.value || '0');
-    const seats = parseInt((document.getElementById('inputSeats') as HTMLInputElement)?.value || '0');
-    const x = parseInt((document.getElementById('inputX') as HTMLInputElement)?.value || '0');
-    const y = parseInt((document.getElementById('inputY') as HTMLInputElement)?.value || '0');
-    const tableSize = parseInt((document.getElementById('inputTableSize') as HTMLInputElement)?.value || '0');
-    const color = (document.getElementById('inputColor') as HTMLInputElement)?.value || '';
+    const number = this.getInputNumberValue('inputNumber', table.number);
+    const seats = this.getInputNumberValue('inputSeats', table.numberOfSeats);
+    const x = this.getInputNumberValue('inputX', table.x);
+    const y = this.getInputNumberValue('inputY', table.y);
+    const width = this.getInputNumberValue('inputWidth', table.width);
+    const height = this.getInputNumberValue('inputHeight', table.height);
+
+    const color = (document.getElementById('inputColor') as HTMLInputElement)?.value || table.color;
 
     return (
-      sectionName !== table.sectionName ||
       number !== table.number ||
       seats !== table.numberOfSeats ||
       x !== table.x ||
       y !== table.y ||
-      tableSize !== table.tableSize ||
+      width !== table.width ||
+      height !== table.height ||
       color !== table.color
     );
   }
+
 
 
 
@@ -354,6 +365,7 @@ export class TableLayoutComponent implements OnInit {
 
     const tableEl = event.currentTarget as HTMLElement;
     tableEl.setPointerCapture(event.pointerId);
+
     const container = document.querySelector('.table-layout-full') as HTMLElement;
     const containerRect = container.getBoundingClientRect();
     const tableRect = tableEl.getBoundingClientRect();
@@ -377,6 +389,10 @@ export class TableLayoutComponent implements OnInit {
         isDragging = true;
         tableEl.classList.add('dragging');
         tableEl.setPointerCapture(e.pointerId);
+
+        // Apply drag visual effects
+        tableEl.style.transform = 'scale(0.95)';
+        tableEl.style.zIndex = '1000';
       }
 
       if (isDragging) {
@@ -395,12 +411,16 @@ export class TableLayoutComponent implements OnInit {
       if (isDragging) {
         tableEl.classList.remove('dragging');
 
+        // Reset visual effects
+        tableEl.style.transform = '';
+        tableEl.style.zIndex = '';
+
         const overlapping = this.diningTables.some(t => {
           if (t === table) return false;
-          const tableWidth = table.tableSize * 186 / 220 + 2;
-          const tableHeight = table.tableSize * 148 / 220;
-          const otherWidth = t.tableSize * 186 / 220 + 2;
-          const otherHeight = t.tableSize * 148 / 220;
+          const tableWidth = table.width;
+          const tableHeight = table.height;
+          const otherWidth = t.width;
+          const otherHeight = t.height;
           return !(table.x + tableWidth <= t.x || table.x >= t.x + otherWidth || table.y + tableHeight <= t.y || table.y >= t.y + otherHeight);
         });
 
@@ -420,6 +440,7 @@ export class TableLayoutComponent implements OnInit {
     tableEl.addEventListener('pointerup', upHandler);
   }
 
+
   TableStatusEnum = TableStatus;
 
   clearInputsAndSelection() {
@@ -431,7 +452,8 @@ export class TableLayoutComponent implements OnInit {
       'inputSeats',
       'inputX',
       'inputY',
-      'inputTableSize',
+      'inputWidth',
+      'inputHeight',
       'inputItem'
     ];
 
@@ -464,11 +486,10 @@ export class TableLayoutComponent implements OnInit {
 
 
   isTableValid(): boolean {
-    const sectionName = (document.getElementById('inputSectionName') as HTMLInputElement)?.value.trim();
     const numberStr = (document.getElementById('inputNumber') as HTMLInputElement)?.value.trim();
 
     // Only ensure required fields are filled
-    return !!sectionName && !!numberStr;
+    return !!numberStr;
   }
 
   duplicateApiCheck:boolean = false;
@@ -476,34 +497,35 @@ export class TableLayoutComponent implements OnInit {
   async validateTableBeforeAction(): Promise<boolean> {
     this.duplicateApiCheck = false;
 
-    const sectionName = (document.getElementById('inputSectionName') as HTMLInputElement)?.value.trim();
     const number = parseInt((document.getElementById('inputNumber') as HTMLInputElement)?.value.trim() || "0");
 
-    // 1. Load all tables from API - WAIT here
+    // 1. Load all tables from API
     const tables = await firstValueFrom(
       this.diningTableGetListEndpoint.handleAsync()
     );
 
-    // 2. Check duplicates in API
+    // 2. Check duplicates in API within the same layout
     const duplicateApi = tables.some(t =>
       !(this.selectedTable && t.id === this.selectedTable.id) &&
-      t.sectionName === sectionName &&
-      t.number === number && t.tableLayoutId !== this.selectedLayout?.id
+      t.number === number &&
+      t.tableLayoutId === this.selectedLayout?.id
     );
 
+    // 3. Check duplicates in local array within the same layout
     const duplicateLocal = this.diningTables.some(t =>
       !(this.selectedTable && t.id === this.selectedTable.id) &&
-      t.sectionName === sectionName &&
-      t.number === number
+      t.number === number &&
+      t.tableLayoutId === this.selectedLayout?.id
     );
 
     if (duplicateApi || duplicateLocal) {
-      alert(`A table with Section "${sectionName}" and Number "${number}" already exists!`);
+      alert(`A table with Number "${number}" already exists in this layout!`);
       return false;
     }
 
     return true;
   }
+
 
 
 
@@ -527,11 +549,6 @@ export class TableLayoutComponent implements OnInit {
     this.filteredTables = this.filteredTables
       .slice() // avoid mutating original array
       .sort((a, b) => {
-        // First sort by sectionName alphabetically
-        const sectionCompare = a.sectionName.localeCompare(b.sectionName);
-        if (sectionCompare !== 0) return sectionCompare;
-
-        // Then by number ascending
         return a.number - b.number;
       });
   }
@@ -598,12 +615,12 @@ export class TableLayoutComponent implements OnInit {
   spawnTable() {
     if (!this.selectedLayout) return;
 
-    const x = parseInt((document.getElementById('inputX') as HTMLInputElement).value || '0');
-    const y = parseInt((document.getElementById('inputY') as HTMLInputElement).value || '0');
-    const tableSize = parseInt((document.getElementById('inputTableSize') as HTMLInputElement).value || '120');
-    const number = parseInt((document.getElementById('inputNumber') as HTMLInputElement).value || '1');
-    const numberOfSeats = parseInt((document.getElementById('inputSeats') as HTMLInputElement).value || '1');
-    const sectionName = (document.getElementById('inputSectionName') as HTMLInputElement).value;
+    const x = this.getInputNumberValue('inputX', 0);
+    const y = this.getInputNumberValue('inputY', 0);
+    const width = this.getInputNumberValue('inputWidth', 50);
+    const height = this.getInputNumberValue('inputHeight', 50);
+    const number = this.getInputNumberValue('inputNumber', 1);
+    const numberOfSeats = this.getInputNumberValue('inputSeats', 1);
 
     // Get status from dropdown
     const statusSelect = document.getElementById('inputItem') as HTMLSelectElement | null;
@@ -615,24 +632,18 @@ export class TableLayoutComponent implements OnInit {
         case 'item3': status = TableStatus.Reserved; break;
         case 'item4': status = TableStatus.Cleaning; break;
         case 'item5': status = TableStatus.OutOfService; break;
-        default: status = TableStatus.Free;
       }
     }
 
-    // Determine color based on status
     const color = this.statusColors[status] || '#000000';
 
-    const tableWidth = tableSize * 186 / 220 + 2;
-    const tableHeight = tableSize * 148 / 220 + 4;
-
+    // Check overlapping
     const overlapping = this.diningTables.some(t => {
-      const otherWidth = t.tableSize * 186 / 220 + 2;
-      const otherHeight = t.tableSize * 148 / 220 + 2;
       return !(
-        x + tableWidth <= t.x ||
-        x >= t.x + otherWidth ||
-        y + tableHeight <= t.y ||
-        y >= t.y + otherHeight
+        x + width <= t.x ||
+        x >= t.x + t.width ||
+        y + height <= t.y ||
+        y >= t.y + t.height
       );
     });
 
@@ -644,22 +655,20 @@ export class TableLayoutComponent implements OnInit {
     const dto: UpdateDiningTableDto = {
       id: 0,
       tableLayoutId: this.selectedLayout.id,
-      x,
-      y,
-      tableSize,
+      x, y, width, height,
       color,
-      shape: 'square',
+      shape: 'rectangle',
       tableType: 1,
       status,
       number,
       numberOfSeats,
-      sectionName,
       isActive: true,
       lastUsedAt: new Date()
     };
 
     this.diningTables.push(dto);
   }
+
 
 
 
@@ -732,9 +741,8 @@ export class TableLayoutComponent implements OnInit {
       const search = this.textFilter.toLowerCase();
 
       filtered = filtered.filter(t => {
-        const sectionMatch = t.sectionName.toLowerCase().includes(search);
         const numberMatch = t.number.toString().includes(search);
-        return sectionMatch || numberMatch;
+        return numberMatch;
       });
     }
 

@@ -27,26 +27,34 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            // Apply updates - basic info
-            table.SectionName = request.SectionName.Trim();
+            // Check for duplicate table number in the same layout
+            bool numberExists = await _db.DiningTables
+                .AnyAsync(t => t.TableLayoutId == request.TableLayoutId
+                               && t.Number == request.Number
+                               && t.Id != request.Id, cancellationToken);
+
+            if (numberExists)
+                throw new ArgumentException($"A table with number {request.Number} already exists in this layout.");
+
+            // Update table properties
             table.Number = request.Number;
             table.NumberOfSeats = request.NumberOfSeats;
             table.IsActive = request.IsActive;
 
-            // Apply layout/visual info
             table.TableLayoutId = request.TableLayoutId;
             table.X = request.X;
             table.Y = request.Y;
-            table.TableSize = request.TableSize;
+            table.Height = request.Height;
+            table.Width = request.Width;
             table.Shape = request.Shape.Trim();
             table.Color = request.Color;
 
-            // Apply status info
             table.TableType = request.TableType;
             table.Status = request.Status;
             table.LastUsedAt = request.LastUsedAt;
 
             await _db.SaveChangesAsync(cancellationToken);
         }
+
     }
 }

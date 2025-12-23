@@ -10,3 +10,37 @@ body { font-family: Roboto, "Helvetica Neue", sans-serif; }
 * {
   outline: none;
 }
+
+.app-snackbar {
+  letter-spacing: 0.2px;
+}
+
+.app-snackbar .mdc-snackbar__surface {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(31, 41, 55, 0.95) 100%);
+  color: #f8fafc;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-snackbar .mdc-snackbar__label {
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.app-snackbar .mdc-button .mdc-button__label {
+  color: #c7d2fe;
+  font-weight: 700;
+}
+
+.app-snackbar-success {
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.app-snackbar-info {
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.app-snackbar-warn {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+}

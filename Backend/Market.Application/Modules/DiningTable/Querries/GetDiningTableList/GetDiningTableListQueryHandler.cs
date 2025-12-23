@@ -20,10 +20,12 @@ namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
         {
             var query = _db.DiningTables.AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(request.SectionName))
+            query = query.Include(t => t.TableLayout);
+
+            if (!string.IsNullOrWhiteSpace(request.TableLayoutName))
             {
                 query = query.Where(t =>
-                    EF.Functions.Like(t.SectionName, request.SectionName + "%"));
+                    EF.Functions.Like(t.TableLayout.Name, request.TableLayoutName + "%"));
             }
 
 
@@ -47,7 +49,6 @@ namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
                 {
                     Id = t.Id,
                     TableLayoutId = t.TableLayoutId,
-                    SectionName = t.SectionName,
                     Number = t.Number,
                     NumberOfSeats = t.NumberOfSeats,
                     TableType = t.TableType,
@@ -55,7 +56,8 @@ namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
                     IsActive = t.IsActive,
                     X = t.X,
                     Y = t.Y,
-                    TableSize = t.TableSize,
+                    Height = t.Height,
+                    Width = t.Width,
                     Shape = t.Shape,
                     Color = t.Color,
                     LastUsedAt = t.LastUsedAt

@@ -160,6 +160,11 @@ namespace Market.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Height")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(50);
+
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -180,11 +185,6 @@ namespace Market.Infrastructure.Migrations
                     b.Property<int>("NumberOfSeats")
                         .HasColumnType("int");
 
-                    b.Property<string>("SectionName")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("Shape")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -200,16 +200,16 @@ namespace Market.Infrastructure.Migrations
                     b.Property<int>("TableLayoutId")
                         .HasColumnType("int");
 
-                    b.Property<int>("TableSize")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(100);
-
                     b.Property<int>("TableType")
                         .HasColumnType("int");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Width")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(50);
 
                     b.Property<int>("X")
                         .HasColumnType("int");
@@ -730,6 +730,18 @@ namespace Market.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1024)
+                        .HasColumnType("nvarchar(1024)");
+
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int?>("TableNumber")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
 
@@ -737,7 +749,54 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasIndex("DiningTableId");
 
-                    b.ToTable("Order");
+                    b.ToTable("Orders", (string)null);
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Orders.OrderItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MealId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MealId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Staff.EmployeeProfile", b =>
@@ -1118,10 +1177,27 @@ namespace Market.Infrastructure.Migrations
                 {
                     b.HasOne("Market.Domain.Entities.DiningTables.DiningTable", "DiningTable")
                         .WithMany("Orders")
-                        .HasForeignKey("DiningTableId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("DiningTableId");
 
                     b.Navigation("DiningTable");
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Orders.OrderItem", b =>
+                {
+                    b.HasOne("Market.Domain.Entities.Meal.Meal", "Meal")
+                        .WithMany()
+                        .HasForeignKey("MealId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Market.Domain.Entities.Orders.Order", "Order")
+                        .WithMany("Items")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Meal");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.Staff.EmployeeProfile", b =>
@@ -1194,6 +1270,11 @@ namespace Market.Infrastructure.Migrations
             modelBuilder.Entity("Market.Domain.Entities.Meal.Meal", b =>
                 {
                     b.Navigation("Ingredients");
+                });
+
+            modelBuilder.Entity("Market.Domain.Entities.Orders.Order", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Market.Domain.Entities.TableLayout.TableLayout", b =>

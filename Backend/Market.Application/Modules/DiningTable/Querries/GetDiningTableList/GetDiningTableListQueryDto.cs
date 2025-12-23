@@ -11,7 +11,7 @@ using System.Threading.Tasks;
     {
         public sealed class GetDiningTableListQuery : IRequest<List<GetDiningTableListQueryDto>>
         {
-            public string? SectionName { get; set; }
+            public string? TableLayoutName { get; set; }
             public TableStatus? Status { get; set; }
             public int? MinimumSeats { get; set; }
             public int? TableLayoutId { get; set; } // optional filter by layout
@@ -23,7 +23,6 @@ using System.Threading.Tasks;
         {
             public int Id { get; set; }
             public int TableLayoutId { get; set; } // new property
-            public string SectionName { get; set; }
             public int Number { get; set; }
             public int NumberOfSeats { get; set; }
             public TableTypes TableType { get; set; }
@@ -33,7 +32,8 @@ using System.Threading.Tasks;
             // Position and visual properties
             public int X { get; set; }
             public int Y { get; set; }
-            public int TableSize { get; set; }
+            public int Height { get; set; }
+            public int Width { get; set; }
             public string Shape { get; set; }
             public string Color { get; set; }
 

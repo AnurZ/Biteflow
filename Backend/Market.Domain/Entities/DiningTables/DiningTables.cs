@@ -12,7 +12,6 @@ namespace Market.Domain.Entities.DiningTables
 {
     public class DiningTable : BaseEntity
     {
-        public string SectionName { get; set; }
         public int Number { get; set; }
         public int NumberOfSeats { get; set; }
         public bool IsActive { get; set; }
@@ -21,7 +20,8 @@ namespace Market.Domain.Entities.DiningTables
         public TableLayout.TableLayout TableLayout { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public int TableSize { get; set; } = 100; // default size
+        public int Width { get; set; }
+        public int Height { get; set; }
         public string Shape { get; set; } = "rectangle";
         public string Color { get; set; } = "#00ff00";
         public TableTypes TableType { get; set; }
