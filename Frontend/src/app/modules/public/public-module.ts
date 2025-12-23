@@ -37,7 +37,7 @@ import { PublicRoutingModule } from './public-routing.module';
     MatButtonModule,
     MatIconModule,
     MatSnackBarModule,
-    TenantActivationComponent,
+    TenantActivationComponent
   ],
   exports: [
     Header
