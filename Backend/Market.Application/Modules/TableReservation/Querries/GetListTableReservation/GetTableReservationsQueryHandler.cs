@@ -27,35 +27,49 @@ namespace Market.Application.Modules.TableReservation.Queries.GetTableReservatio
             if (request.Status.HasValue)
                 query = query.Where(r => r.Status == request.Status.Value);
 
-            // Filter overlapping reservations (handle nullable ReservationEnd)
             if (request.RequestedStart.HasValue && request.RequestedEnd.HasValue)
             {
                 var start = request.RequestedStart.Value;
                 var end = request.RequestedEnd.Value;
 
+                Console.WriteLine(start);
+                Console.WriteLine(end);
                 query = query.Where(r =>
                     r.ReservationEnd.HasValue
                         ? r.ReservationStart < end && r.ReservationEnd > start
                         : r.ReservationStart < end);
             }
 
+
+
+
+
+
             var reservations = await query
                 .Select(r => new GetTableReservationsQueryDto
                 {
                     Id = r.Id,
                     DiningTableId = r.DiningTableId,
+                    DiningTableNumber = r.DiningTable.Number,
                     ApplicationUserId = r.ApplicationUserId,
+
                     FirstName = r.FirstName,
                     LastName = r.LastName,
                     Email = r.Email,
                     PhoneNumber = r.PhoneNumber,
+
                     NumberOfGuests = r.NumberOfGuests,
                     Notes = r.Notes,
+
                     ReservationStart = r.ReservationStart,
                     ReservationEnd = r.ReservationEnd,
-                    Status = r.Status
+                    Status = r.Status,
+
+                    TableLayoutName = r.DiningTable.TableLayout.Name,
+                    TableLayoutId = r.DiningTable.TableLayoutId
                 })
                 .ToListAsync(cancellationToken);
+
 
             return reservations;
         }

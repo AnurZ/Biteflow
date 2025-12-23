@@ -7,7 +7,7 @@ import { MyConfig } from '../../my-config';
 
 @Injectable({ providedIn: 'root' })
 export class TableLayoutGetListEndpoint implements BaseEndpointAsync<void, GetTableLayoutListDto[]> {
-  private base = `${MyConfig.api_address}/table-layout`; // adjust API path
+  private base = `${MyConfig.api_address}/TableLayout`; // adjust API path
 
   constructor(private http: HttpClient) {}
 
