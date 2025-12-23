@@ -27,6 +27,8 @@ import { TableReservation } from './modules/table-reservation/table-reservation'
 import { TableReservationFormDialog } from './modules/table-reservation/table-reservation-form-dialog/table-reservation-form-dialog';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatMenu, MatMenuTrigger} from '@angular/material/menu';
+import { WaiterModule } from './modules/waiter/waiter-module';
+import { KitchenModule } from './modules/kitchen/kitchen-module';
 
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
@@ -45,6 +47,8 @@ import {MatMenu, MatMenuTrigger} from '@angular/material/menu';
     }),
     SharedModule,
     PublicModule,
+    WaiterModule,
+    KitchenModule,
     MatCheckbox,
     MatTableModule,
     ColorPickerDirective,
