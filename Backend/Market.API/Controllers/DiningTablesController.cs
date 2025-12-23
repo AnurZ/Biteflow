@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Market.Domain.Common.Enums;
 using Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle;
+using Market.Application.Modules.DiningTable.Querries.GetDiningTableTLIDbyTableID;
+using Market.Application.Modules.DiningTable.Querries.GetDiningTableStatus;
 
 namespace Market.API.Controllers
 {
@@ -78,6 +80,30 @@ namespace Market.API.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+
+        [HttpGet("dining-table/{id}/table-layout-id")]
+        public async Task<ActionResult<GetDiningTableTableLayoutIdByIdDto>> GetTableLayoutId(int id)
+        {
+            var result = await _mediator.Send(new GetDiningTableTableLayoutIdByIdQuery
+            {
+                DiningTableId = id
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("status")]
+        public async Task<IActionResult> GetAll([FromQuery] int? tableLayoutId)
+        {
+            var query = new GetDiningTablesStatusQuery
+            {
+                TableLayoutId = tableLayoutId
+            };
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
 
     }
 }

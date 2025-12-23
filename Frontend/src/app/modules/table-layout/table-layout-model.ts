@@ -77,6 +77,12 @@ export interface DiningTableFilter {
   status?: string;  // if you want
 }
 
+export interface DiningTableStatusDto {
+  id: number;
+  tableLayoutId: number;
+  status: TableStatus; // static table status
+}
+
 
 export enum TableType {
   "Low Table" = 1,

@@ -1,0 +1,696 @@
+.card {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  height: 790px;
+  flex-direction: column;
+  padding-bottom: 20px;
+}
+
+/* --- Header --- */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 10px;
+}
+
+.card-header .title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #212529;
+}
+
+.reservations-header {
+  display: flex;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0; /* IMPORTANT for flex scrolling */
+}
+
+
+.tables-and-layouts-container {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+
+}
+
+
+
+.no-layouts {
+  padding: 1rem;
+  text-align: center;
+  color: #777;
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.layouts-container {
+  justify-content: center;
+  display: flex;
+  gap: 1rem;
+  white-space: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+}
+
+/* hide scrollbar completely */
+.layouts-container::-webkit-scrollbar {
+  display: none;
+}
+
+
+.layouts-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.layouts-wrapper {
+  max-height: 90px;        /* adjust as needed */
+  overflow-y: auto;        /* ✅ scroll */
+  margin-bottom: 10px;
+  flex: 4 1 0; /* grow 1.25x, shrink, base width 0 */
+  min-width: 0;
+}
+
+.layouts-wrapper-with-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.layouts-viewport {
+  flex: 1;
+  overflow: hidden;   /* 🔑 hides scrollbar */
+}
+
+.layout-scroll-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #ddd;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.layout-scroll-btn:hover {
+  background: #f0f0f0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.layout-scroll-btn mat-icon {
+  font-size: 24px;
+  color: #a54ae2;
+  display: flex;
+  justify-content: center;
+}
+
+
+
+
+.layout-item {
+  background: #f6f6f6;
+  border: 1px solid #ddd;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.15s ease;
+}
+
+.layout-progress {
+  width: 100%;
+  height: 6px;
+  background: #c5c5c5;
+  border-radius: 3px;
+  margin-top: 6px;
+}
+
+.layout-name{
+  text-align: center;
+}
+
+.layout-progress-fill {
+  height: 100%;
+  background: #a900a9; /* your pink theme */
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+
+.layout-item:hover {
+  background: #ececec;
+}
+
+/* Selected layout highlight */
+.layout-item.selected {
+  border-color: #c88ed1;           /* softer pink border */
+  background: #f9e6f9;             /* very light pink background */
+  font-weight: 600;
+  box-shadow: 0 0 5px rgba(200, 142, 209, 0.25);  /* softer pink shadow */
+}
+
+
+
+.reservation-item {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+    padding: 10px 14px;
+    gap: 12px;
+    margin-bottom: 8px;
+
+
+  display: flex;
+  align-items: stretch;
+  align-items: center;
+  justify-content: space-between;
+           /* spacing instead of space-around */
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: 0.15s ease;
+}
+
+
+.reservation-item-selected-table{
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  margin-bottom: 10px;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+
+.reservation-item:hover {
+  background: #f0f0f0;
+  cursor: pointer;
+}
+
+.reservation-item-text {
+  min-width: 0; /* REQUIRED so flexbox can shrink text */
+}
+
+.reservation-date-and-time{
+  display: flex;
+  gap: 20px;
+}
+
+.reservation-item.reservation-past {
+  background: #f1f3f5;
+  border-color: #cfd4da;
+  opacity: 0.75;
+}
+
+.reservation-item.reservation-past:hover {
+  background: #e9ecef;
+}
+
+.reservation-item.reservation-past .reservation-item-text {
+  color: #6c757d;
+}
+
+.reservation-item.reservation-past .reservation-item-edit,
+.reservation-item.reservation-past .reservation-item-remove {
+  opacity: 0.6;
+}
+
+
+.no-reservations {
+  font-style: italic;
+  color: #777;
+  padding: 10px;
+  text-align: center;
+}
+
+.reservation-item-commands{
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+  gap: 5px;
+}
+
+.reservation-item-edit{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+  color: white;
+  background: green;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px #ddd solid;
+}
+
+.reservation-item-edit:hover{
+  background: #046e04;
+}
+
+.reservation-item-remove{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+  color: white;
+  background: #da0404;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px #ddd solid;
+}
+
+.reservation-item-remove:hover{
+  background: #c30a07;
+}
+
+.list-reservations-container{
+  width: 27%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: auto;
+  border: 2px solid #ddd;
+  padding: 20px;
+  height: 696px;
+  border-radius: 10px;
+}
+
+.table-layout-full{
+  flex: 1;
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 2px solid #ccc;
+  overflow: auto;
+  max-height: 600px;
+
+  position: relative;
+  max-width: 800px;
+  min-width: 800px;
+  width: 800px;
+  height: 600px;
+  overflow: hidden;
+}
+
+.table-rectangle-wrapper {
+  position: absolute;
+}
+
+.table-rectangle {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+
+  /* Make text unselectable */
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+}
+
+.table-rectangle.has-reservation::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: #42a5f5; /* soft blue indicator */
+  border: 1px solid white;
+  box-shadow: 0 0 2px rgba(0,0,0,0.3);
+}
+
+
+/* Highlight selected table */
+/* Highlight selected table */
+.table-rectangle.selected {
+  border: 3px solid #fff;  /* dark border */
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.2); /* subtle inner depth */
+  font-weight: 700;
+  color: #fff;
+}
+
+
+
+/* Hover for all tables */
+.table-rectangle:hover {
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+
+/* Slightly stronger hover for selected table */
+.table-rectangle.selected:hover {
+  box-shadow: 0 0 12px rgba(255, 152, 0, 0.7);
+}
+
+
+
+
+
+
+/* Button inside menu styled like your cards */
+.table-menu {
+  width: 100%;                /* full panel width */
+  padding: 10px 14px;         /* your preferred padding */
+  margin: 0;                  /* no extra margin from panel */
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #212529;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.table-menu:hover {
+  background: #ececec;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  cursor: pointer;
+}
+
+
+/* Icon spacing */
+.table-menu mat-icon {
+  color: #4a90e2; /* consistent accent color */
+}
+
+.table-rectangle-wrapper {
+  position: absolute;
+}
+
+/* Center button below table */
+.table-create-button-wrapper {
+  position: absolute;
+  top: 100%;          /* right below the table */
+  left: 50%;          /* center horizontally */
+  transform: translateX(-50%);
+  margin-top: 6px;    /* spacing */
+  z-index: 10;
+}
+
+/* Button styling */
+.table-create-button {
+  background: #a900a9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.table-create-button:hover {
+  background: #7e146e;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.table-create-button mat-icon {
+  font-size: 16px;
+  color: #fff;
+}
+
+.reservations-count {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.date-time-filters {
+  display: flex;
+  width: 100%;
+  gap: 1rem; /* space between items */
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+/* Date field */
+.filter-date {
+  flex: 1.5 1 0;
+  min-width: 0;
+}
+
+/* Time pickers */
+.time-picker {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.checkboxes{
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 4px;
+}
+
+.layout-and-selected-table-reservations-container{
+  display: flex;
+  justify-content: space-between;
+  border-top: 2px solid #e9ecef;
+  padding-top: 10px;
+}
+
+.selected-table-reservations {
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  width: 32%;
+
+  position: relative;
+  overflow: hidden;   /* 🔑 important */
+}
+
+
+.selected-table-reservations-only {
+  padding: 20px;
+  height: 575px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+
+
+.add-table-button {
+  width: 100%;
+  padding: 10px 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+
+  background: #a900a9;      /* same pink */
+  color: #fff;
+
+  border: none;
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.add-table-button:hover {
+  background: #7e146e;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.add-table-button mat-icon {
+  font-size: 20px;
+  color: #fff;
+}
+
+.add-table-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.reservation-actions{
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.reservations-container{
+
+}
+
+.search{
+  margin-bottom: 15px;
+}
+
+:host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+  display: none !important;
+}
+
+.button-space{
+  position: absolute;
+  width: 90%;
+  display: flex;
+  bottom: 10px;
+}
+
+.reservation-name {
+  font-weight: 700;
+  font-size: 17px;
+  margin-bottom: 6px;
+}
+
+.reservation-table {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.reservation-date,
+.reservation-time {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.reservation-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 13.5px;
+  color: #666;
+}
+
+.reservation-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  margin-top: 10px;
+}
+
+.reservation-notes span {
+  display: inline;
+}
+
+
+
+
+.reservation-notes mat-icon,
+.reservation-date mat-icon,
+.reservation-time mat-icon {
+  color: #a900a9; /* your pink accent */
+  overflow: clip;
+}
+
+.commands-container {
+  flex: 0 0 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.reservation-status {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.reservation-status mat-form-field {
+  width: 100%;
+  min-width: 0; /* critical for Material + flex */
+}
+
+.status-and-guests{
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+  gap: 25px;
+}
+
+/* Container */
+.reservation-status-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 180px;
+}
+
+/* Label */
+.status-label {
+  font-size: 16px;
+  color: #777;
+  margin-right: 0px;
+}
+
+/* Shrink the form field */
+:host ::ng-deep .reservation-status-inline .mat-mdc-form-field {
+  font-size: 11px;
+}
+
+/* Kill Material height */
+:host ::ng-deep .reservation-status-inline .mat-mdc-form-field-infix {
+  min-height: 26px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* Shrink the select trigger */
+:host ::ng-deep .reservation-status-inline .mat-mdc-select-trigger {
+  height: 26px;
+}
+
+/* Center text vertically */
+:host ::ng-deep .reservation-status-inline .mat-mdc-select-value {
+  line-height: 22px;
+}
+
+/* Optional: remove extra bottom spacing */
+:host ::ng-deep .reservation-status-inline .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+

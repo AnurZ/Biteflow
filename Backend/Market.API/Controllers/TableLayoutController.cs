@@ -6,6 +6,7 @@ using Market.Application.Modules.TableLayout.Commands.CreateTableLayout;
 using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
 using Market.Application.Modules.TableLayout.Commands.DeleteTableLayout;
 using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
+using Market.Application.Modules.TableLayout.Queries.TableLayoutGetNameById;
 
 namespace Market.API.Controllers
 {
@@ -27,6 +28,13 @@ namespace Market.API.Controllers
             var layouts = await _mediator.Send(query);
             return Ok(layouts);
         }
+
+        [HttpGet("{id:int}/name")]
+        public async Task<TableLayoutGetNameByIdDto> GetNameById(int id)
+        {
+            return await _mediator.Send(new TableLayoutGetNameByIdQuery(id));
+        }
+
 
         // POST: api/TableLayout
         [HttpPost]

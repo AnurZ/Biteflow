@@ -23,8 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Modules\DiningTable\Querries\GetDiningTableById\" />
-    <Folder Include="Modules\DiningTable\Querries\GetDiningTableBySectionList\" />
     <Folder Include="Modules\DiningTable\Querries\GetDiningTableByStatusList\" />
     <Folder Include="Modules\TableReservation\Querries\GetByIdTableReservation\" />
     <Folder Include="Modules\TableReservation\Querries\GetByTableIdTableReservation\" />
