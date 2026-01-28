@@ -1,3 +1,5 @@
+using Market.API.Hubs;
+using Market.Application.Abstractions;
 using Market.Application.Modules.Orders.Commands.CreateOrder;
 using Market.Application.Modules.Orders.Commands.UpdateOrderStatus;
 using Market.Application.Modules.Orders.Queries.GetOrders;
@@ -6,6 +8,8 @@ using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.API.Controllers
 {
@@ -14,10 +18,14 @@ namespace Market.API.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly ISender _sender;
+        private readonly IAppDbContext _db;
+        private readonly IHubContext<OrdersHub> _hub;
 
-        public OrdersController(ISender sender)
+        public OrdersController(ISender sender, IAppDbContext db, IHubContext<OrdersHub> hub)
         {
             _sender = sender;
+            _db = db;
+            _hub = hub;
         }
 
         [HttpGet]
@@ -37,6 +45,25 @@ namespace Market.API.Controllers
         public async Task<ActionResult<int>> Create([FromBody] CreateOrderCommand command, CancellationToken ct)
         {
             var id = await _sender.Send(command, ct);
+            var order = await _db.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id, ct);
+
+            if (order != null)
+            {
+                var payload = new
+                {
+                    orderId = order.Id,
+                    tableNumber = order.TableNumber,
+                    note = order.Notes,
+                    createdAt = order.CreatedAtUtc,
+                    status = order.Status.ToString()
+                };
+
+                await _hub.Clients
+                    .Group(OrdersHubGroups.Kitchen(order.TenantId))
+                    .SendAsync(OrdersHubEvents.OrderCreated, payload, ct);
+            }
             return Created(string.Empty, new { id });
         }
 
@@ -46,6 +73,26 @@ namespace Market.API.Controllers
         {
             command.Id = id;
             await _sender.Send(command, ct);
+
+            var order = await _db.Orders
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id, ct);
+
+            if (order != null)
+            {
+                var payload = new
+                {
+                    orderId = order.Id,
+                    status = order.Status.ToString()
+                };
+
+                var waiterGroup = OrdersHubGroups.Waiter(order.TenantId);
+                var kitchenGroup = OrdersHubGroups.Kitchen(order.TenantId);
+
+                await _hub.Clients
+                    .Groups(waiterGroup, kitchenGroup)
+                    .SendAsync(OrdersHubEvents.OrderStatusChanged, payload, ct);
+            }
             return NoContent();
         }
     }

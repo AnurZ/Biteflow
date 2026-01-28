@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Http;
 using System.Linq;
 using Market.Domain.Entities.BlobStorageSettings;
+using Market.API.Hubs;
 
 public partial class Program
 {
@@ -212,6 +213,7 @@ public partial class Program
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHub<OrdersHub>("/hubs/orders");
 
             // --- Wrap database initialization ---
             try
