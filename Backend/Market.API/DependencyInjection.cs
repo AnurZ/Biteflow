@@ -37,6 +37,8 @@ public static class DependencyInjection
                 };
             });
 
+        services.AddSignalR();
+
         // Typed options + validation on startup
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
