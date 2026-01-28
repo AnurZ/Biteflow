@@ -1,9 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import {
   CreateOrderRequest,
   OrderDto,
   OrdersService
 } from '../../services/orders/orders.service';
+import { MyConfig } from '../../my-config';
+import { RealtimeHubService } from '../../services/realtime/realtime-hub.service';
+import { OrderStatusChangedEvent } from '../../services/realtime/orders-realtime.model';
 import { MealsService } from '../meals/meals-service';
 import { MealDto, MealCategory } from '../meals/meals-model';
 import { MealCategoryGetEndpoint } from '../../endpoints/meal-category-crud-endpoint/meal-category-get-endpoint';
@@ -86,6 +90,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
   billingOrder?: OrderDto;
   billTipRate = 0.1;
   tableStatusOverrides: Record<number, TableStatus> = {};
+  private realtimeSub = new Subscription();
 
   selectedTableId: number = this.sections[0].tables[0].id;
   selectedCategoryId?: number;
@@ -96,7 +101,8 @@ export class WaiterComponent implements OnInit, OnDestroy {
     private readonly ordersService: OrdersService,
     private readonly mealsService: MealsService,
     private readonly mealCategoryEndpoint: MealCategoryGetEndpoint,
-    private readonly snack: MatSnackBar
+    private readonly snack: MatSnackBar,
+    private readonly realtime: RealtimeHubService
   ) {}
 
   private showSnack(message: string, type: 'success' | 'info' | 'warn' = 'info'): void {
@@ -110,12 +116,19 @@ export class WaiterComponent implements OnInit, OnDestroy {
     this.loadOrders();
     this.loadMenu();
     this.pollHandle = setInterval(() => this.loadOrders(), 10000);
+    void this.realtime.start(MyConfig.orders_hub);
+    this.realtimeSub.add(
+      this.realtime.on<OrderStatusChangedEvent>('OrderStatusChanged').subscribe(() => {
+        this.loadOrders();
+      })
+    );
   }
 
   ngOnDestroy(): void {
     if (this.pollHandle) {
       clearInterval(this.pollHandle);
     }
+    this.realtimeSub.unsubscribe();
   }
 
   loadOrders(): void {

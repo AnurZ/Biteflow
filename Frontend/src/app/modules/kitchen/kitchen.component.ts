@@ -1,6 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Subscription } from 'rxjs';
+import { MyConfig } from '../../my-config';
 import { OrderDto, OrderStatus, OrdersService } from '../../services/orders/orders.service';
+import { RealtimeHubService } from '../../services/realtime/realtime-hub.service';
+import { OrderCreatedEvent, OrderStatusChangedEvent } from '../../services/realtime/orders-realtime.model';
 
 type KitchenStage = OrderStatus;
 
@@ -19,10 +23,11 @@ interface KitchenColumn {
   styleUrl: './kitchen.component.css',
   standalone: false
 })
-export class KitchenComponent implements OnInit {
+export class KitchenComponent implements OnInit, OnDestroy {
   orders: OrderDto[] = [];
   loading = false;
   updatingId?: number;
+  private realtimeSub = new Subscription();
 
   columnsMeta: Omit<KitchenColumn, 'orders'>[] = [
     { key: 'New', title: 'New Orders', icon: '📦', cta: 'Start Cooking', next: 'Cooking' },
@@ -32,7 +37,8 @@ export class KitchenComponent implements OnInit {
 
   constructor(
     private readonly ordersService: OrdersService,
-    private readonly snack: MatSnackBar
+    private readonly snack: MatSnackBar,
+    private readonly realtime: RealtimeHubService
   ) {}
 
   private showSnack(message: string, type: 'success' | 'info' | 'warn' = 'info'): void {
@@ -44,6 +50,21 @@ export class KitchenComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadOrders();
+    void this.realtime.start(MyConfig.orders_hub);
+    this.realtimeSub.add(
+      this.realtime.on<OrderCreatedEvent>('OrderCreated').subscribe(() => {
+        this.loadOrders();
+      })
+    );
+    this.realtimeSub.add(
+      this.realtime.on<OrderStatusChangedEvent>('OrderStatusChanged').subscribe(() => {
+        this.loadOrders();
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.realtimeSub.unsubscribe();
   }
 
   get board(): KitchenColumn[] {

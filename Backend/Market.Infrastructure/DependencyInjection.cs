@@ -164,6 +164,12 @@ public static class DependencyInjection
                 {
                     var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILoggerFactory>()
                         .CreateLogger("JwtAuth");
+                    var accessToken = ctx.Request.Query["access_token"].ToString();
+                    var path = ctx.HttpContext.Request.Path;
+                    if (!string.IsNullOrWhiteSpace(accessToken) && path.StartsWithSegments("/hubs/orders"))
+                    {
+                        ctx.Token = accessToken;
+                    }
                     var hasAuth = ctx.HttpContext.Request.Headers.ContainsKey("Authorization");
                     logger.LogInformation("JWT message received. HasAuthHeader={HasAuth}", hasAuth);
                     return Task.CompletedTask;
