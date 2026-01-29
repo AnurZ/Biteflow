@@ -22,6 +22,38 @@
 
   <div class="right">
     @if (authService.isLoggedIn()) {
+      <div class="notif-wrapper">
+        <button class="notif-btn" (click)="toggleNotifications()" aria-label="Notifications">
+        <mat-icon>notifications</mat-icon>
+        <span class="notif-badge" *ngIf="(unreadCount$ | async) as unreadCount" [class.hidden]="unreadCount === 0">
+          {{ unreadCount }}
+        </span>
+        </button>
+        <div class="notif-panel" *ngIf="panelOpen">
+          <div class="notif-panel-header">
+            <div>
+              <div class="notif-title">Notifications</div>
+              <div class="notif-subtitle">
+                {{ (unreadCount$ | async) ?? 0 }} unread
+              </div>
+            </div>
+            <button mat-button (click)="markAllRead()">Mark all read</button>
+          </div>
+          <div class="notif-panel-list" *ngIf="(notifications$ | async) as items">
+            <button
+              class="notif-item"
+              *ngFor="let item of items"
+              [class.unread]="!item.readAtUtc"
+              (click)="openNotification(item)"
+            >
+              <div class="notif-item-title">{{ item.title }}</div>
+              <div class="notif-item-message">{{ item.message }}</div>
+              <div class="notif-item-meta">{{ item.createdAtUtc | date: 'short' }}</div>
+            </button>
+            <div class="notif-empty" *ngIf="!items.length">No notifications yet.</div>
+          </div>
+        </div>
+      </div>
       <span>{{ authService.getDisplayName() }}</span>
       <button mat-stroked-button color="warn" routerLink="/auth/logout">Logout</button>
     } @else if (!isOnLoginPage()) {

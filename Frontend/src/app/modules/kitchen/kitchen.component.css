@@ -161,6 +161,15 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
 }
 
+.column.readyforpickup .cta {
+  cursor: default;
+}
+
+.column.readyforpickup .cta:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .cta.new {
   background: linear-gradient(90deg, #f97316, #ef4444);
 }
