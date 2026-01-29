@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using Market.Application.Abstractions;
-using Market.Shared.Constants;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -13,10 +13,76 @@ namespace Market.API.Hubs
     {
         public const string OrderCreated = "OrderCreated";
         public const string OrderStatusChanged = "OrderStatusChanged";
+        public const string NotificationCreated = "NotificationCreated";
+        public const string NotificationCleared = "NotificationCleared";
     }
 
     public static class OrdersHubGroups
     {
+        public static string User(string userId, string? tenantId)
+        {
+            var trimmed = (userId ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return string.Empty;
+            }
+
+            if (!IsTenantScoped(tenantId))
+            {
+                return $"user:{trimmed}";
+            }
+
+            return $"tenant:{tenantId}:user:{trimmed}";
+        }
+
+        public static string User(string userId, Guid tenantId)
+        {
+            var trimmed = (userId ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return string.Empty;
+            }
+
+            if (!IsTenantScoped(tenantId))
+            {
+                return $"user:{trimmed}";
+            }
+
+            return $"tenant:{tenantId}:user:{trimmed}";
+        }
+
+        public static string Role(string role, string? tenantId)
+        {
+            var trimmed = (role ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return string.Empty;
+            }
+
+            if (!IsTenantScoped(tenantId))
+            {
+                return $"role:{trimmed}";
+            }
+
+            return $"tenant:{tenantId}:role:{trimmed}";
+        }
+
+        public static string Role(string role, Guid tenantId)
+        {
+            var trimmed = (role ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return string.Empty;
+            }
+
+            if (!IsTenantScoped(tenantId))
+            {
+                return $"role:{trimmed}";
+            }
+
+            return $"tenant:{tenantId}:role:{trimmed}";
+        }
+
         public static string Kitchen(string? tenantId)
         {
             if (string.IsNullOrWhiteSpace(tenantId))
@@ -68,6 +134,23 @@ namespace Market.API.Hubs
 
             return $"tenant:{tenantId}:waiter";
         }
+
+        private static bool IsTenantScoped(string? tenantId)
+        {
+            if (string.IsNullOrWhiteSpace(tenantId))
+            {
+                return false;
+            }
+
+            return Guid.TryParse(tenantId, out var parsed) &&
+                parsed != Guid.Empty &&
+                parsed != SeedConstants.DefaultTenantId;
+        }
+
+        private static bool IsTenantScoped(Guid tenantId)
+        {
+            return tenantId != Guid.Empty && tenantId != SeedConstants.DefaultTenantId;
+        }
     }
 
     [Authorize(Policy = PolicyNames.StaffMember)]
@@ -85,7 +168,54 @@ namespace Market.API.Hubs
         public override async Task OnConnectedAsync()
         {
             var tenantId = Context.User?.FindFirst("tenant_id")?.Value;
-            var groups = await ResolveGroupsAsync(Context.User, tenantId, Context.ConnectionAborted);
+            var groups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (Context.User != null)
+            {
+                var position = await GetPositionAsync(Context.User, Context.ConnectionAborted);
+                var normalized = (position ?? string.Empty).Trim().ToLowerInvariant();
+
+                var isKitchen = LooksLikeKitchen(normalized);
+                var isWaiter = LooksLikeWaiter(normalized);
+
+                if (!isKitchen && !isWaiter)
+                {
+                    // Fallback: if position isn't set, join both so demo stays functional.
+                    isKitchen = true;
+                    isWaiter = true;
+                }
+
+                if (isKitchen)
+                {
+                    groups.Add(OrdersHubGroups.Kitchen(tenantId));
+                    groups.Add(OrdersHubGroups.Role("Kitchen", tenantId));
+                }
+
+                if (isWaiter)
+                {
+                    groups.Add(OrdersHubGroups.Waiter(tenantId));
+                    groups.Add(OrdersHubGroups.Role("Waiter", tenantId));
+                }
+
+                var userId = ResolveUserId(Context.User);
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    var userGroup = OrdersHubGroups.User(userId, tenantId);
+                    if (!string.IsNullOrWhiteSpace(userGroup))
+                    {
+                        groups.Add(userGroup);
+                    }
+                }
+
+                foreach (var role in ResolveRoleClaims(Context.User))
+                {
+                    var roleGroup = OrdersHubGroups.Role(role, tenantId);
+                    if (!string.IsNullOrWhiteSpace(roleGroup))
+                    {
+                        groups.Add(roleGroup);
+                    }
+                }
+            }
 
             foreach (var group in groups)
             {
@@ -94,43 +224,6 @@ namespace Market.API.Hubs
 
             _logger.LogInformation("OrdersHub connected {ConnectionId}. Groups={Groups}", Context.ConnectionId, string.Join(",", groups));
             await base.OnConnectedAsync();
-        }
-
-        private async Task<IReadOnlyCollection<string>> ResolveGroupsAsync(
-            ClaimsPrincipal? user,
-            string? tenantId,
-            CancellationToken ct)
-        {
-            var groups = new List<string>();
-            if (user == null)
-            {
-                return groups;
-            }
-
-            var position = await GetPositionAsync(user, ct);
-            var normalized = (position ?? string.Empty).Trim().ToLowerInvariant();
-
-            var isKitchen = LooksLikeKitchen(normalized);
-            var isWaiter = LooksLikeWaiter(normalized);
-
-            if (!isKitchen && !isWaiter)
-            {
-                // Fallback: if position isn't set, join both so demo stays functional.
-                isKitchen = true;
-                isWaiter = true;
-            }
-
-            if (isKitchen)
-            {
-                groups.Add(OrdersHubGroups.Kitchen(tenantId));
-            }
-
-            if (isWaiter)
-            {
-                groups.Add(OrdersHubGroups.Waiter(tenantId));
-            }
-
-            return groups;
         }
 
         private async Task<string?> GetPositionAsync(ClaimsPrincipal user, CancellationToken ct)
@@ -157,6 +250,34 @@ namespace Market.API.Hubs
             }
 
             return null;
+        }
+
+        private static string? ResolveUserId(ClaimsPrincipal? user)
+        {
+            if (user == null)
+            {
+                return null;
+            }
+
+            return user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                user.FindFirst("sub")?.Value ??
+                user.FindFirst("subject")?.Value;
+        }
+
+        private static IEnumerable<string> ResolveRoleClaims(ClaimsPrincipal? user)
+        {
+            if (user == null)
+            {
+                yield break;
+            }
+
+            foreach (var claim in user.Claims)
+            {
+                if (claim.Type == "role" || claim.Type == ClaimTypes.Role)
+                {
+                    yield return claim.Value;
+                }
+            }
         }
 
         private static bool LooksLikeKitchen(string position)

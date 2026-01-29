@@ -5,6 +5,7 @@ using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.MealIngredient;
+using Market.Domain.Entities.Notifications;
 using Market.Domain.Entities.Orders;
 using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
@@ -33,6 +34,7 @@ public interface IAppDbContext
     DbSet<TableLayout> TableLayouts { get; }
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
+    DbSet<NotificationEntity> Notifications { get; }
 
 
     Task<int> SaveChangesAsync(CancellationToken ct);
