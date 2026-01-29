@@ -1,9 +1,12 @@
+using System;
+using System.Linq;
 using Market.API.Hubs;
 using Market.Application.Abstractions;
 using Market.Application.Modules.Orders.Commands.CreateOrder;
 using Market.Application.Modules.Orders.Commands.UpdateOrderStatus;
 using Market.Application.Modules.Orders.Queries.GetOrders;
 using Market.Domain.Common.Enums;
+using Market.Domain.Entities.Notifications;
 using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -51,6 +54,19 @@ namespace Market.API.Controllers
 
             if (order != null)
             {
+                var notification = new NotificationEntity
+                {
+                    TenantId = order.TenantId,
+                    TargetRole = "Kitchen",
+                    Title = "Nova narudzba",
+                    Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
+                    Type = "OrderCreated",
+                    Link = $"/kitchen/orders/{order.Id}"
+                };
+
+                _db.Notifications.Add(notification);
+                await _db.SaveChangesAsync(ct);
+
                 var payload = new
                 {
                     orderId = order.Id,
@@ -63,6 +79,23 @@ namespace Market.API.Controllers
                 await _hub.Clients
                     .Group(OrdersHubGroups.Kitchen(order.TenantId))
                     .SendAsync(OrdersHubEvents.OrderCreated, payload, ct);
+
+                var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, order.TenantId);
+                if (!string.IsNullOrWhiteSpace(roleGroup))
+                {
+                    await _hub.Clients
+                        .Group(roleGroup)
+                        .SendAsync(OrdersHubEvents.NotificationCreated, new
+                        {
+                            id = notification.Id,
+                            title = notification.Title,
+                            message = notification.Message,
+                            type = notification.Type,
+                            link = notification.Link,
+                            createdAtUtc = notification.CreatedAtUtc,
+                            readAtUtc = notification.ReadAtUtc
+                        }, ct);
+                }
             }
             return Created(string.Empty, new { id });
         }
@@ -92,6 +125,77 @@ namespace Market.API.Controllers
                 await _hub.Clients
                     .Groups(waiterGroup, kitchenGroup)
                     .SendAsync(OrdersHubEvents.OrderStatusChanged, payload, ct);
+
+                if (order.Status == OrderStatus.ReadyForPickup)
+                {
+                    var notification = new NotificationEntity
+                    {
+                        TenantId = order.TenantId,
+                        TargetRole = "Waiter",
+                        Title = "Narudzba spremna",
+                        Message = $"Sto {order.TableNumber ?? order.DiningTableId} - narudzba je spremna.",
+                        Type = "OrderReady",
+                        Link = $"/waiter/orders/{order.Id}"
+                    };
+
+                    _db.Notifications.Add(notification);
+                    await _db.SaveChangesAsync(ct);
+
+                    var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, order.TenantId);
+                    if (!string.IsNullOrWhiteSpace(roleGroup))
+                    {
+                        await _hub.Clients
+                            .Group(roleGroup)
+                            .SendAsync(OrdersHubEvents.NotificationCreated, new
+                            {
+                                id = notification.Id,
+                                title = notification.Title,
+                                message = notification.Message,
+                                type = notification.Type,
+                                link = notification.Link,
+                                createdAtUtc = notification.CreatedAtUtc,
+                                readAtUtc = notification.ReadAtUtc
+                            }, ct);
+                    }
+                }
+
+                if (order.Status == OrderStatus.Completed)
+                {
+                    var linkSuffix = $"/{order.Id}";
+                    var notifications = await _db.Notifications
+                        .Where(n => n.TenantId == order.TenantId &&
+                                    n.Link != null &&
+                                    n.Link.EndsWith(linkSuffix))
+                        .ToListAsync(ct);
+
+                    if (notifications.Count > 0)
+                    {
+                        var now = DateTime.UtcNow;
+                        foreach (var item in notifications)
+                        {
+                            item.ReadAtUtc ??= now;
+                        }
+
+                        await _db.SaveChangesAsync(ct);
+                    }
+
+                    var waiterRole = OrdersHubGroups.Role("Waiter", order.TenantId);
+                    var kitchenRole = OrdersHubGroups.Role("Kitchen", order.TenantId);
+                    var groups = new[] { waiterRole, kitchenRole }
+                        .Where(g => !string.IsNullOrWhiteSpace(g))
+                        .ToArray();
+
+                    if (groups.Length > 0)
+                    {
+                        await _hub.Clients
+                            .Groups(groups)
+                            .SendAsync(OrdersHubEvents.NotificationCleared, new
+                            {
+                                orderId = order.Id,
+                                notificationIds = notifications.Select(n => n.Id).ToArray()
+                            }, ct);
+                    }
+                }
             }
             return NoContent();
         }
