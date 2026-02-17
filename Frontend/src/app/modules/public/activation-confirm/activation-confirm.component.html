@@ -1,10 +1,18 @@
 <div class="activation-wrapper">
   @if (loading()) {
     <mat-spinner diameter="48"></mat-spinner>
-    <p>Activating your tenant…</p>
+    <p>Activating your tenant...</p>
   } @else if (ok()) {
     <mat-icon color="primary" class="result-icon">check_circle</mat-icon>
     <h2>Activation complete</h2>
+    <p class="subtext">You're all set. Use these first-time login credentials:</p>
+    @if (loginInfo(); as info) {
+      <div class="credentials-card">
+        <div><strong>Restaurant:</strong> {{ info.restaurantName }}</div>
+        <div><strong>Username:</strong> {{ info.adminUsername }}</div>
+        <div><strong>Password:</strong> {{ info.adminPassword }}</div>
+      </div>
+    }
     <button mat-flat-button color="primary" (click)="goHome()">Go to app</button>
   } @else {
     <mat-icon color="warn" class="result-icon">error</mat-icon>

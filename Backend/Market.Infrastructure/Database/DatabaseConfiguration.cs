@@ -15,6 +15,13 @@ public partial class DatabaseContext
             switch (entry.State)
             {
                 case EntityState.Added:
+                    if (entry.Entity.TenantId == Guid.Empty &&
+                        CurrentTenantId.HasValue &&
+                        !IsSuperAdmin)
+                    {
+                        entry.Entity.TenantId = CurrentTenantId.Value;
+                    }
+
                     entry.Entity.CreatedAtUtc = UtcNow;
                     entry.Entity.ModifiedAtUtc = null; // ili = UtcNow
                     entry.Entity.IsDeleted = false;
@@ -59,9 +66,20 @@ public partial class DatabaseContext
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
                 var parameter = Expression.Parameter(entityType.ClrType, "e");
-                var prop = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-                var compare = Expression.Equal(prop, Expression.Constant(false));
-                var lambda = Expression.Lambda(compare, parameter);
+                var isDeleted = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+                var notDeleted = Expression.Equal(isDeleted, Expression.Constant(false));
+
+                var context = Expression.Constant(this);
+                var isSuperAdmin = Expression.Property(context, nameof(IsSuperAdmin));
+                var currentTenantId = Expression.Property(context, nameof(CurrentTenantId));
+
+                var tenantProp = Expression.Property(parameter, nameof(BaseEntity.TenantId));
+                var tenantPropNullable = Expression.Convert(tenantProp, typeof(Guid?));
+                var tenantMatch = Expression.Equal(tenantPropNullable, currentTenantId);
+                var tenantScope = Expression.OrElse(isSuperAdmin, tenantMatch);
+
+                var body = Expression.AndAlso(notDeleted, tenantScope);
+                var lambda = Expression.Lambda(body, parameter);
 
                 modelBuilder.Entity(entityType.ClrType)
                             .HasQueryFilter(lambda);

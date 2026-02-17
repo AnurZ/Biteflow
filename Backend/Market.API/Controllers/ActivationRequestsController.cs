@@ -166,16 +166,16 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
 
     [AllowAnonymous]
     [HttpPost("confirm")]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ConfirmActivationResult), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<Guid>> Confirm([FromBody] ConfirmDto dto, CancellationToken ct)
+    public async Task<ActionResult<ConfirmActivationResult>> Confirm([FromBody] ConfirmDto dto, CancellationToken ct)
     {
         try
         {
-            var tenantId = await mediator.Send(new ConfirmActivationCommand(dto.Token), ct);
-            return Ok(tenantId);
+            var result = await mediator.Send(new ConfirmActivationCommand(dto.Token), ct);
+            return Ok(result);
         }
         catch (UnauthorizedAccessException)
         {
