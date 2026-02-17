@@ -36,8 +36,9 @@ public sealed class IdentitySeeder
     public async Task SeedAsync(CancellationToken ct = default)
     {
         await EnsureRolesAsync(ct);
-        await EnsureSuperAdminAsync(ct);
+        await EnsureConfiguredSeedAdminAsync(ct);
         await EnsureStaffProfilesAsync(ct);
+        await EnsureExclusiveDemoSuperAdminAsync(ct);
     }
 
     private async Task EnsureRolesAsync(CancellationToken ct)
@@ -58,14 +59,14 @@ public sealed class IdentitySeeder
         }
     }
 
-    private async Task EnsureSuperAdminAsync(CancellationToken ct)
+    private async Task EnsureConfiguredSeedAdminAsync(CancellationToken ct)
     {
         var seedSection = _configuration.GetSection("SeedAdmin");
         var email = seedSection["Email"];
         var password = seedSection["Password"];
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            _logger.LogInformation("SeedAdmin credentials not provided; skipping superadmin seeding.");
+            _logger.LogInformation("SeedAdmin credentials not provided; skipping seed admin seeding.");
             return;
         }
 
@@ -76,7 +77,7 @@ public sealed class IdentitySeeder
             {
                 UserName = email,
                 Email = email,
-                DisplayName = seedSection["DisplayName"] ?? "Super Administrator",
+                DisplayName = seedSection["DisplayName"] ?? "Seed Administrator",
                 TenantId = Guid.Empty,
                 IsEnabled = true,
                 EmailConfirmed = true,
@@ -87,17 +88,16 @@ public sealed class IdentitySeeder
             {
                 _logger.LogError("Failed creating seed admin {Email}: {Errors}", email,
                     string.Join(", ", create.Errors.Select(e => e.Description)));
-                throw new InvalidOperationException("Superadmin seeding failed.");
+                throw new InvalidOperationException("Seed admin seeding failed.");
             }
         }
 
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        if (!currentRoles.Contains(RoleNames.SuperAdmin))
-        {
-            await _userManager.AddToRoleAsync(user, RoleNames.SuperAdmin);
-        }
+        await EnsureRoleAsync(user, RoleNames.Admin, ct);
+        await RemoveRoleIfPresentAsync(user, RoleNames.SuperAdmin, ct);
     }
 
+    // Demo legacy user used for UI demos and general staff/admin workflows.
+    // Intended roles: admin + staff + customer (explicitly not superadmin).
     private async Task EnsureStaffProfilesAsync(CancellationToken ct)
     {
         var staffUsers = await _userManager.GetUsersInRoleAsync(RoleNames.Staff);
@@ -109,10 +109,94 @@ public sealed class IdentitySeeder
         var legacyStringUser = await EnsureLegacyIdentityUserAsync("string", "string", ct);
         if (legacyStringUser != null)
         {
-            await EnsureRoleAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
             await EnsureRoleAsync(legacyStringUser, RoleNames.Admin, ct);
             await EnsureRoleAsync(legacyStringUser, RoleNames.Staff, ct);
+            await EnsureRoleAsync(legacyStringUser, RoleNames.Customer, ct);
+            await RemoveRoleIfPresentAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
             await _staffProfiles.EnsureProfileAsync(legacyStringUser, ct);
+        }
+    }
+
+    // Dedicated demo platform owner account.
+    // Intended credentials: superadmin / superadmin.
+    // Intended role set: superadmin only (exclusive).
+    private async Task EnsureExclusiveDemoSuperAdminAsync(CancellationToken ct)
+    {
+        const string username = "superadmin";
+        const string email = "superadmin@demo.local";
+        const string password = "superadmin";
+
+        var demoSuperAdmin = await _userManager.FindByNameAsync(username)
+            ?? await _userManager.FindByEmailAsync(email);
+
+        if (demoSuperAdmin == null)
+        {
+            demoSuperAdmin = new ApplicationUser
+            {
+                UserName = username,
+                Email = email,
+                DisplayName = "Super Administrator",
+                TenantId = Guid.Empty,
+                IsEnabled = true,
+                EmailConfirmed = true
+            };
+
+            var create = await _userManager.CreateAsync(demoSuperAdmin, password);
+            if (!create.Succeeded)
+            {
+                _logger.LogError("Failed creating demo superadmin '{Username}': {Errors}", username,
+                    string.Join(", ", create.Errors.Select(e => e.Description)));
+                throw new InvalidOperationException("Demo superadmin seeding failed.");
+            }
+        }
+        else
+        {
+            var changed = false;
+
+            if (!string.Equals(demoSuperAdmin.UserName, username, StringComparison.OrdinalIgnoreCase))
+            {
+                demoSuperAdmin.UserName = username;
+                changed = true;
+            }
+
+            if (!string.Equals(demoSuperAdmin.Email, email, StringComparison.OrdinalIgnoreCase))
+            {
+                demoSuperAdmin.Email = email;
+                changed = true;
+            }
+
+            if (!demoSuperAdmin.IsEnabled)
+            {
+                demoSuperAdmin.IsEnabled = true;
+                changed = true;
+            }
+
+            if (!demoSuperAdmin.EmailConfirmed)
+            {
+                demoSuperAdmin.EmailConfirmed = true;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                var update = await _userManager.UpdateAsync(demoSuperAdmin);
+                if (!update.Succeeded)
+                {
+                    _logger.LogError("Failed updating demo superadmin '{Username}': {Errors}", username,
+                        string.Join(", ", update.Errors.Select(e => e.Description)));
+                    throw new InvalidOperationException("Demo superadmin update failed.");
+                }
+            }
+
+            await EnsurePasswordAsync(demoSuperAdmin, password, ct);
+        }
+
+        await EnsureRoleAsync(demoSuperAdmin, RoleNames.SuperAdmin, ct);
+
+        var superAdmins = await _userManager.GetUsersInRoleAsync(RoleNames.SuperAdmin);
+        foreach (var user in superAdmins.Where(x => x.Id != demoSuperAdmin.Id))
+        {
+            await RemoveRoleIfPresentAsync(user, RoleNames.SuperAdmin, ct);
         }
     }
 
@@ -176,6 +260,43 @@ public sealed class IdentitySeeder
                 _logger.LogWarning("Failed adding role {Role} to user {UserId}: {Errors}",
                     role, user.Id, string.Join(", ", result.Errors.Select(e => e.Description)));
             }
+        }
+    }
+
+    private async Task RemoveRoleIfPresentAsync(ApplicationUser user, string role, CancellationToken ct)
+    {
+        if (!await _userManager.IsInRoleAsync(user, role))
+            return;
+
+        var result = await _userManager.RemoveFromRoleAsync(user, role);
+        if (!result.Succeeded)
+        {
+            _logger.LogWarning("Failed removing role {Role} from user {UserId}: {Errors}",
+                role, user.Id, string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+    }
+
+    private async Task EnsurePasswordAsync(ApplicationUser user, string desiredPassword, CancellationToken ct)
+    {
+        if (await _userManager.CheckPasswordAsync(user, desiredPassword))
+            return;
+
+        if (await _userManager.HasPasswordAsync(user))
+        {
+            var remove = await _userManager.RemovePasswordAsync(user);
+            if (!remove.Succeeded)
+            {
+                _logger.LogWarning("Failed removing password for user {UserId}: {Errors}",
+                    user.Id, string.Join(", ", remove.Errors.Select(e => e.Description)));
+                return;
+            }
+        }
+
+        var add = await _userManager.AddPasswordAsync(user, desiredPassword);
+        if (!add.Succeeded)
+        {
+            _logger.LogWarning("Failed setting password for user {UserId}: {Errors}",
+                user.Id, string.Join(", ", add.Errors.Select(e => e.Description)));
         }
     }
 }

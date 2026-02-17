@@ -5,12 +5,12 @@
   <header class="header">
     <h1 class="title">Restaurant Activation</h1>
     <div class="status-chip" [class.s--draft]="status===0" [class.s--submitted]="status===1"
-         [class.s--approved]="status===2" [class.s--activated]="status===3" [class.s--rejected]="status===4">
+         [class.s--approved]="status===2" [class.s--rejected]="status===3" [class.s--activated]="status===4">
       @if (status===0) { Draft }
       @if (status===1) { Submitted }
       @if (status===2) { Approved }
-      @if (status===3) { Activated }
-      @if (status===4) { Rejected }
+      @if (status===3) { Rejected }
+      @if (status===4) { Activated }
     </div>
   </header>
 

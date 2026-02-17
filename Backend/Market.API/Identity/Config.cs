@@ -21,6 +21,7 @@ namespace Market.API.Identity
             profile.UserClaims.Add("display_name");
             profile.UserClaims.Add("restaurant_id");
             profile.UserClaims.Add("tenant_id");
+            profile.UserClaims.Add("tenant_name");
             return profile;
         }
 
@@ -29,7 +30,7 @@ namespace Market.API.Identity
             {
             new ApiScope("biteflow.api", "Biteflow API", new[]
             {
-                JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name"
+                JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name", "tenant_name"
             })
             };
 
@@ -39,7 +40,7 @@ namespace Market.API.Identity
             new ApiResource("biteflow.api", "Biteflow API")
             {
                 Scopes = { "biteflow.api" },
-                UserClaims = { JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name" }
+                UserClaims = { JwtClaimTypes.Role, JwtClaimTypes.Email, "restaurant_id", "tenant_id", "display_name", "tenant_name" }
             }
             };
 
