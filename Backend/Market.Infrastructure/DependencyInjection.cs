@@ -205,6 +205,7 @@ public static class DependencyInjection
         // HttpContext accessor + current user
         services.AddHttpContextAccessor();
         services.AddScoped<IAppCurrentUser, AppCurrentUser>();
+        services.AddScoped<ITenantContext, AppTenantContext>();
 
         // TimeProvider (if used in handlers/services)
         services.AddSingleton<TimeProvider>(TimeProvider.System);

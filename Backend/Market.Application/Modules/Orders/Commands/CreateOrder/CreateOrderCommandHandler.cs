@@ -11,10 +11,12 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
     public sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int>
     {
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public CreateOrderCommandHandler(IAppDbContext db)
+        public CreateOrderCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext = tenantContext;
         }
 
         public async Task<int> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -56,7 +58,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 TableNumber = tableNumber,
                 Status = OrderStatus.New,
                 Notes = request.Notes,
-                TenantId = SeedConstants.DefaultTenantId
+                TenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId
             };
 
             foreach (var item in request.Items)
@@ -67,7 +69,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                     Name = item.Name.Trim(),
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    TenantId = SeedConstants.DefaultTenantId
+                    TenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId
                 });
             }
 

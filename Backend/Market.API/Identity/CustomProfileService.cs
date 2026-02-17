@@ -33,12 +33,15 @@ namespace Market.API.Identity
 
             _logger.LogInformation("Issuing profile claims for user {UserId} ({Email}) with display name '{DisplayName}'", user.Id, user.Email, user.DisplayName);
 
-            var tenantName = await ResolveTenantNameAsync(user.TenantId, CancellationToken.None);
+            var effectiveTenantId = user.TenantId == Guid.Empty
+                ? SeedConstants.DefaultTenantId
+                : user.TenantId;
+            var tenantName = await ResolveTenantNameAsync(effectiveTenantId, CancellationToken.None);
 
             var claims = new List<Claim>
             {
                 new("restaurant_id", user.RestaurantId?.ToString() ?? string.Empty),
-                new("tenant_id", user.TenantId.ToString()),
+                new("tenant_id", effectiveTenantId.ToString()),
                 new("display_name", user.DisplayName ?? string.Empty),
                 new(JwtClaimTypes.Name, user.DisplayName ?? user.UserName ?? string.Empty),
                 new(JwtClaimTypes.PreferredUserName, user.UserName ?? string.Empty)
@@ -74,6 +77,11 @@ namespace Market.API.Identity
                 .Where(x => x.TenantId == tenantId)
                 .OrderByDescending(x => x.CreatedAtUtc)
                 .Select(x => x.RestaurantName)
+                .FirstOrDefaultAsync(ct)
+                ?? await _db.Tenants
+                .AsNoTracking()
+                .Where(x => x.Id == tenantId)
+                .Select(x => x.Name)
                 .FirstOrDefaultAsync(ct);
         }
     }

@@ -12,15 +12,25 @@ using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.TableReservations;
 using Market.Domain.Entities.Tenants;
+using Market.Shared.Constants;
 
 namespace Market.Infrastructure.Database;
 
 public partial class DatabaseContext : DbContext, IAppDbContext
 {
+    private sealed class SystemTenantContext : ITenantContext
+    {
+        public Guid? TenantId => SeedConstants.DefaultTenantId;
+        public Guid? RestaurantId => null;
+        public bool IsSuperAdmin => false;
+    }
+
     public DbSet<ProductCategoryEntity> ProductCategories => Set<ProductCategoryEntity>();
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
     public DbSet<AppUser> Users => Set<AppUser>();
     public DbSet<RefreshTokenEntity> RefreshTokens => Set<RefreshTokenEntity>();
+    public DbSet<Tenant> Tenants => Set<Tenant>();
+    public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<TenantActivationRequest> TenantActivationRequests => Set<TenantActivationRequest>();
 
     public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
@@ -37,8 +47,19 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
 
     private readonly TimeProvider _clock;
-    public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock) : base(options)
+    private readonly ITenantContext _tenantContext;
+    public Guid? CurrentTenantId => _tenantContext.TenantId;
+    public bool IsSuperAdmin => _tenantContext.IsSuperAdmin;
+
+    public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock)
+        : this(options, clock, new SystemTenantContext())
+    {
+    }
+
+    public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock, ITenantContext tenantContext)
+        : base(options)
     {
         _clock = clock;
+        _tenantContext = tenantContext;
     }
 }

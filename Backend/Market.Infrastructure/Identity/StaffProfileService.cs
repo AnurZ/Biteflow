@@ -1,6 +1,7 @@
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.Staff;
 using Market.Infrastructure.Database;
+using Market.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +25,13 @@ public sealed class StaffProfileService
         if (user is null)
             throw new ArgumentNullException(nameof(user));
 
+        var effectiveTenantId = user.TenantId == Guid.Empty
+            ? SeedConstants.DefaultTenantId
+            : user.TenantId;
+        var normalizedUserName = (user.UserName ?? user.Email ?? string.Empty).ToLowerInvariant();
+
         var profile = await _legacyContext.EmployeeProfiles
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
 
         if (profile != null)
@@ -32,24 +39,26 @@ public sealed class StaffProfileService
             if (profile.ApplicationUserId != user.Id)
             {
                 profile.ApplicationUserId = user.Id;
-                profile.TenantId = user.TenantId;
+                profile.TenantId = effectiveTenantId;
                 await _legacyContext.SaveChangesAsync(ct);
             }
             return true;
         }
 
         var legacyAppUser = await _legacyContext.Users
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == user.UserName!.ToLower(), ct);
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedUserName, ct);
 
         if (legacyAppUser != null)
         {
             profile = await _legacyContext.EmployeeProfiles
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.AppUserId == legacyAppUser.Id, ct);
 
             if (profile != null)
             {
                 profile.ApplicationUserId = user.Id;
-                profile.TenantId = user.TenantId;
+                profile.TenantId = effectiveTenantId;
                 if (!string.IsNullOrWhiteSpace(user.DisplayName))
                     profile.FirstName = user.DisplayName;
                 await _legacyContext.SaveChangesAsync(ct);
@@ -60,7 +69,7 @@ public sealed class StaffProfileService
         var newProfile = new EmployeeProfile
         {
             ApplicationUserId = user.Id,
-            TenantId = user.TenantId,
+            TenantId = effectiveTenantId,
             Position = "Unassigned",
             FirstName = user.DisplayName ?? "Staff",
             LastName = string.Empty,

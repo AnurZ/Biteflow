@@ -22,6 +22,8 @@ public interface IAppDbContext
     DbSet<AppUser> Users { get; }
     DbSet<RefreshTokenEntity> RefreshTokens { get; }
 
+    DbSet<Tenant> Tenants { get; }
+    DbSet<Restaurant> Restaurants { get; }
     DbSet<TenantActivationRequest> TenantActivationRequests { get; }
     DbSet<EmployeeProfile> EmployeeProfiles { get; }
     DbSet<ActivationLinkEntity> ActivationLinks { get; }

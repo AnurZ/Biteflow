@@ -155,12 +155,22 @@ public static class DynamicDataSeeder
 
     private static async Task SeedTenantActivationRequestAsync(DatabaseContext context)
     {
-        if (await context.TenantActivationRequests.AnyAsync()) return;
+        const string seedDomain = "demo-bistro";
+
+        var alreadyExists = await context.TenantActivationRequests
+            .IgnoreQueryFilters()
+            .AnyAsync(x => x.Domain == seedDomain);
+
+        if (alreadyExists)
+        {
+            Console.WriteLine($"Seed skipped: TenantActivationRequest already exists for domain '{seedDomain}'.");
+            return;
+        }
 
         var req = new TenantActivationRequest();
         req.EditDraft(
             restaurantName: "Demo Bistro",
-            domain: "demo-bistro",
+            domain: seedDomain,
             ownerFullName: "Owner Name",
             ownerEmail: "owner@example.com",
             ownerPhone: "+38761111222",
