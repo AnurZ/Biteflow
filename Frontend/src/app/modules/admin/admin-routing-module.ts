@@ -5,7 +5,6 @@ import { StaffList } from './staff/staff-list/staff-list';
 import {Meals} from '../meals/meals';
 import {InventoryItems} from '../inventory-items/inventory-items';
 import {MealsStats} from '../meals/Stats/meals-stats';
-import { ActivationRequestsListComponent } from './activation-requests/activation-requests-list.component';
 import {TableLayoutComponent} from '../table-layout/table-layout';
 import {TableReservation} from '../table-reservation/table-reservation';
 const routes: Routes = [
@@ -21,8 +20,7 @@ const routes: Routes = [
       { path: 'inventory-items', component: InventoryItems },
       { path: 'table-reservations', component: TableReservation },
       { path: 'tables-layout', component: TableLayoutComponent },
-      { path: 'activation-requests', component: ActivationRequestsListComponent },
-      { path: '', redirectTo: 'admin', pathMatch: 'full' }
+      { path: '', redirectTo: 'staff', pathMatch: 'full' }
     ]
   }
 ];

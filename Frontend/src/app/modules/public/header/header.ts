@@ -42,14 +42,28 @@ export class Header implements OnInit, OnDestroy {
     this.clearAutoClose();
   }
 
-  get isAdmin(): boolean {
+  get isSuperAdmin(): boolean {
     const roles = this.authService.getRoles();
-    return roles.includes('admin') || roles.includes('superadmin');
+    return roles.includes('superadmin');
+  }
+
+  get isRestaurantAdmin(): boolean {
+    const roles = this.authService.getRoles();
+    return roles.includes('admin') && !roles.includes('superadmin');
   }
 
   get isStaff(): boolean {
+    if (this.isSuperAdmin) return false;
     const roles = this.authService.getRoles();
-    return roles.includes('staff') || this.isAdmin;
+    return roles.includes('staff') || roles.includes('admin');
+  }
+
+  get brandName(): string {
+    if (!this.authService.isLoggedIn()) return 'Biteflow';
+    if (this.isSuperAdmin) return 'Biteflow Admin';
+
+    const tenantName = this.authService.getTenantName().trim();
+    return tenantName.length > 0 ? tenantName : 'Biteflow';
   }
 
   isOnLoginPage():boolean{

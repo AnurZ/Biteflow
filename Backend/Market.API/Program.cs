@@ -110,7 +110,7 @@ public partial class Program
                     .AddInMemoryApiResources(Config.ApiResources)
                     .AddInMemoryClients(Config.Clients)
                     .AddDeveloperSigningCredential()
-                    .AddResourceOwnerValidator<LegacyResourceOwnerPasswordValidator>()
+                    .AddResourceOwnerValidator<ResourceOwnerPasswordValidator>()
                     .AddProfileService<CustomProfileService>();
 
                 Log.Information("IdentityServer configured successfully.");

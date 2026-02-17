@@ -19,7 +19,6 @@ namespace Market.API.Controllers;
 
 [ApiController]
 [Route("api/activation-requests")]
-//[Authorize(Policy = PolicyNames.SuperAdminOnly)]
 public sealed class ActivationRequestsController(IMediator mediator) : ControllerBase
 {
     // --- DTOs for request bodies ---
@@ -85,6 +84,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     }
 
     // Get one
+    [AllowAnonymous]
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ActivationDraftDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -103,7 +103,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
 
     // ---------- Admin actions ----------
 
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Policy = PolicyNames.SuperAdminOnly)]
     [HttpGet]
     [ProducesResponseType(typeof(PageResult<ActivationDraftDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PageResult<ActivationDraftDto>>> List(
@@ -116,7 +116,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     }
 
     // Approve (issues link internally and sets Approved)
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Policy = PolicyNames.SuperAdminOnly)]
     [HttpPost("{id:int}/approve")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -140,7 +140,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
     }
 
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Policy = PolicyNames.SuperAdminOnly)]
     [HttpPost("{id:int}/reject")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

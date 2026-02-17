@@ -8,10 +8,10 @@ using System.Security.Claims;
 
 namespace Market.API.Identity;
 
-public sealed class LegacyResourceOwnerPasswordValidator(
+public sealed class ResourceOwnerPasswordValidator(
     UserManager<ApplicationUser> userManager,
     SignInManager<ApplicationUser> signInManager,
-    ILogger<LegacyResourceOwnerPasswordValidator> logger) : IResourceOwnerPasswordValidator
+    ILogger<ResourceOwnerPasswordValidator> logger) : IResourceOwnerPasswordValidator
 {
     public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
     {
