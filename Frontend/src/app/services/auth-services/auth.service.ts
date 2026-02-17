@@ -105,6 +105,10 @@ export class AuthService {
     return this.authInfo?.displayName ?? '';
   }
 
+  getTenantName(): string {
+    return this.authInfo?.tenantName ?? '';
+  }
+
   private updateAuthInfoFromToken(userInfo?: Record<string, any>): void {
     const accessToken = this.oauthService.getAccessToken();
     if (!accessToken) {
@@ -117,6 +121,7 @@ export class AuthService {
       const info = {
         id: String(payload.sub ?? ''),
         restaurantId: String(payload['restaurant_id'] ?? payload['restaurantid'] ?? ''),
+        tenantName: '',
         displayName: '',
         email: String(
           payload['email'] ??
@@ -137,6 +142,12 @@ export class AuthService {
         payload['display_name'] ??
         payload['name'] ??
         payload['preferred_username'] ??
+        ''
+      );
+
+      info.tenantName = String(
+        userInfo?.['tenant_name'] ??
+        payload['tenant_name'] ??
         ''
       );
 

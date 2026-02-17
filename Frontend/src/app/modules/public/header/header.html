@@ -1,11 +1,14 @@
 <header class="topbar">
-  <div id="biteflow-tag" routerLink="/public">Biteflow</div>
+  <div id="biteflow-tag" routerLink="/public">{{ brandName }}</div>
 
   <div class="center">
     @if (authService.isLoggedIn()) {
 
       <div class="ComponentButtons">
-        @if (isAdmin) {
+        @if (isSuperAdmin) {
+          <button mat-raised-button color="primary" routerLink="/superadmin">Superadmin</button>
+        }
+        @if (isRestaurantAdmin) {
           <button mat-raised-button color="primary" routerLink="/admin">Admin</button>
         }
         @if (isStaff) {

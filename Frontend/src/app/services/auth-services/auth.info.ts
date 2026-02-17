@@ -2,6 +2,7 @@
 export interface MyAuthInfo {
   id: string;
   restaurantId: string;
+  tenantName: string;
   displayName: string;
   email: string;
   roles: string[];
