@@ -17,19 +17,22 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICaptchaVerifier _captchaVerifier;
     private readonly ILogger<RegisterCustomerCommandHandler> _logger;
+    private readonly ITenantContext _tenantContext;
 
     public RegisterCustomerCommandHandler(
         IAppDbContext db,
         IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
         ICaptchaVerifier captchaVerifier,
-        ILogger<RegisterCustomerCommandHandler> logger)
+        ILogger<RegisterCustomerCommandHandler> logger,
+        ITenantContext tenantContext)
     {
         _db = db;
         _hasher = hasher;
         _userManager = userManager;
         _captchaVerifier = captchaVerifier;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     public async Task Handle(RegisterCustomerCommand request, CancellationToken ct)
@@ -45,6 +48,8 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
         var displayName = string.IsNullOrWhiteSpace(request.DisplayName)
             ? email
             : request.DisplayName.Trim();
+        var tenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId;
+        var restaurantId = _tenantContext.RestaurantId ?? Guid.Empty;
 
         var appUserExists = await _db.Users.AnyAsync(
             u => u.Email.ToLower() == normalizedEmail,
@@ -59,8 +64,8 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
 
         var appUser = new AppUser
         {
-            TenantId = SeedConstants.DefaultTenantId,
-            RestaurantId = Guid.Empty,
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
             Email = email,
             DisplayName = displayName,
             IsEmailConfirmed = true,
@@ -79,8 +84,8 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
             UserName = email,
             Email = email,
             DisplayName = displayName,
-            TenantId = SeedConstants.DefaultTenantId,
-            RestaurantId = null,
+            TenantId = tenantId,
+            RestaurantId = restaurantId == Guid.Empty ? null : restaurantId,
             EmailConfirmed = true,
             IsEnabled = true
         };

@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ConfirmActivationResult } from '../models/activation.models';
 import { ActivationRequests } from '../../../services/tenant-services/activation-requests';
 
 @Component({
@@ -20,7 +21,8 @@ export class ActivationConfirmComponent implements OnInit {
 
   readonly loading = signal(true);
   readonly ok = signal(false);
-  readonly message = signal('Activating…');
+  readonly message = signal('Activating...');
+  readonly loginInfo = signal<ConfirmActivationResult | null>(null);
 
   ngOnInit(): void {
     const token = this.route.snapshot.queryParamMap.get('token');
@@ -31,14 +33,16 @@ export class ActivationConfirmComponent implements OnInit {
     }
 
     this.api.confirm(token).subscribe({
-      next: (tenantId) => {
+      next: (result) => {
         this.message.set('Activation complete');
+        this.loginInfo.set(result);
         this.ok.set(true);
         this.loading.set(false);
       },
       error: (err) => {
         this.loading.set(false);
         this.ok.set(false);
+        this.loginInfo.set(null);
 
         switch (err.status) {
           case 401:
@@ -64,6 +68,7 @@ export class ActivationConfirmComponent implements OnInit {
   private fail(text: string): void {
     this.loading.set(false);
     this.ok.set(false);
+    this.loginInfo.set(null);
     this.message.set(text);
   }
 }

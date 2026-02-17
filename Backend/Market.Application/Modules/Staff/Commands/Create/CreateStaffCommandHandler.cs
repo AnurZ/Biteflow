@@ -22,22 +22,26 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     private readonly IPasswordHasher<AppUser> _hasher;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<CreateStaffCommandHandler> _logger;
+    private readonly ITenantContext _tenantContext;
 
     public CreateStaffCommandHandler(
         IAppDbContext db,
         IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
-        ILogger<CreateStaffCommandHandler> logger)
+        ILogger<CreateStaffCommandHandler> logger,
+        ITenantContext tenantContext)
     {
         _db = db;
         _hasher = hasher;
         _userManager = userManager;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     public async Task<int> Handle(CreateStaffCommand r, CancellationToken ct)
     {
-        var tenantId = SeedConstants.DefaultTenantId;
+        var tenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId;
+        var restaurantId = _tenantContext.RestaurantId ?? Guid.Empty;
 
         if (string.IsNullOrWhiteSpace(r.FirstName) || string.IsNullOrWhiteSpace(r.LastName))
             throw new ValidationException("FirstName and LastName are required.");
@@ -56,8 +60,8 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             ? Guid.NewGuid().ToString("N")
             : r.PlainPassword!;
 
-        var appUserId = await EnsureLegacyUserAsync(r.AppUserId, email!, displayName, plainPassword, tenantId, ct);
-        var identityUser = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, targetRole, ct);
+        var appUserId = await EnsureLegacyUserAsync(r.AppUserId, email!, displayName, plainPassword, tenantId, restaurantId, ct);
+        var identityUser = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
 
         var profile = new EmployeeProfile
         {
@@ -90,6 +94,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         string displayName,
         string plainPassword,
         Guid tenantId,
+        Guid restaurantId,
         CancellationToken ct)
     {
         if (existingAppUserId > 0)
@@ -106,7 +111,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         var user = new AppUser
         {
             TenantId = tenantId,
-            RestaurantId = Guid.Empty,
+            RestaurantId = restaurantId,
             Email = normalizedEmail,
             DisplayName = displayName,
             IsEmailConfirmed = false,
@@ -128,6 +133,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         string displayName,
         string plainPassword,
         Guid tenantId,
+        Guid restaurantId,
         string role,
         CancellationToken ct)
     {
@@ -142,7 +148,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
                 Email = normalizedEmail,
                 DisplayName = displayName,
                 TenantId = tenantId,
-                RestaurantId = Guid.Empty,
+                RestaurantId = restaurantId,
                 EmailConfirmed = false,
                 IsEnabled = true
             };

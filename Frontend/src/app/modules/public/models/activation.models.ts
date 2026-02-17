@@ -38,3 +38,10 @@ export interface PageResult<T> {
   total: number;
   items: T[];
 }
+
+export interface ConfirmActivationResult {
+  tenantId: string;
+  restaurantName: string;
+  adminUsername: string;
+  adminPassword: string;
+}
