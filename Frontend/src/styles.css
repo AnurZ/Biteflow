@@ -44,3 +44,57 @@ body { font-family: Roboto, "Helvetica Neue", sans-serif; }
 .app-snackbar-warn {
   border: 1px solid rgba(239, 68, 68, 0.5);
 }
+
+@media (max-width: 768px) {
+  app-waiter .waiter-page .pane-card,
+  app-waiter .waiter-page .order-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  app-waiter .waiter-page .pane-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  app-waiter .waiter-page .tables-grid {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+
+  app-waiter .waiter-page .ticket {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  app-waiter .waiter-page .ticket-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  app-waiter .waiter-page .order-line {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  app-waiter .waiter-page .category-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  app-waiter .waiter-page .bill-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    padding: 14px;
+  }
+
+  app-waiter .waiter-page .bill-actions {
+    justify-content: stretch;
+  }
+
+  app-waiter .waiter-page .bill-actions .pay,
+  app-waiter .waiter-page .bill-actions .cancel {
+    flex: 1;
+    text-align: center;
+  }
+}
