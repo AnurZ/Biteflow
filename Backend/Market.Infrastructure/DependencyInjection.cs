@@ -96,6 +96,8 @@ public static class DependencyInjection
 
         // Identity hasher
         services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+        services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
+        services.AddScoped<IEmailService, SmtpEmailService>();
 
         var authority = configuration["IdentityServer:Authority"];
         if (string.IsNullOrWhiteSpace(authority))

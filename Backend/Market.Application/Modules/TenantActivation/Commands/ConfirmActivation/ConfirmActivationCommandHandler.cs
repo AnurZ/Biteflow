@@ -9,7 +9,8 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
         IAppDbContext db,
         IActivationLinkService links,
         IPasswordHasher<AppUser> hasher,
-        UserManager<ApplicationUser> userManager)
+        UserManager<ApplicationUser> userManager,
+        IEmailService emailService)
         : IRequestHandler<ConfirmActivationCommand, ConfirmActivationResult>
     {
         public async Task<ConfirmActivationResult> Handle(ConfirmActivationCommand r, CancellationToken ct)
@@ -107,12 +108,55 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
                 await userManager.DeleteAsync(identityAdmin);
                 throw;
             }
+            await SendOnboardingEmailSafeAsync(
+                emailService,
+                e.OwnerEmail,
+                e.OwnerFullName,
+                e.RestaurantName,
+                adminEmail,
+                adminPassword,
+                ct);
 
             return new ConfirmActivationResult(
                 TenantId: tenantId,
                 RestaurantName: e.RestaurantName,
                 AdminUsername: adminEmail,
                 AdminPassword: adminPassword);
+        }
+
+        private static async Task SendOnboardingEmailSafeAsync(
+            IEmailService emailService,
+            string ownerEmail,
+            string ownerFullName,
+            string restaurantName,
+            string adminUsername,
+            string firstTimePassword,
+            CancellationToken ct)
+        {
+            var subject = "Biteflow - Your Restaurant Has Been Approved";
+            var body = $"""
+Hello {ownerFullName},
+
+Welcome to Biteflow. Your restaurant "{restaurantName}" has been approved and your tenant account is ready.
+
+You can now sign in with the credentials below:
+Username: {adminUsername}
+First-time password: {firstTimePassword}
+
+For security, it is recommended to change your password after the first login.
+
+Best regards,
+Biteflow Team
+""";
+
+            try
+            {
+                await emailService.SendAsync(ownerEmail, subject, body, ct);
+            }
+            catch
+            {
+                // Email sending is best-effort and must not block activation.
+            }
         }
 
         private static string BuildRestaurantSlug(string restaurantName)
