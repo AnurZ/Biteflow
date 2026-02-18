@@ -146,3 +146,65 @@
   font-size: 13px;
 }
 
+@media (max-width: 768px) {
+  #biteflow-tag {
+    font-size: 1.15rem;
+  }
+
+  .topbar {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .center {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .ComponentButtons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    min-width: max-content;
+  }
+
+  .ComponentButtons button {
+    white-space: nowrap;
+  }
+
+  .right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .right > span {
+    max-width: 55vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .notif-panel {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: 64px;
+    width: auto;
+    max-height: calc(100vh - 76px);
+    padding: 10px;
+  }
+
+  .notif-panel-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .notif-panel-list {
+    max-height: min(56vh, 380px);
+  }
+}
+
