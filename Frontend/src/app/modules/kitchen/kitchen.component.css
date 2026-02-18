@@ -187,3 +187,40 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  :host {
+    padding: 8px;
+  }
+
+  .kitchen-page {
+    gap: 10px;
+  }
+
+  .title-group .title {
+    font-size: 16px;
+  }
+
+  .title-group .subtitle {
+    font-size: 13px;
+  }
+
+  .column {
+    padding: 8px;
+    border-radius: 12px;
+  }
+
+  .order-card {
+    padding: 10px;
+  }
+
+  .item-row {
+    padding: 7px 9px;
+    font-size: 13px;
+  }
+
+  .cta {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+}
