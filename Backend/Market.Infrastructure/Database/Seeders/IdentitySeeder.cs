@@ -1,4 +1,5 @@
 using Market.Domain.Entities.IdentityV2;
+using Market.Domain.Entities.Staff;
 using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
@@ -43,7 +44,15 @@ public sealed class IdentitySeeder
 
     private async Task EnsureRolesAsync(CancellationToken ct)
     {
-        var roles = new[] { RoleNames.SuperAdmin, RoleNames.Admin, RoleNames.Staff, RoleNames.Customer };
+        var roles = new[]
+        {
+            RoleNames.SuperAdmin,
+            RoleNames.Admin,
+            RoleNames.Staff,
+            RoleNames.Waiter,
+            RoleNames.Kitchen,
+            RoleNames.Customer
+        };
         foreach (var role in roles)
         {
             if (await _roleManager.RoleExistsAsync(role))
@@ -96,24 +105,173 @@ public sealed class IdentitySeeder
         await RemoveRoleIfPresentAsync(user, RoleNames.SuperAdmin, ct);
     }
 
-    // Demo legacy user used for UI demos and general staff/admin workflows.
-    // Intended roles: admin + staff + customer (explicitly not superadmin).
     private async Task EnsureStaffProfilesAsync(CancellationToken ct)
     {
-        var staffUsers = await _userManager.GetUsersInRoleAsync(RoleNames.Staff);
-        foreach (var staff in staffUsers)
+        var staffRoles = new[] { RoleNames.Staff, RoleNames.Waiter, RoleNames.Kitchen };
+        foreach (var staffRole in staffRoles)
         {
-            await _staffProfiles.EnsureProfileAsync(staff, ct);
+            var users = await _userManager.GetUsersInRoleAsync(staffRole);
+            foreach (var user in users)
+            {
+                await _staffProfiles.EnsureProfileAsync(user, ct);
+            }
         }
 
-        var legacyStringUser = await EnsureLegacyIdentityUserAsync("string", "string", ct);
-        if (legacyStringUser != null)
+        await EnsureDemoUserAsync(
+            username: "string",
+            password: "string",
+            primaryRole: RoleNames.Admin,
+            position: "Manager",
+            firstName: "Admin",
+            lastName: "User",
+            ct: ct);
+
+        await EnsureDemoUserAsync(
+            username: "waiter1",
+            password: "waiter1",
+            primaryRole: RoleNames.Waiter,
+            position: "Waiter",
+            firstName: "Waiter",
+            lastName: "One",
+            ct: ct);
+
+        await EnsureDemoUserAsync(
+            username: "kitchen1",
+            password: "kitchen1",
+            primaryRole: RoleNames.Kitchen,
+            position: "Kitchen",
+            firstName: "Kitchen",
+            lastName: "One",
+            ct: ct);
+    }
+
+    private async Task EnsureDemoUserAsync(
+        string username,
+        string password,
+        string primaryRole,
+        string position,
+        string firstName,
+        string lastName,
+        CancellationToken ct)
+    {
+        var identityUser = await EnsureLegacyIdentityUserAsync(username, password, ct);
+        if (identityUser == null)
+            return;
+
+        await EnsurePasswordAsync(identityUser, password, ct);
+        await EnsureRoleAsync(identityUser, primaryRole, ct);
+
+        var managedRoles = new[]
         {
-            await EnsureRoleAsync(legacyStringUser, RoleNames.Admin, ct);
-            await EnsureRoleAsync(legacyStringUser, RoleNames.Staff, ct);
-            await EnsureRoleAsync(legacyStringUser, RoleNames.Customer, ct);
-            await RemoveRoleIfPresentAsync(legacyStringUser, RoleNames.SuperAdmin, ct);
-            await _staffProfiles.EnsureProfileAsync(legacyStringUser, ct);
+            RoleNames.SuperAdmin,
+            RoleNames.Admin,
+            RoleNames.Staff,
+            RoleNames.Waiter,
+            RoleNames.Kitchen,
+            RoleNames.Customer
+        };
+
+        foreach (var role in managedRoles.Where(r => !string.Equals(r, primaryRole, StringComparison.OrdinalIgnoreCase)))
+        {
+            await RemoveRoleIfPresentAsync(identityUser, role, ct);
+        }
+
+        await EnsureLegacyEmployeeProfileAsync(identityUser, username, position, firstName, lastName, ct);
+    }
+
+    private async Task EnsureLegacyEmployeeProfileAsync(
+        ApplicationUser identityUser,
+        string legacyEmailOrUsername,
+        string position,
+        string firstName,
+        string lastName,
+        CancellationToken ct)
+    {
+        var normalized = legacyEmailOrUsername.Trim().ToLowerInvariant();
+
+        var legacyUser = await _legacyContext.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalized, ct);
+
+        if (legacyUser == null)
+        {
+            _logger.LogWarning("Legacy AppUser '{Email}' not found while seeding profile for identity user {UserId}.",
+                legacyEmailOrUsername, identityUser.Id);
+            return;
+        }
+
+        var effectiveTenantId = legacyUser.TenantId == Guid.Empty
+            ? SeedConstants.DefaultTenantId
+            : legacyUser.TenantId;
+
+        var profile = await _legacyContext.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.AppUserId == legacyUser.Id || x.ApplicationUserId == identityUser.Id, ct);
+
+        if (profile == null)
+        {
+            profile = new EmployeeProfile
+            {
+                AppUserId = legacyUser.Id,
+                ApplicationUserId = identityUser.Id,
+                TenantId = effectiveTenantId,
+                Position = position,
+                FirstName = firstName,
+                LastName = lastName,
+                IsActive = true
+            };
+
+            _legacyContext.EmployeeProfiles.Add(profile);
+            await _legacyContext.SaveChangesAsync(ct);
+            return;
+        }
+
+        var changed = false;
+        if (profile.AppUserId != legacyUser.Id)
+        {
+            profile.AppUserId = legacyUser.Id;
+            changed = true;
+        }
+
+        if (profile.ApplicationUserId != identityUser.Id)
+        {
+            profile.ApplicationUserId = identityUser.Id;
+            changed = true;
+        }
+
+        if (profile.TenantId != effectiveTenantId)
+        {
+            profile.TenantId = effectiveTenantId;
+            changed = true;
+        }
+
+        if (!string.Equals(profile.Position, position, StringComparison.Ordinal))
+        {
+            profile.Position = position;
+            changed = true;
+        }
+
+        if (!string.Equals(profile.FirstName, firstName, StringComparison.Ordinal))
+        {
+            profile.FirstName = firstName;
+            changed = true;
+        }
+
+        if (!string.Equals(profile.LastName, lastName, StringComparison.Ordinal))
+        {
+            profile.LastName = lastName;
+            changed = true;
+        }
+
+        if (!profile.IsActive)
+        {
+            profile.IsActive = true;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await _legacyContext.SaveChangesAsync(ct);
         }
     }
 

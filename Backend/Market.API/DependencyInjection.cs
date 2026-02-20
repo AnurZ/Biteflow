@@ -75,7 +75,9 @@ public static class DependencyInjection
                 policy.RequireAssertion(ctx =>
                     ctx.User.IsInRole(RoleNames.SuperAdmin) ||
                     ctx.User.IsInRole(RoleNames.Admin) ||
-                    ctx.User.IsInRole(RoleNames.Staff));
+                    ctx.User.IsInRole(RoleNames.Staff) ||
+                    ctx.User.IsInRole(RoleNames.Waiter) ||
+                    ctx.User.IsInRole(RoleNames.Kitchen));
             });
         });
 

@@ -37,6 +37,7 @@ namespace Market.API.Identity
                 ? SeedConstants.DefaultTenantId
                 : user.TenantId;
             var tenantName = await ResolveTenantNameAsync(effectiveTenantId, CancellationToken.None);
+            var position = await ResolvePositionAsync(user, CancellationToken.None);
 
             var claims = new List<Claim>
             {
@@ -53,6 +54,11 @@ namespace Market.API.Identity
             if (!string.IsNullOrWhiteSpace(tenantName))
             {
                 claims.Add(new Claim("tenant_name", tenantName!));
+            }
+
+            if (!string.IsNullOrWhiteSpace(position))
+            {
+                claims.Add(new Claim("position", position));
             }
 
             context.IssuedClaims.AddRange(claims);
@@ -82,6 +88,44 @@ namespace Market.API.Identity
                 .AsNoTracking()
                 .Where(x => x.Id == tenantId)
                 .Select(x => x.Name)
+                .FirstOrDefaultAsync(ct);
+        }
+
+        private async Task<string?> ResolvePositionAsync(ApplicationUser user, CancellationToken ct)
+        {
+            var profile = await _db.EmployeeProfiles
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
+
+            if (profile != null && !string.IsNullOrWhiteSpace(profile.Position))
+            {
+                return profile.Position;
+            }
+
+            var userNameOrEmail = (user.UserName ?? user.Email ?? string.Empty).Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(userNameOrEmail))
+            {
+                return null;
+            }
+
+            var legacyUserId = await _db.Users
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(x => x.Email.ToLower() == userNameOrEmail)
+                .Select(x => x.Id)
+                .FirstOrDefaultAsync(ct);
+
+            if (legacyUserId == 0)
+            {
+                return null;
+            }
+
+            return await _db.EmployeeProfiles
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .Where(x => x.AppUserId == legacyUserId)
+                .Select(x => x.Position)
                 .FirstOrDefaultAsync(ct);
         }
     }

@@ -109,6 +109,25 @@ export class AuthService {
     return this.authInfo?.tenantName ?? '';
   }
 
+  getPosition(): string {
+    return this.authInfo?.position ?? '';
+  }
+
+  hasRole(role: string): boolean {
+    const normalized = role.trim().toLowerCase();
+    return this.getRoles().some((r) => r.toLowerCase() === normalized);
+  }
+
+  hasWaiterAccess(): boolean {
+    const position = this.getPosition().trim().toLowerCase();
+    return this.hasRole('waiter') || position.includes('waiter') || position.includes('konobar') || position.includes('server');
+  }
+
+  hasKitchenAccess(): boolean {
+    const position = this.getPosition().trim().toLowerCase();
+    return this.hasRole('kitchen') || position.includes('kitchen') || position.includes('cook') || position.includes('chef') || position.includes('kuhar');
+  }
+
   private updateAuthInfoFromToken(userInfo?: Record<string, any>): void {
     const accessToken = this.oauthService.getAccessToken();
     if (!accessToken) {
@@ -123,6 +142,7 @@ export class AuthService {
         restaurantId: String(payload['restaurant_id'] ?? payload['restaurantid'] ?? ''),
         tenantName: '',
         displayName: '',
+        position: '',
         email: String(
           payload['email'] ??
           payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ??
@@ -151,6 +171,12 @@ export class AuthService {
         ''
       );
 
+      info.position = String(
+        userInfo?.['position'] ??
+        payload['position'] ??
+        ''
+      );
+
       this.authInfo = info;
 
       if (!this.authInfo.displayName) {
@@ -167,12 +193,14 @@ export class AuthService {
     if (!roleClaim) return [];
 
     if (Array.isArray(roleClaim)) {
-      return roleClaim.map((r) => String(r));
+      return roleClaim
+        .map((r) => String(r).trim().toLowerCase())
+        .filter((r) => r.length > 0);
     }
 
     return String(roleClaim)
       .split(',')
-      .map((r) => r.trim())
+      .map((r) => r.trim().toLowerCase())
       .filter((r) => r.length > 0);
   }
 

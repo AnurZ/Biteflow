@@ -15,7 +15,9 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     {
         RoleNames.SuperAdmin,
         RoleNames.Admin,
-        RoleNames.Staff
+        RoleNames.Staff,
+        RoleNames.Waiter,
+        RoleNames.Kitchen
     };
 
     private readonly IAppDbContext _db;

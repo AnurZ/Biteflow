@@ -21,11 +21,11 @@ namespace Market.API.Controllers;
 [Route("api/activation-requests")]
 public sealed class ActivationRequestsController(IMediator mediator) : ControllerBase
 {
-    // --- DTOs for request bodies ---
+
     public sealed record RejectDto(string Reason);
     public sealed record ConfirmDto(string Token);
 
-    // ---------- Public (tenant) actions ----------
+
 
     // Create draft
     [AllowAnonymous]
@@ -78,7 +78,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
         catch (InvalidOperationException ex)
         {
-            // e.g., not in Draft
+            //not in Draft
             return Conflict(ex.Message);
         }
     }
@@ -101,7 +101,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
     }
 
-    // ---------- Admin actions ----------
+
 
     [Authorize(Policy = PolicyNames.SuperAdminOnly)]
     [HttpGet]
@@ -115,7 +115,6 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         return Ok(result);
     }
 
-    // Approve (issues link internally and sets Approved)
     [Authorize(Policy = PolicyNames.SuperAdminOnly)]
     [HttpPost("{id:int}/approve")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
@@ -125,9 +124,9 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     {
         try
         {
-            // ApproveRequestCommand MUST be int-based: record ApproveRequestCommand(int Id) : IRequest<string>;
+
             var link = await mediator.Send(new ApproveRequestCommand(id));
-            return Ok(link); // FE or mailer will use this URL
+            return Ok(link);
         }
         catch (MarketNotFoundException)
         {
@@ -135,7 +134,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
         catch (InvalidOperationException ex)
         {
-            // e.g., Only submitted requests can be approved.
+
             return Conflict(ex.Message);
         }
     }
@@ -157,12 +156,12 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
         catch (InvalidOperationException ex)
         {
-            // e.g., cannot reject after activation
+            //cannot reject after activation
             return Conflict(ex.Message);
         }
     }
 
-    // ---------- Activation landing (public) ----------
+
 
     [AllowAnonymous]
     [HttpPost("confirm")]
@@ -179,7 +178,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
         }
         catch (UnauthorizedAccessException)
         {
-            // invalid/expired/consumed token
+            // invalid token
             return Unauthorized("Activation link is invalid or expired.");
         }
         catch (MarketNotFoundException)
@@ -190,7 +189,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
             when (ex.Message.Contains("Activation allowed only after approval", StringComparison.OrdinalIgnoreCase)
                || ex.Message.Contains("Only submitted requests can be approved", StringComparison.OrdinalIgnoreCase))
         {
-            // domain guard from MarkActivated / Approve
+
             return Conflict(ex.Message);
         }
     }
