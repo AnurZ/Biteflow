@@ -44,46 +44,9 @@ public static class DynamicDataSeeder
             return;
         }
 
-        var user = await context.Users
-            .Where(u => EF.Functions.Like(u.Email, "%string%"))
-            .FirstOrDefaultAsync();
-
-        if (user == null)
-        {
-            Console.WriteLine("Seed skipped: no user found whose email contains 'string'.");
-            return;
-        }
-
-        var hasAny = await context.EmployeeProfiles.AnyAsync(ep => ep.AppUserId == user.Id);
-        if (hasAny)
-        {
-            Console.WriteLine("Seed skipped: EmployeeProfile already exists for this user.");
-            return;
-        }
-
-        var profile = new EmployeeProfile
-        {
-            AppUserId = user.Id,
-            Position = "Waiter",
-            FirstName = "Anur",
-            LastName = "Zjakic",
-            PhoneNumber = "123123123",
-            HireDate = DateTime.UtcNow,
-            Salary = 1200m,
-            HourlyRate = 5m,
-            EmploymentType = "FullTime",
-            ShiftType = "Morning",
-            ShiftStart = TimeOnly.FromTimeSpan(TimeSpan.FromHours(8)),
-            ShiftEnd = TimeOnly.FromTimeSpan(TimeSpan.FromHours(15)),
-            AverageRating = 4.39,
-            CompletedOrders = 10,
-            MonthlyTips = 11m,
-            IsActive = true
-        };
-
-        context.EmployeeProfiles.Add(profile);
-        await context.SaveChangesAsync();
-        Console.WriteLine("Seed: EmployeeProfile added.");
+        await EnsureEmployeeProfileAsync(context, "string", "Manager", "Admin", "User");
+        await EnsureEmployeeProfileAsync(context, "waiter1", "Waiter", "Waiter", "One");
+        await EnsureEmployeeProfileAsync(context, "kitchen1", "Kitchen", "Kitchen", "One");
     }
 
     private static async Task SeedProductCategoriesAsync(DatabaseContext context)
@@ -112,45 +75,146 @@ public static class DynamicDataSeeder
 
     private static async Task SeedUsersAsync(DatabaseContext context)
     {
-        if (await context.Users.AnyAsync())
-            return;
+        var hasher = new PasswordHasher<AppUser>();
 
-        var hasher = new PasswordHasher<MarketUserEntity>();
-
-        var admin = new AppUser
-        {
-            Email = "admin@market.local",
-            PasswordHash = hasher.HashPassword(null!, "Admin123!"),
-            IsEnabled = true,
-            DisplayName = "ADMIN1",
-        };
-
-        var user = new AppUser
-        {
-            Email = "manager@market.local",
-            PasswordHash = hasher.HashPassword(null!, "User123!"),
-            IsEnabled = true,
-            DisplayName = "MANAGER1"
-        };
-
-        var dummyForSwagger = new AppUser
-        {
-            Email = "string",
-            PasswordHash = hasher.HashPassword(null!, "string"),
-            IsEnabled = true,
-            DisplayName = "Konobar1"
-        };
-        var dummyForTests = new AppUser
-        {
-            Email = "test",
-            PasswordHash = hasher.HashPassword(null!, "test123"),
-            IsEnabled = true,
-            DisplayName = "TEST1"
-        };
-        context.Users.AddRange(admin, user, dummyForSwagger, dummyForTests);
-        await context.SaveChangesAsync();
+        await EnsureLegacyUserAsync(context, hasher, "admin@market.local", "Admin123!", "ADMIN1");
+        await EnsureLegacyUserAsync(context, hasher, "manager@market.local", "User123!", "MANAGER1");
+        await EnsureLegacyUserAsync(context, hasher, "string", "string", "Admin1");
+        await EnsureLegacyUserAsync(context, hasher, "waiter1", "waiter1", "Waiter1");
+        await EnsureLegacyUserAsync(context, hasher, "kitchen1", "kitchen1", "Kitchen1");
+        await EnsureLegacyUserAsync(context, hasher, "test", "test123", "TEST1");
 
         Console.WriteLine("Dynamic seed: demo users added.");
+    }
+
+    private static async Task EnsureLegacyUserAsync(
+        DatabaseContext context,
+        PasswordHasher<AppUser> hasher,
+        string email,
+        string plainPassword,
+        string displayName)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var existing = await context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);
+
+        if (existing == null)
+        {
+            var created = new AppUser
+            {
+                Email = email,
+                DisplayName = displayName,
+                PasswordHash = hasher.HashPassword(null!, plainPassword),
+                IsEnabled = true
+            };
+
+            context.Users.Add(created);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        var changed = false;
+
+        if (!string.Equals(existing.DisplayName, displayName, StringComparison.Ordinal))
+        {
+            existing.DisplayName = displayName;
+            changed = true;
+        }
+
+        if (!existing.IsEnabled)
+        {
+            existing.IsEnabled = true;
+            changed = true;
+        }
+
+        var passwordCheck = hasher.VerifyHashedPassword(existing, existing.PasswordHash, plainPassword);
+        if (passwordCheck == PasswordVerificationResult.Failed)
+        {
+            existing.PasswordHash = hasher.HashPassword(existing, plainPassword);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+        }
+    }
+
+    private static async Task EnsureEmployeeProfileAsync(
+        DatabaseContext context,
+        string email,
+        string position,
+        string firstName,
+        string lastName)
+    {
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await context.Users
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);
+
+        if (user == null)
+        {
+            Console.WriteLine($"Seed skipped: no user found for '{email}'.");
+            return;
+        }
+
+        var profile = await context.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(ep => ep.AppUserId == user.Id);
+
+        if (profile == null)
+        {
+            profile = new EmployeeProfile
+            {
+                AppUserId = user.Id,
+                TenantId = user.TenantId,
+                Position = position,
+                FirstName = firstName,
+                LastName = lastName,
+                IsActive = true
+            };
+
+            context.EmployeeProfiles.Add(profile);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        var changed = false;
+        if (!string.Equals(profile.Position, position, StringComparison.Ordinal))
+        {
+            profile.Position = position;
+            changed = true;
+        }
+
+        if (!string.Equals(profile.FirstName, firstName, StringComparison.Ordinal))
+        {
+            profile.FirstName = firstName;
+            changed = true;
+        }
+
+        if (!string.Equals(profile.LastName, lastName, StringComparison.Ordinal))
+        {
+            profile.LastName = lastName;
+            changed = true;
+        }
+
+        if (!profile.IsActive)
+        {
+            profile.IsActive = true;
+            changed = true;
+        }
+
+        if (profile.TenantId != user.TenantId)
+        {
+            profile.TenantId = user.TenantId;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await context.SaveChangesAsync();
+        }
     }
 
     private static async Task SeedTenantActivationRequestAsync(DatabaseContext context)

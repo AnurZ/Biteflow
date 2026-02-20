@@ -54,8 +54,17 @@ export class Header implements OnInit, OnDestroy {
 
   get isStaff(): boolean {
     if (this.isSuperAdmin) return false;
-    const roles = this.authService.getRoles();
-    return roles.includes('staff') || roles.includes('admin');
+    return this.authService.hasRole('staff') || this.isRestaurantAdmin;
+  }
+
+  get canAccessWaiter(): boolean {
+    if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
+    return this.authService.hasWaiterAccess();
+  }
+
+  get canAccessKitchen(): boolean {
+    if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
+    return this.authService.hasKitchenAccess();
   }
 
   get brandName(): string {

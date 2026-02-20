@@ -4,6 +4,7 @@ export interface MyAuthInfo {
   restaurantId: string;
   tenantName: string;
   displayName: string;
+  position: string;
   email: string;
   roles: string[];
   isEnabled: boolean;
