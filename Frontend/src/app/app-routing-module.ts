@@ -3,9 +3,10 @@ import { RouterModule, Routes } from '@angular/router';
 import { ActivationConfirmComponent } from './modules/public/activation-confirm/activation-confirm.component';
 import { WaiterComponent } from './modules/waiter/waiter.component';
 import { KitchenComponent } from './modules/kitchen/kitchen.component';
-import { StaffGuard } from './modules/core/auth/staff.guard';
 import { SuperAdminGuard } from './modules/core/auth/superadmin.guard';
 import { SuperAdminActivationRequestsComponent } from './modules/superadmin/superadmin-activation-requests.component';
+import { WaiterGuard } from './modules/core/auth/waiter.guard';
+import { KitchenGuard } from './modules/core/auth/kitchen.guard';
 
 const routes: Routes = [
   {
@@ -28,12 +29,12 @@ const routes: Routes = [
   {
     path: 'waiter',
     component: WaiterComponent,
-    canActivate: [StaffGuard]
+    canActivate: [WaiterGuard]
   },
   {
     path: 'kitchen',
     component: KitchenComponent,
-    canActivate: [StaffGuard]
+    canActivate: [KitchenGuard]
   },
   {
     path: 'activate',

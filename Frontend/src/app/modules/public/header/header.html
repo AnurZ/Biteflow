@@ -11,8 +11,10 @@
         @if (isRestaurantAdmin) {
           <button mat-raised-button color="primary" routerLink="/admin">Admin</button>
         }
-        @if (isStaff) {
+        @if (canAccessWaiter) {
           <button mat-raised-button color="primary" routerLink="/waiter">Waiter</button>
+        }
+        @if (canAccessKitchen) {
           <button mat-raised-button color="primary" routerLink="/kitchen">Kitchen</button>
         }
       </div>
