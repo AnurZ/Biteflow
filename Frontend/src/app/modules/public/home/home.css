@@ -1,0 +1,273 @@
+:host {
+  display: block;
+  background: #f3f5f8;
+}
+
+.brand-shell {
+  --dom-red: #e31837;
+  --dom-blue: #006491;
+  --ink: #1a1a1a;
+  --muted: #667;
+  --line: #d6dde6;
+
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 14px 34px;
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  color: var(--ink);
+}
+
+.brand-hero {
+  border: 1px solid #cbd5e3;
+  background: #fff;
+}
+
+.top-ribbon {
+  background: linear-gradient(90deg, var(--dom-blue) 0 50%, var(--dom-red) 50% 100%);
+  color: #fff;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  font-weight: 700;
+  padding: 7px 10px;
+}
+
+.hero-main {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 14px;
+  padding: 16px;
+}
+
+.mini {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: #4e5f77;
+}
+
+.hero-copy h1 {
+  margin: 0 0 6px;
+  color: var(--dom-blue);
+  font-size: clamp(28px, 4.4vw, 44px);
+  line-height: 1.04;
+  font-weight: 800;
+}
+
+.lead {
+  margin: 0;
+  color: #2f3f54;
+  max-width: 620px;
+}
+
+.mode-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mode-row button {
+  border: 0;
+  font-weight: 700;
+  color: #fff;
+  background: var(--dom-red);
+  padding: 9px 13px;
+  opacity: 0.72;
+  cursor: default;
+}
+
+.mode-row button:last-child {
+  background: var(--dom-blue);
+}
+
+.promo-box {
+  border: 2px solid var(--dom-red);
+  background: #fff5f7;
+  padding: 12px;
+  text-align: center;
+  display: grid;
+  align-content: center;
+}
+
+.promo-top {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #8f2334;
+  font-weight: 700;
+}
+
+.promo-main {
+  margin: 8px 0 3px;
+  color: var(--dom-red);
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.promo-sub {
+  margin: 0;
+  color: #4b5668;
+  font-size: 13px;
+}
+
+.menu-section {
+  margin-top: 14px;
+  border: 1px solid #cbd5e3;
+  background: #fff;
+  padding: 14px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #e8edf4;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.section-head h2 {
+  margin: 0;
+  font-size: 24px;
+  color: var(--dom-blue);
+  font-weight: 800;
+}
+
+.status-pill {
+  background: var(--dom-red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+}
+
+.loading {
+  border: 1px dashed var(--line);
+  background: #fafbfd;
+  color: #3a4a61;
+  padding: 11px;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.menu-card {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 245px;
+}
+
+.menu-card-head {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.menu-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--dom-red), #f0516b);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+.menu-card-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.menu-card-head p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.item-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #edf1f6;
+}
+
+.item-list li {
+  border-bottom: 1px solid #edf1f6;
+  padding: 8px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-main {
+  min-width: 0;
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.item-name {
+  font-size: 13px;
+}
+
+.item-tag {
+  border: 1px solid #9eb8d6;
+  color: #245b90;
+  background: #edf5ff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+}
+
+.item-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--dom-blue);
+  white-space: nowrap;
+}
+
+.order-btn {
+  margin-top: auto;
+  border: 0;
+  background: var(--dom-blue);
+  color: #fff;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  padding: 9px 10px;
+  opacity: 0.72;
+  cursor: default;
+}
+
+.fallback-note {
+  margin: 11px 0 0;
+  color: #56667f;
+  font-size: 12px;
+}
+
+@media (max-width: 820px) {
+  .hero-main {
+    grid-template-columns: 1fr;
+  }
+
+  .promo-box {
+    text-align: left;
+  }
+}
