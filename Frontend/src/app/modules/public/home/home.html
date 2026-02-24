@@ -1,1 +1,57 @@
-<p>home works!</p>
+<section class="brand-shell">
+  <header class="brand-hero">
+    <div class="top-ribbon">FAST DELIVERY - TAKEAWAY - HOT DEALS</div>
+    <div class="hero-main">
+      <div class="hero-copy">
+        <p class="mini">Biteflow menu preview</p>
+        <h1>Order Favorites In Minutes</h1>
+        <p class="lead">
+          Public storefront placeholder
+        </p>
+        <div class="mode-row">
+          <button type="button" disabled>Delivery</button>
+          <button type="button" disabled>Takeaway</button>
+        </div>
+      </div>
+      <aside class="promo-box">
+        <p class="promo-top">TODAY'S DEAL</p>
+        <p class="promo-main">2x Combo Menu</p>
+        <p class="promo-sub">+ free soft drink</p>
+      </aside>
+    </div>
+  </header>
+
+  <section class="menu-section">
+    <div class="section-head">
+      <h2>Menu Categories</h2>
+      <span class="status-pill">Live Menu</span>
+    </div>
+
+    <div class="loading" *ngIf="loadingShopping">Loading categories...</div>
+
+    <div class="menu-grid" *ngIf="!loadingShopping">
+      <article class="menu-card" *ngFor="let category of shoppingCategories">
+        <div class="menu-card-head">
+          <span class="menu-dot">{{ category.title.charAt(0) }}</span>
+          <div>
+            <h3>{{ category.title }}</h3>
+            <p>{{ category.subtitle }}</p>
+          </div>
+        </div>
+
+        <ul class="item-list">
+          <li *ngFor="let meal of category.meals">
+            <div class="item-main">
+              <span class="item-name">{{ meal.name }}</span>
+              <span class="item-tag" *ngIf="meal.badge">{{ meal.badge }}</span>
+            </div>
+            <span class="item-price">{{ meal.price }}</span>
+          </li>
+        </ul>
+
+        <button type="button" class="order-btn" disabled>Add To Cart</button>
+      </article>
+    </div>
+
+  </section>
+</section>
