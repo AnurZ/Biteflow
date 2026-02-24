@@ -1,0 +1,46 @@
+<section class="settings-page">
+  <header class="settings-header">
+    <div>
+      <h1>Settings</h1>
+      <p>Personal preferences for this browser session.</p>
+    </div>
+    <button mat-stroked-button (click)="resetDefaults()">
+      <mat-icon>restart_alt</mat-icon>
+      Reset defaults
+    </button>
+  </header>
+
+  <div class="settings-grid" [formGroup]="form">
+    <article class="settings-card">
+      <h2>Notifications</h2>
+      <mat-slide-toggle formControlName="autoOpenNotifications">
+        Auto-open notification panel
+      </mat-slide-toggle>
+      <mat-slide-toggle formControlName="notificationSound">
+        Play notification sound
+      </mat-slide-toggle>
+    </article>
+
+    <article class="settings-card">
+      <h2>Layout</h2>
+      <mat-slide-toggle formControlName="compactHeader">
+        Compact header
+      </mat-slide-toggle>
+    </article>
+
+    <article class="settings-card">
+      <h2>Navigation</h2>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Default landing after login</mat-label>
+        <mat-select formControlName="defaultLanding">
+          <mat-option
+            *ngFor="let option of landingOptions"
+            [value]="option.value"
+            [disabled]="!option.enabled">
+            {{ option.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </article>
+  </div>
+</section>
