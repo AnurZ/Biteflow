@@ -11,7 +11,7 @@ export const WaiterGuard: CanActivateFn = (_route, state) => {
     return false;
   }
 
-  if (auth.hasWaiterAccess()) {
+  if (auth.hasWaiterAccess() || auth.hasRole('staff') || auth.hasRole('admin')) {
     return true;
   }
 

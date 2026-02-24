@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../services/auth-services/auth.service';
+import { UserSettingsService } from '../../../../services/settings/user-settings.service';
 
 @Component({
   selector: 'app-auth-callback',
@@ -33,13 +34,17 @@ export class AuthCallbackComponent implements OnInit {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly userSettings: UserSettingsService
   ) {}
 
   async ngOnInit(): Promise<void> {
     try {
       await this.authService.handleLoginCallback();
-      const target = this.authService.getPostLoginRedirect() ?? '/public';
+      const requestedTarget = this.authService.getPostLoginRedirect();
+      const target = requestedTarget && requestedTarget !== '/' && !requestedTarget.startsWith('/auth')
+        ? requestedTarget
+        : this.userSettings.getPreferredHomeRoute(this.authService);
       await this.router.navigateByUrl(target);
     } catch (err) {
       console.error('Login callback failed', err);

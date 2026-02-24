@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { NotificationStoreService } from '../../../services/notifications/notification-store.service';
 import { NotificationDto } from '../../../services/notifications/notification.model';
 import { Observable, Subscription } from 'rxjs';
+import { UserSettingsService } from '../../../services/settings/user-settings.service';
 
 @Component({
   selector: 'app-header',
@@ -15,6 +16,7 @@ export class Header implements OnInit, OnDestroy {
   readonly unreadCount$: Observable<number>;
   readonly notifications$: Observable<NotificationDto[]>;
   panelOpen = false;
+  compactHeader = false;
   private autoCloseHandle?: ReturnType<typeof setTimeout>;
   private sub = new Subscription();
 
@@ -22,7 +24,8 @@ export class Header implements OnInit, OnDestroy {
   constructor(
     public authService: AuthService,
     public router: Router,
-    private readonly notificationStore: NotificationStoreService
+    private readonly notificationStore: NotificationStoreService,
+    private readonly userSettings: UserSettingsService
   ) {
     this.unreadCount$ = this.notificationStore.unreadCount$;
     this.notifications$ = this.notificationStore.notifications$;
@@ -31,8 +34,20 @@ export class Header implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.notificationStore.init();
     this.sub.add(
+      this.userSettings.settings$.subscribe((settings) => {
+        this.compactHeader = settings.compactHeader;
+      })
+    );
+
+    this.sub.add(
       this.notificationStore.notificationReceived$.subscribe(() => {
-        this.openPanelTemporarily();
+        if (this.userSettings.snapshot.notificationSound) {
+          this.playNotificationSound();
+        }
+
+        if (this.userSettings.snapshot.autoOpenNotifications) {
+          this.openPanelTemporarily();
+        }
       })
     );
   }
@@ -59,12 +74,12 @@ export class Header implements OnInit, OnDestroy {
 
   get canAccessWaiter(): boolean {
     if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
-    return this.authService.hasWaiterAccess();
+    return this.authService.hasWaiterAccess() || this.authService.hasRole('staff') || this.isRestaurantAdmin;
   }
 
   get canAccessKitchen(): boolean {
     if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
-    return this.authService.hasKitchenAccess();
+    return this.authService.hasKitchenAccess() || this.authService.hasRole('staff') || this.isRestaurantAdmin;
   }
 
   get brandName(): string {
@@ -77,6 +92,11 @@ export class Header implements OnInit, OnDestroy {
 
   isOnLoginPage():boolean{
     return this.router.url.includes('auth/login');
+  }
+
+  goHome(): void {
+    const target = this.userSettings.getPreferredHomeRoute(this.authService);
+    this.router.navigateByUrl(target);
   }
 
   toggleNotifications(): void {
@@ -118,6 +138,27 @@ export class Header implements OnInit, OnDestroy {
     if (this.autoCloseHandle) {
       clearTimeout(this.autoCloseHandle);
       this.autoCloseHandle = undefined;
+    }
+  }
+
+  private playNotificationSound(): void {
+    try {
+      const context = new AudioContext();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+
+      oscillator.type = 'triangle';
+      oscillator.frequency.value = 940;
+      gain.gain.value = 0.04;
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+
+      oscillator.start();
+      oscillator.stop(context.currentTime + 0.12);
+      oscillator.onended = () => context.close();
+    } catch {
+      // No-op when audio context is not available (browser policies/private mode).
     }
   }
 

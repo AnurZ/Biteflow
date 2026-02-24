@@ -1,0 +1,57 @@
+:host {
+  display: block;
+}
+
+.settings-page {
+  max-width: 880px;
+  margin: 18px auto;
+  padding: 0 14px 22px;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.settings-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.settings-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.settings-card h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.full {
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .settings-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
