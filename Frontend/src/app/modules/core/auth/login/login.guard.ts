@@ -7,7 +7,7 @@ export const LoginGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   try {
-    const returnUrl = state.url && state.url !== '/auth/login' ? state.url : '/';
+    const returnUrl = state.url && state.url !== '/auth/login' ? state.url : '/auth/login';
     auth.startLogin(returnUrl);
   } catch (err) {
     // If redirect fails, navigate to a safe fallback inside the SPA

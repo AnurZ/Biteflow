@@ -7,6 +7,7 @@ import { SuperAdminGuard } from './modules/core/auth/superadmin.guard';
 import { SuperAdminActivationRequestsComponent } from './modules/superadmin/superadmin-activation-requests.component';
 import { WaiterGuard } from './modules/core/auth/waiter.guard';
 import { KitchenGuard } from './modules/core/auth/kitchen.guard';
+import { LoggedInGuard } from './modules/core/auth/logged-in.guard';
 
 const routes: Routes = [
   {
@@ -39,6 +40,11 @@ const routes: Routes = [
   {
     path: 'activate',
     component: ActivationConfirmComponent
+  },
+  {
+    path: 'settings',
+    canActivate: [LoggedInGuard],
+    loadComponent: () => import('./modules/settings/settings.component').then(m => m.SettingsComponent)
   },
 
   { path: 'activation/wizard', redirectTo: 'public/activation/wizard', pathMatch: 'full' },

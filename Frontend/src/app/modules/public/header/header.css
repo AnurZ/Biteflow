@@ -28,6 +28,9 @@
 
 .center { display: flex; justify-content: center; }
 .right  { display: flex; align-items: center; gap: 1rem; }
+.icon-action {
+  color: #374151;
+}
 
 .notif-wrapper {
   position: relative;
@@ -144,6 +147,25 @@
   text-align: center;
   color: #6b7280;
   font-size: 13px;
+}
+
+.topbar.topbar-compact {
+  padding: 0.45rem 1rem;
+  gap: 0.6rem;
+}
+
+.topbar.topbar-compact #biteflow-tag {
+  font-size: 1.15rem;
+}
+
+.topbar.topbar-compact .ComponentButtons button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.topbar.topbar-compact .right {
+  gap: 0.6rem;
 }
 
 @media (max-width: 768px) {

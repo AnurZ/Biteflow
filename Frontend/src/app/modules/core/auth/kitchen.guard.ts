@@ -11,7 +11,7 @@ export const KitchenGuard: CanActivateFn = (_route, state) => {
     return false;
   }
 
-  if (auth.hasKitchenAccess()) {
+  if (auth.hasKitchenAccess() || auth.hasRole('staff') || auth.hasRole('admin')) {
     return true;
   }
 
