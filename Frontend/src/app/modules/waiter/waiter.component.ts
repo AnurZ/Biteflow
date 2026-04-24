@@ -94,7 +94,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
 
   selectedTableId: number = this.sections[0].tables[0].id;
   selectedCategoryId?: number;
-
+  sort: string | undefined;
   tableOrders: Record<number, OrderItem[]> = {};
 
   constructor(
@@ -145,6 +145,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
 
   loadMenu(): void {
     this.loadingMeals = true;
+
     this.mealCategoryEndpoint.handleAsync().subscribe({
       next: categories => {
         this.categories = categories;
@@ -154,12 +155,16 @@ export class WaiterComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.mealsService.getMeals().subscribe({
-      next: meals => {
-        this.meals = meals.filter(m => m.isAvailable);
+    this.mealsService.getMeals(1, 1000, '', this.sort).subscribe({
+      next: res => {
+        this.meals = (res.items ?? []).filter(m => m.isAvailable);
       },
-      complete: () => (this.loadingMeals = false),
-      error: () => (this.loadingMeals = false)
+      error: () => {
+        this.loadingMeals = false;
+      },
+      complete: () => {
+        this.loadingMeals = false;
+      }
     });
   }
 

@@ -44,9 +44,9 @@ export class InventoryItemService {
     return this.getByIdEndpoint.handleAsync({ id });
   }
 
-  list(): Observable<PageResult<ListInventoryItemsDto>> {
-    return this.listEndpoint.handleAsync();
-    }
+  list(req: any): Observable<PageResult<ListInventoryItemsDto>> {
+    return this.listEndpoint.handleAsync(req);
+  }
 
   getByName(name: string): Observable<PageResult<GetInventoryItemByNameDto>> {
     return this.getByNameEndpoint.handleAsync({ name });

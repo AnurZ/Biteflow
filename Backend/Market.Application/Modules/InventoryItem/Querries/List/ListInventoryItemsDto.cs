@@ -10,7 +10,7 @@ namespace Market.Application.Modules.InventoryItem.Querries.List
     public sealed class ListInventoryItemsDto
     {
         public int Id { get; init; }
-        public Guid RestaurantId { get; init; }
+        public Guid? RestaurantId { get; init; }
         public string Name { get; init; } = string.Empty;
         public string Sku { get; init; } = string.Empty;
         public UnitTypes UnitType { get; init; }

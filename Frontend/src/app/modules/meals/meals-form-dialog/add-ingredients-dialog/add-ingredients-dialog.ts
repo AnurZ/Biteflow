@@ -71,47 +71,35 @@ export class AddIngredientsDialog implements OnInit {
     }
   }
 
-  loadItemsByName(name: string) {
-    const filter = name.toLowerCase();
-    this.getInventoryItemsListEp.handleAsync().subscribe({
-      next: (result) => {
-        this.listIngredients = result.items
-          .filter(ing => ing.name.toLowerCase().includes(filter))
-          .map(ing => ({
-            inventoryItemId: ing.id,
-            inventoryItemName: ing.name,
-            quantity: 1,
-            unitType: UnitTypes[ing.unitType] as string,
-            selected: this.data.selectedIngredientsList.some(x => x.inventoryItemId === ing.id)
-          }));
-      }
-    })
-  }
-
-  loadItems() {
+  loadItems(search: string = '') {
     this.loading = true;
 
-      this.getInventoryItemsListEp.handleAsync().subscribe({
-        next: (result) => {
-          // assuming your endpoint returns { items: [...] }
-          this.listIngredients = result.items.map(ing => {
-            const existing = this.data.selectedIngredientsList.find(x => x.inventoryItemId === ing.id);
-            return {
-              inventoryItemId: ing.id,
-              inventoryItemName: ing.name,
-              quantity: existing ? existing.quantity : 1,
-              unitType: UnitTypes[ing.unitType] as string,
-              selected: !!existing
-            };
-          });
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Failed to load inventory items', err);
-          this.loading = false;
-        }
-      });
-      return; // so it doesn’t continue to the rest of the function
+    this.getInventoryItemsListEp.handleAsync({
+      pageNumber: 1,
+      pageSize: 100,
+      search: search,
+      sort: ''
+    }).subscribe({
+      next: (result) => {
+        this.listIngredients = result.items.map(ing => {
+          const existing = this.data.selectedIngredientsList.find(x => x.inventoryItemId === ing.id);
+
+          return {
+            inventoryItemId: ing.id,
+            inventoryItemName: ing.name,
+            quantity: existing ? existing.quantity : 1,
+            unitType: UnitTypes[ing.unitType] as string,
+            selected: !!existing
+          };
+        });
+
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load inventory items', err);
+        this.loading = false;
+      }
+    });
   }
 
   ngOnInit() {

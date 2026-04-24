@@ -10,6 +10,7 @@ namespace Market.Domain.Entities.TableLayout
 {
     public class TableLayout
     {
+        public Guid? RestaurantId { get; set; }
         public int Id { get; set; }
         public string Name { get; set; } // Layout name, e.g., "Main Floor"
         public string BackgroundColor { get; set; } = "#ffffff";

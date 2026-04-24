@@ -77,13 +77,14 @@ export class InventoryItems implements OnInit, AfterViewInit {
   }
 
   loadItems() {
-    this.inventoryService.list().subscribe({
-      next: (res) => {
-        console.log('API response:', res);
-        this.items.data = res.items || res; // ✅ assign array to .data
-        this.total = (res.items || res).length; // optional: update total for paginator
-      },
-      error: (err) => console.error('Error fetching inventory items', err)
+    this.inventoryService.list({
+      pageNumber: this.pageNumber,
+      pageSize: this.pageSize,
+      search: this.search,
+      sort: this.sort
+    }).subscribe(res => {
+      this.items.data = res.items || res;
+      this.total = res.total;
     });
   }
 
@@ -144,5 +145,17 @@ export class InventoryItems implements OnInit, AfterViewInit {
     const ref = this.dialog.open(InventoryItemsFormDialogComponent, { width: '720px', data: { mode: 'create' } });
     ref.afterClosed().subscribe(changed => changed && this.loadItems());
   }
+
+  onSort(key: string) {
+    if (!this.sort || this.sort.replace('-', '') !== key) {
+      this.sort = key;
+    } else if (this.sort === key) {
+      this.sort = `-${key}`;
+    } else {
+      this.sort = undefined;
+    }
+    this.loadItems();
+  }
+
 
 }

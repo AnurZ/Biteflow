@@ -13,11 +13,12 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
     {
         public async Task<int> Handle(CreateInventoryItemCommand r, CancellationToken ct)
         {
-            var restaurantId = tenantContext.RestaurantId ?? r.RestaurantId;
-            if (restaurantId == Guid.Empty)
+            var restaurantId = tenantContext.RestaurantId;
+
+            if (restaurantId == null || restaurantId == Guid.Empty)
                 throw new ValidationException("Restaurant context is missing.");
 
-            if (string.IsNullOrWhiteSpace(r.Name) || string.IsNullOrWhiteSpace(r.Name))
+            if (string.IsNullOrWhiteSpace(r.Name))
                 throw new ValidationException("Name is required.");
             // Have to add checks for all other attributes
 
@@ -33,7 +34,7 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
             {
                 Name = r.Name,
                 Sku = r.Sku,
-                RestaurantId = restaurantId,
+                RestaurantId = restaurantId.Value,
                 UnitType = r.UnitType,
                 ReorderFrequency = r.ReorderFrequency,
                 ReorderQty = r.ReorderQty,

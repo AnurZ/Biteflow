@@ -42,13 +42,16 @@ namespace Market.Application.Modules.Staff.Queries.List
             if (!string.IsNullOrWhiteSpace(req.Sort))
             {
                 bool desc = req.Sort.StartsWith("-");
-                string key = desc ? req.Sort[1..] : req.Sort;
+                string key = (desc ? req.Sort[1..] : req.Sort).ToLower();
 
                 q = key switch
                 {
-                    "firstName" => desc ? q.OrderByDescending(x => x.FirstName) : q.OrderBy(x => x.FirstName),
-                    "lastName" => desc ? q.OrderByDescending(x => x.LastName) : q.OrderBy(x => x.LastName),
-                    "hireDate" => desc ? q.OrderByDescending(x => x.HireDate) : q.OrderBy(x => x.HireDate),
+                    "email" => desc ? q.OrderByDescending(x => x.Email) : q.OrderBy(x => x.Email),
+                    "displayname" => desc ? q.OrderByDescending(x => x.DisplayName) : q.OrderBy(x => x.DisplayName),
+                    "isactive" => desc ? q.OrderByDescending(x => x.IsActive) : q.OrderBy(x => x.IsActive),
+                    "firstname" => desc ? q.OrderByDescending(x => x.FirstName) : q.OrderBy(x => x.FirstName),
+                    "lastname" => desc ? q.OrderByDescending(x => x.LastName) : q.OrderBy(x => x.LastName),
+                    "hiredate" => desc ? q.OrderByDescending(x => x.HireDate) : q.OrderBy(x => x.HireDate),
                     "position" => desc ? q.OrderByDescending(x => x.Position) : q.OrderBy(x => x.Position),
                     _ => q.OrderBy(x => x.Id)
                 };
