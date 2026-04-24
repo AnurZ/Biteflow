@@ -1,0 +1,41 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using MediatR;
+using Market.Application.Modules.Analytics.Queries.GetOrdersPerDay;
+using Market.Application.Modules.Analytics.Queries.GetTopSellingItems;
+using Market.Application.Modules.Analytics.Queries.GetRevenuePerDay;
+
+namespace Market.API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class AnalyticsController : ControllerBase
+    {
+        private readonly IMediator _mediator;
+
+        public AnalyticsController(IMediator mediator)
+        {
+            _mediator = mediator;
+        }
+
+        [HttpGet("orders-per-day")]
+        public async Task<IActionResult> GetOrdersPerDay()
+        {
+            var result = await _mediator.Send(new GetOrdersPerDayQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("top-selling-items")]
+        public async Task<IActionResult> GetTopSellingItems([FromQuery] GetTopSellingItemsQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+
+        [HttpGet("revenue-per-day")]
+        public async Task<IActionResult> GetRevenuePerDay([FromQuery] GetRevenuePerDayQuery query)
+        {
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+    }
+}
