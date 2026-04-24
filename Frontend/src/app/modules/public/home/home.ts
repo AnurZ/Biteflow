@@ -45,11 +45,15 @@ export class Home implements OnInit {
     this.loadingShopping = true;
 
     forkJoin({
-      meals: this.mealsService.getMeals(),
+      meals: this.mealsService.getMeals(1, 1000, '', ''),
       categories: this.categoryEndpoint.handleAsync()
     }).subscribe({
       next: ({ meals, categories }) => {
-        const mapped = this.mapFromApi(meals, categories);
+
+        const mealList = meals?.items ?? [];
+
+        const mapped = this.mapFromApi(mealList, categories);
+
         if (mapped.length > 0) {
           this.shoppingCategories = mapped;
           this.isFallback = false;
@@ -57,6 +61,7 @@ export class Home implements OnInit {
           this.shoppingCategories = this.buildFallback();
           this.isFallback = true;
         }
+
         this.loadingShopping = false;
       },
       error: () => {

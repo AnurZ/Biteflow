@@ -4,6 +4,9 @@ public sealed class ListStaffQueryValidator : AbstractValidator<ListStaffQuery>
 {
     private static readonly HashSet<string> AllowedSortFields = new(StringComparer.OrdinalIgnoreCase)
     {
+        "email",
+        "displayName",
+        "isActive",
         "firstName",
         "lastName",
         "hireDate",
@@ -22,7 +25,7 @@ public sealed class ListStaffQueryValidator : AbstractValidator<ListStaffQuery>
 
         RuleFor(x => x.Sort)
             .Must(BeValidSort)
-            .WithMessage("Sort must be one of: firstName, lastName, hireDate, position. Prefix with '-' for descending.")
+            .WithMessage("Sort must be one of: email, displayName, isActive, firstName, lastName, hireDate, position. Prefix with '-' for descending.")
             .When(x => !string.IsNullOrWhiteSpace(x.Sort));
     }
 

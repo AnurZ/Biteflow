@@ -5,6 +5,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
 {
     public sealed class CreateMealCommand : IRequest<int>
     {
+        public Guid RestaurantId { get; set; }
         public string Name { get; init; } = string.Empty;
         public string Description { get; init; } = string.Empty;
         public double BasePrice { get; init; }

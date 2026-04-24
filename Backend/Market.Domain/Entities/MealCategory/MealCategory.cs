@@ -10,6 +10,7 @@ namespace Market.Domain.Entities.MealCategory
 {
     public sealed class MealCategory : BaseEntity
     {
+        public Guid? RestaurantId { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
     }

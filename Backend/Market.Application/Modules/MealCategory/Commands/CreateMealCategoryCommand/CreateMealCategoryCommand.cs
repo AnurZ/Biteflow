@@ -8,6 +8,7 @@ namespace Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCom
 {
     public sealed class CreateMealCategoryCommand : IRequest<int>
     {
+
         public string Name { get; set; }
         public string Description { get; set; }
     }

@@ -21,8 +21,10 @@ public class MealController(ISender sender) : ControllerBase
     // GET: api/meal
     [HttpGet]
     [Authorize(Policy = PolicyNames.StaffMember)]
-    public async Task<List<MealDto>> GetList(CancellationToken ct)
-        => await sender.Send(new GetMealsQuery(), ct);
+    public async Task<PageResult<MealDto>> GetList([FromQuery] GetMealsQuery query, CancellationToken ct)
+    {
+        return await sender.Send(query, ct);
+    }
 
     // GET: api/meal/{id}
     [HttpGet("{id:int}")]

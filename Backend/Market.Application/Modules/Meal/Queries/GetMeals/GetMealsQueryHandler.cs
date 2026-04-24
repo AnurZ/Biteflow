@@ -3,16 +3,24 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 namespace Market.Application.Modules.Meal.Queries.GetList
 {
-    public sealed class GetMealsQueryHandler(IAppDbContext _db) : IRequestHandler<GetMealsQuery, List<MealDto>>
+    public sealed class GetMealsQueryHandler(IAppDbContext db, ITenantContext tenantContext)
+        : IRequestHandler<GetMealsQuery, PageResult<MealDto>>
     {
-       
-        public async Task<List<MealDto>> Handle(GetMealsQuery request, CancellationToken cancellationToken)
+        public async Task<PageResult<MealDto>> Handle(GetMealsQuery request, CancellationToken cancellationToken)
         {
-            var meals = await _db.Meals
+            var restaurantId = tenantContext.RestaurantId;
+
+            if (restaurantId == null || restaurantId == Guid.Empty)
+                throw new ValidationException("Restaurant context is missing.");
+
+
+
+            var q = db.Meals
+                .AsNoTracking()
+                .Where(x => x.RestaurantId == restaurantId)
                 .Select(m => new MealDto
                 {
                     Id = m.Id,
@@ -25,11 +33,54 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                     StockManaged = m.StockManaged,
                     IngredientsCount = m.Ingredients.Count,
                     CategoryId = m.CategoryId,
+                    RestaurantId = restaurantId.Value
+                });
 
-                })
-                .ToListAsync(cancellationToken);
+            // -------------------
+            // SEARCH
+            // -------------------
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var s = request.Search.Trim().ToLower();
 
-            return meals;
+                q = q.Where(x =>
+                    x.Name.ToLower().Contains(s) ||
+                    x.Description.ToLower().Contains(s));
+            }
+
+            if (request.CategoryId.HasValue && request.CategoryId > 0)
+            {
+                q = q.Where(x => x.CategoryId == request.CategoryId);
+            }
+
+            // -------------------
+            // SORT
+            // -------------------
+            if (!string.IsNullOrWhiteSpace(request.Sort))
+            {
+                bool desc = request.Sort.StartsWith("-");
+                string key = (desc ? request.Sort[1..] : request.Sort).ToLower();
+
+                q = key switch
+                {
+                    "name" => desc ? q.OrderByDescending(x => x.Name) : q.OrderBy(x => x.Name),
+                    "baseprice" => desc ? q.OrderByDescending(x => x.BasePrice) : q.OrderBy(x => x.BasePrice),
+                    "isavailable" => desc ? q.OrderByDescending(x => x.IsAvailable) : q.OrderBy(x => x.IsAvailable),
+                    "isfeatured" => desc ? q.OrderByDescending(x => x.IsFeatured) : q.OrderBy(x => x.IsFeatured),
+                    "ingredientscount" => desc ? q.OrderByDescending(x => x.IngredientsCount) : q.OrderBy(x => x.IngredientsCount),
+                    "category" => desc ? q.OrderByDescending(x => x.CategoryId) : q.OrderBy(x => x.CategoryId),
+                    _ => q.OrderBy(x => x.Id)
+                };
+            }
+            else
+            {
+                q = q.OrderBy(x => x.Id);
+            }
+
+            // -------------------
+            // PAGINATION
+            // -------------------
+            return await PageResult<MealDto>.FromQueryableAsync(q, request.Paging, cancellationToken);
         }
     }
 }

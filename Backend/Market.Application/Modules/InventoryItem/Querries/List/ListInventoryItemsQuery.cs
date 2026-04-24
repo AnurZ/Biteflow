@@ -12,5 +12,6 @@ namespace Market.Application.Modules.InventoryItem.Queries.List
     {
         public string? Search { get; init; }
         public string? Sort { get; init; }
+        public Guid? RestaurantId { get; init; }
     }
 }

@@ -30,6 +30,7 @@
   gap: 12px;
 }
 
+/* Buttons */
 .card-header .actions button[mat-flat-button] {
   height: 40px;
   line-height: 40px;
@@ -37,11 +38,12 @@
   border-radius: 10px;
 }
 
+/* Search */
 .card-header .actions .search {
   min-width: 280px;
 }
 
-/* Fix for search bar height */
+/* Material fix */
 :host ::ng-deep .card-header .actions .mat-mdc-form-field .mdc-text-field {
   height: 40px;
   border-radius: 8px;
@@ -62,7 +64,7 @@
   border-color: #ced4da;
 }
 
-/* Table wrapper */
+/* TABLE */
 .table-wrap {
   margin-top: .5rem;
   overflow: auto;
@@ -75,9 +77,9 @@ table[mat-table] {
   border-collapse: separate;
   border-spacing: 0;
   background: #fff;
-  table-layout: auto;
 }
 
+/* HEADER */
 tr[mat-header-row] {
   background: #f8f9fa;
 }
@@ -89,13 +91,25 @@ th[mat-header-cell] {
   color: #495057;
   border-bottom: 1px solid #dee2e6;
   white-space: nowrap;
-  text-align: center; /* center headers */
+  text-align: center;
+}
+
+/* SORT HEADER */
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 .sortable {
   cursor: pointer;
   user-select: none;
-  position: relative;
+  transition: 0.2s ease;
+}
+
+.sortable:hover {
+  color: #0d6efd;
 }
 
 .sortable::after {
@@ -105,27 +119,41 @@ th[mat-header-cell] {
   font-size: .75rem;
 }
 
-/* Cells */
+/* ACTIVE SORT */
+.sort-active {
+  color: #0d6efd;
+}
+
+/* ICON */
+.sort-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  opacity: 0.6;
+}
+
+/* CELLS */
 td[mat-cell] {
   padding: 12px 14px;
   border-bottom: 1px solid #f1f3f5;
   color: #212529;
   vertical-align: middle;
-  text-align: center; /* center content horizontally */
+  text-align: center;
 }
 
-/* Wrap cell content for buttons/icons */
 td[mat-cell] .cell-content {
   display: inline-block;
   text-align: center;
 }
 
+/* NAME WRAP FIX */
 .mat-column-name .cell-content {
-  display: block;        /* important! */
-  white-space: normal;   /* allow wrapping */
-  word-break: break-word; /* ensures long words also wrap */
+  display: block;
+  white-space: normal;
+  word-break: break-word;
 }
 
+/* ROWS */
 table[mat-table] tr[mat-row]:nth-child(even) td[mat-cell] {
   background: #fcfcfd;
 }
@@ -134,7 +162,7 @@ table[mat-table] tr[mat-row]:hover td[mat-cell] {
   background: #f5f7f9;
 }
 
-/* Actions column */
+/* ACTIONS */
 .action-buttons {
   display: flex;
   align-items: center;
@@ -150,20 +178,14 @@ table[mat-table] tr[mat-row]:hover td[mat-cell] {
   color: #dc3545;
 }
 
-.right { text-align: right; }
-
+/* ICON SIZE */
 td[mat-cell] mat-icon {
   font-size: 20px;
   height: 20px;
   width: 20px;
-  vertical-align: middle;
 }
 
-td[mat-cell] .icon-delete {
-  color: #dc3545 !important;
-}
-
-/* Paginator */
+/* PAGINATOR */
 mat-paginator {
   border-top: 1px solid #e9ecef;
   border-radius: 0 0 10px 10px;
@@ -171,19 +193,36 @@ mat-paginator {
   background: #fff;
 }
 
-/* Responsive adjustments */
+/* RESPONSIVE */
 @media (max-width: 992px) {
-  .card-header .actions .search { min-width: 200px; }
-}
-@media (max-width: 640px) {
-  .card { padding: 0.5rem; }
-  .card-header { flex-direction: column; align-items: stretch; gap: 8px; }
-  .card-header .actions { margin-left: 0; }
-  .card-header .actions .search { width: 100%; min-width: 0; }
+  .card-header .actions .search {
+    min-width: 200px;
+  }
 }
 
+@media (max-width: 640px) {
+  .card {
+    padding: 0.5rem;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .card-header .actions {
+    margin-left: 0;
+  }
+
+  .card-header .actions .search {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* CATEGORY PICKER FIX */
 #mealCategoryPicker {
-  border-left: 0px;
   width: 200px;
   font-size: 15px;
   height: 40px;
@@ -191,27 +230,23 @@ mat-paginator {
   border-bottom-right-radius: 10px;
   border-top-right-radius: 10px;
   background: #f8f9fa;
-  appearance: progress-bar;
+  border: 1px solid #ced4da;
 }
 
-.addButtonClass{
+/* ADD BUTTON */
+.addButtonClass {
   border-bottom-left-radius: 10px;
   border-top-left-radius: 10px;
   height: 40px;
   width: 45px;
-  border-right: 0px;
   background-color: #B014B0;
-  text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
+  border: none;
 }
 
-.addButtonClass:hover{
+.addButtonClass:hover {
   background-color: #9e339e;
   cursor: pointer;
-}
-
-.plusButtonClass{
-
 }

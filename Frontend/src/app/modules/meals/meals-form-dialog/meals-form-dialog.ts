@@ -280,13 +280,15 @@ export class MealsFormDialog implements OnInit {
     if (!name) return of(null);
 
     return this.getListEp.handleAsync().pipe(
-      map((result: MealDto[] | { meals: MealDto[] }) => {
-        const meals = Array.isArray(result) ? result : result.meals;
-        const exists = meals.some(meal => {
+      map((result: any) => {
+        const meals = result?.items ?? []; // 👈 BITNO
+
+        const exists = meals.some((meal: MealDto) => {
           return this.data.mode === 'create'
             ? meal.name.toLowerCase() === name.toLowerCase()
             : meal.name.toLowerCase() === name.toLowerCase() && meal.id !== this.data.id;
         });
+
         return exists ? { nameExists: true } : null;
       })
     );

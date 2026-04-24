@@ -10,7 +10,14 @@ export class InventoryItemListEndpoint implements BaseEndpointAsync<void, PageRe
   private base = `${MyConfig.api_address}/inventoryitem`;
   constructor(private http: HttpClient) {}
 
-  handleAsync(): Observable<PageResult<ListInventoryItemsDto>> {
-    return this.http.get<PageResult<ListInventoryItemsDto>>(this.base);
+  handleAsync(req: any): Observable<PageResult<ListInventoryItemsDto>> {
+    return this.http.get<PageResult<ListInventoryItemsDto>>(this.base, {
+      params: {
+        pageNumber: req.pageNumber,
+        pageSize: req.pageSize,
+        search: req.search ?? '',
+        sort: req.sort ?? ''
+      }
+    });
   }
 }

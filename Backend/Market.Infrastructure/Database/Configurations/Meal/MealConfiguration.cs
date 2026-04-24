@@ -1,4 +1,5 @@
 ﻿using Market.Domain.Entities.Meal;
+using Market.Domain.Entities.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -42,6 +43,7 @@ namespace Market.Infrastructure.Database.Configurations.Meals
                 .WithMany() 
                 .HasForeignKey(m => m.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+
 
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Market.Domain.Entities.InventoryItem;
 using Market.Domain.Entities.Staff;
+using Market.Domain.Entities.Tenants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +17,6 @@ namespace Market.Infrastructure.Database.Configurations.InventoryItems
 
             builder.HasKey(x => x.Id);
 
-            builder.Property(x => x.RestaurantId)
-                .IsRequired();
 
             builder.Property(x => x.Name)
                 .IsRequired()
@@ -41,7 +40,7 @@ namespace Market.Infrastructure.Database.Configurations.InventoryItems
                 .IsRequired();
 
             builder.HasIndex(x => x.Sku).IsUnique();
-            builder.HasIndex(x => x.RestaurantId);
+
         }
     }
 }

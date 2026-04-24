@@ -94,7 +94,15 @@ th[mat-header-cell] {
 .sortable {
   cursor: pointer;
   user-select: none;
-  position: relative;
+  white-space: nowrap;
+}
+
+.sort-icon {
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  opacity: 0.7;
 }
 
 .sortable::after {

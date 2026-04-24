@@ -10,7 +10,7 @@ namespace Market.Domain.Entities.InventoryItem
 {
     public class InventoryItem:BaseEntity
     {
-        public Guid RestaurantId { get; set; }
+        public Guid? RestaurantId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Sku { get; set; } = string.Empty;
         public UnitTypes UnitType {  get; set; }

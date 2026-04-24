@@ -10,6 +10,7 @@ namespace Market.Domain.Entities.Meal
 {
     public class Meal:BaseEntity
     {
+        public Guid? RestaurantId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public double BasePrice { get; set; }

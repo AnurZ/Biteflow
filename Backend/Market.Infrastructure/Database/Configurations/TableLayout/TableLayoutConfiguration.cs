@@ -1,5 +1,6 @@
 ﻿using Market.Domain.Entities.DiningTables;
 using Market.Domain.Entities.TableLayout;
+using Market.Domain.Entities.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

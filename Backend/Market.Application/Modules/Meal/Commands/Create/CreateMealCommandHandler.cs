@@ -9,16 +9,22 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.Meal.Commands.Create
 {
-    public sealed class CreateMealCommandHandler(IAppDbContext db)
+    public sealed class CreateMealCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         : IRequestHandler<CreateMealCommand, int>
     {
         public async Task<int> Handle(CreateMealCommand request, CancellationToken cancellationToken)
         {
+            var restaurantId = tenantContext.RestaurantId;
+
+            if (restaurantId == null || restaurantId == Guid.Empty)
+                throw new ValidationException("Restaurant context is missing.");
+
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ValidationException("Meal name is required.");
 
             var nameExists = await db.Meals
-                .AnyAsync(m => m.Name.ToLower() == request.Name.Trim().ToLower(), cancellationToken);
+                .AnyAsync(m => m.Name.ToLower() == request.Name.Trim().ToLower()
+                && m.RestaurantId == restaurantId, cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal with the name '{request.Name.Trim()}' already exists.");
@@ -38,7 +44,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
                 ImageField = request.ImageField?.Trim() ?? string.Empty,
                 StockManaged = request.StockManaged,
                 CategoryId = request.CategoryId,
-
+                RestaurantId = restaurantId.Value,
             };
 
             db.Meals.Add(newMeal);

@@ -11,15 +11,18 @@ namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
     public sealed class GetTableLayoutsQueryHandler : IRequestHandler<GetTableLayoutsQuery, List<TableLayoutDto>>
     {
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public GetTableLayoutsQueryHandler(IAppDbContext db)
+        public GetTableLayoutsQueryHandler(IAppDbContext db, ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext=tenantContext;
         }
 
         public async Task<List<TableLayoutDto>> Handle(GetTableLayoutsQuery request, CancellationToken cancellationToken)
         {
             var query = _db.TableLayouts
+                .Where(x=> x.RestaurantId == _tenantContext.RestaurantId)
                 .Include(l => l.Tables)
                 .AsQueryable();
 

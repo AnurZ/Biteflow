@@ -26,8 +26,12 @@
 
       <!-- Name Column -->
       <ng-container matColumnDef="name">
-        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Name</div></th>
-        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.name }}</div></td>
+        <th mat-header-cell *matHeaderCellDef (click)="onSort('name')" class="sortable">
+          Name
+        </th>
+        <td mat-cell *matCellDef="let item">
+          <div class="cell-content">{{ item.name }}</div>
+        </td>
       </ng-container>
 
       <!-- SKU Column -->
@@ -44,8 +48,12 @@
 
       <!-- Current Qty Column -->
       <ng-container matColumnDef="currentQty">
-        <th mat-header-cell *matHeaderCellDef><div class="cell-content">Current Qty</div></th>
-        <td mat-cell *matCellDef="let item"><div class="cell-content">{{ item.currentQty }}</div></td>
+        <th mat-header-cell *matHeaderCellDef (click)="onSort('currentQty')" class="sortable">
+          Current Qty
+        </th>
+        <td mat-cell *matCellDef="let item">
+          <div class="cell-content">{{ item.currentQty }}</div>
+        </td>
       </ng-container>
 
       <!-- Actions Column -->
@@ -70,9 +78,10 @@
     </table>
   </div>
 
-  <mat-paginator
-    [length]="total"
-    [pageSize]="pageSize"
-    (page)="onPage($event)">
+  <mat-paginator [length]="total"
+                 [pageSize]="pageSize"
+                 [pageIndex]="pageNumber - 1"
+                 [pageSizeOptions]="[5,10,25,50]"
+                 (page)="onPage($event)">
   </mat-paginator>
 </div>
