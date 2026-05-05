@@ -1,7 +1,8 @@
 import { AuthConfig } from 'angular-oauth2-oidc';
+import { MyConfig } from './my-config';
 
 export const authConfig: AuthConfig = {
-  issuer: 'https://localhost:7260',
+  issuer: MyConfig.api_base,
   redirectUri: `${window.location.origin}/auth/callback`,
   postLogoutRedirectUri: `${window.location.origin}/public`,
   clientId: 'biteflow-angular',
