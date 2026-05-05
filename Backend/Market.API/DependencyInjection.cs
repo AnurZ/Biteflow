@@ -39,12 +39,6 @@ public static class DependencyInjection
 
         services.AddSignalR();
 
-        // Typed options + validation on startup
-        services.AddOptions<JwtOptions>()
-            .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddOptions<CaptchaOptions>()
             .Bind(configuration.GetSection(CaptchaOptions.SectionName))
             .ValidateDataAnnotations()

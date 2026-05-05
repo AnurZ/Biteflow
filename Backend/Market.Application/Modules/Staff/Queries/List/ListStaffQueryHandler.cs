@@ -13,13 +13,13 @@ namespace Market.Application.Modules.Staff.Queries.List
         {
             var q = db.EmployeeProfiles
                 .AsNoTracking()
-                .Include(e => e.AppUser)
+                .Include(e => e.ApplicationUser)
                 .Select(e => new ListStaffItemDto
                 {
                     Id = e.Id,
-                    AppUserId = e.AppUserId,
-                    DisplayName = e.AppUser.DisplayName,
-                    Email = e.AppUser.Email,
+                    ApplicationUserId = e.ApplicationUserId,
+                    DisplayName = e.ApplicationUser != null ? e.ApplicationUser.DisplayName ?? string.Empty : string.Empty,
+                    Email = e.ApplicationUser != null ? e.ApplicationUser.Email ?? string.Empty : string.Empty,
                     FirstName = e.FirstName,
                     LastName = e.LastName,
                     Position = e.Position,

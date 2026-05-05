@@ -119,7 +119,6 @@ export class StaffFormDialogComponent implements OnInit {
       const derivedRole = normalizedPosition === 'manager' ? 'admin' : 'staff';
 
       const body: CreateStaffRequest = {
-        appUserId: 0,
         email: raw.email.trim(),
         displayName: raw.displayName.trim(),
         plainPassword: raw.plainPassword.trim(),

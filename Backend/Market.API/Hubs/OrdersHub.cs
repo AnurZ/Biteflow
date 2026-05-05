@@ -241,14 +241,6 @@ namespace Market.API.Hubs
                 return profile?.Position;
             }
 
-            if (int.TryParse(subject, out var legacyId))
-            {
-                var profile = await _db.EmployeeProfiles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.AppUserId == legacyId, ct);
-                return profile?.Position;
-            }
-
             return null;
         }
 

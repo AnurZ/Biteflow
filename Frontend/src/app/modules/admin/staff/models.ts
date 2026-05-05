@@ -5,7 +5,7 @@ export interface PageResult<T> {
 
 export interface StaffListItem {
   id: number;
-  appUserId: number;
+  applicationUserId: string;
   displayName: string;
   email: string;
   firstName: string;
@@ -17,7 +17,7 @@ export interface StaffListItem {
 
 export interface StaffDetails {
   id: number;
-  appUserId: number;
+  applicationUserId: string;
   displayName: string;
   email: string;
   position: string;
@@ -40,7 +40,6 @@ export interface StaffDetails {
 }
 
 export interface CreateStaffRequest {
-  appUserId: number;
   email?: string;
   displayName?: string;
   plainPassword?: string;

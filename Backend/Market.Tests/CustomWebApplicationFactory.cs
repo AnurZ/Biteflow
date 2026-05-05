@@ -1,6 +1,5 @@
-﻿using Market.Application.Modules.Auth.Commands.Login;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Market.Tests;
 
@@ -18,18 +17,22 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<Progr
         var client = CreateClient();
         if (string.IsNullOrEmpty(_cachedToken))
         {
-            var loginRequest = new
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
             {
-                Email = "test",
-                Password = "test123"
-            };
+                ["grant_type"] = "password",
+                ["client_id"] = "biteflow-tests",
+                ["username"] = "string",
+                ["password"] = "string",
+                ["scope"] = "openid profile email roles biteflow.api"
+            });
 
-            var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
+            var response = await client.PostAsync("connect/token", content);
             response.EnsureSuccessStatusCode();
 
-            var loginResponse = await response.Content.ReadFromJsonAsync<LoginCommandDto>();
-            _cachedToken = loginResponse.AccessToken;
+            using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            _cachedToken = payload.RootElement.GetProperty("access_token").GetString();
         }
+
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", _cachedToken);
         return client;

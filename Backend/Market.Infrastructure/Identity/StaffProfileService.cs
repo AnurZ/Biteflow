@@ -9,14 +9,14 @@ namespace Market.Infrastructure.Identity;
 
 public sealed class StaffProfileService
 {
-    private readonly DatabaseContext _legacyContext;
+    private readonly DatabaseContext _db;
     private readonly ILogger<StaffProfileService> _logger;
 
     public StaffProfileService(
-        DatabaseContext legacyContext,
+        DatabaseContext db,
         ILogger<StaffProfileService> logger)
     {
-        _legacyContext = legacyContext;
+        _db = db;
         _logger = logger;
     }
 
@@ -28,9 +28,7 @@ public sealed class StaffProfileService
         var effectiveTenantId = user.TenantId == Guid.Empty
             ? SeedConstants.DefaultTenantId
             : user.TenantId;
-        var normalizedUserName = (user.UserName ?? user.Email ?? string.Empty).ToLowerInvariant();
-
-        var profile = await _legacyContext.EmployeeProfiles
+        var profile = await _db.EmployeeProfiles
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
 
@@ -40,30 +38,9 @@ public sealed class StaffProfileService
             {
                 profile.ApplicationUserId = user.Id;
                 profile.TenantId = effectiveTenantId;
-                await _legacyContext.SaveChangesAsync(ct);
+                await _db.SaveChangesAsync(ct);
             }
             return true;
-        }
-
-        var legacyAppUser = await _legacyContext.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedUserName, ct);
-
-        if (legacyAppUser != null)
-        {
-            profile = await _legacyContext.EmployeeProfiles
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(x => x.AppUserId == legacyAppUser.Id, ct);
-
-            if (profile != null)
-            {
-                profile.ApplicationUserId = user.Id;
-                profile.TenantId = effectiveTenantId;
-                if (!string.IsNullOrWhiteSpace(user.DisplayName))
-                    profile.FirstName = user.DisplayName;
-                await _legacyContext.SaveChangesAsync(ct);
-                return true;
-            }
         }
 
         var newProfile = new EmployeeProfile
@@ -76,11 +53,11 @@ public sealed class StaffProfileService
             IsActive = true
         };
 
-        _legacyContext.EmployeeProfiles.Add(newProfile);
+        _db.EmployeeProfiles.Add(newProfile);
 
         try
         {
-            await _legacyContext.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
             return true;
         }
         catch (Exception ex)

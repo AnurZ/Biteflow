@@ -93,38 +93,10 @@ namespace Market.API.Identity
 
         private async Task<string?> ResolvePositionAsync(ApplicationUser user, CancellationToken ct)
         {
-            var profile = await _db.EmployeeProfiles
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
-
-            if (profile != null && !string.IsNullOrWhiteSpace(profile.Position))
-            {
-                return profile.Position;
-            }
-
-            var userNameOrEmail = (user.UserName ?? user.Email ?? string.Empty).Trim().ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(userNameOrEmail))
-            {
-                return null;
-            }
-
-            var legacyUserId = await _db.Users
-                .AsNoTracking()
-                .IgnoreQueryFilters()
-                .Where(x => x.Email.ToLower() == userNameOrEmail)
-                .Select(x => x.Id)
-                .FirstOrDefaultAsync(ct);
-
-            if (legacyUserId == 0)
-            {
-                return null;
-            }
-
             return await _db.EmployeeProfiles
                 .AsNoTracking()
                 .IgnoreQueryFilters()
-                .Where(x => x.AppUserId == legacyUserId)
+                .Where(x => x.ApplicationUserId == user.Id)
                 .Select(x => x.Position)
                 .FirstOrDefaultAsync(ct);
         }

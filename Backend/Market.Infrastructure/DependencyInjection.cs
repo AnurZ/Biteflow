@@ -17,6 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 
 namespace Market.Infrastructure;
@@ -94,8 +95,6 @@ public static class DependencyInjection
         services.Configure<SecurityStampValidatorOptions>(opts =>
             opts.ValidationInterval = TimeSpan.FromMinutes(5));
 
-        // Identity hasher
-        services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
         services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
         services.AddScoped<IEmailService, SmtpEmailService>();
 
@@ -143,8 +142,8 @@ public static class DependencyInjection
         })
         .AddJwtBearer(options =>
         {
-            options.Authority = authority;
-            options.RequireHttpsMetadata = !env.IsDevelopment();
+            options.Authority = env.IsTest() ? null : authority;
+            options.RequireHttpsMetadata = !env.IsDevelopment() && !env.IsTest();
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = true,
@@ -159,6 +158,12 @@ public static class DependencyInjection
                 RoleClaimType = JwtClaimTypes.Role,
                 ClockSkew = TimeSpan.Zero
             };
+            if (env.IsTest())
+            {
+                options.TokenValidationParameters.ValidateIssuer = false;
+                options.TokenValidationParameters.SignatureValidator = (token, _) => new JsonWebToken(token);
+                options.TokenValidationParameters.ValidateIssuerSigningKey = false;
+            }
             options.MapInboundClaims = false;
             options.Events = new JwtBearerEvents
             {
@@ -200,9 +205,6 @@ public static class DependencyInjection
                 }
             };
         });
-
-        // Token service (reads JwtOptions via IOptions<JwtOptions>)
-        services.AddTransient<IJwtTokenService, JwtTokenService>();
 
         // HttpContext accessor + current user
         services.AddHttpContextAccessor();

@@ -12,7 +12,9 @@ namespace Market.Application.Modules.Staff.Commands.Update
     {
         public async Task Handle(UpdateStaffCommand r, CancellationToken ct)
         {
-            var e = await db.EmployeeProfiles.FirstOrDefaultAsync(x => x.Id == r.Id, ct);
+            var e = await db.EmployeeProfiles
+                .Include(x => x.ApplicationUser)
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
             if (e is null) throw new KeyNotFoundException("EmployeeProfile");
 
             e.Position = r.Position.Trim();
@@ -32,9 +34,10 @@ namespace Market.Application.Modules.Staff.Commands.Update
 
             if (!string.IsNullOrWhiteSpace(r.DisplayName))
             {
-                var user = await db.Users.FirstOrDefaultAsync(u => u.Id == e.AppUserId, ct)
-                           ?? throw new MarketNotFoundException("User not found for staff.");
-                user.DisplayName = r.DisplayName.Trim();
+                if (e.ApplicationUser is null)
+                    throw new MarketNotFoundException("User not found for staff.");
+
+                e.ApplicationUser.DisplayName = r.DisplayName.Trim();
             }
 
             await db.SaveChangesAsync(ct);

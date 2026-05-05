@@ -14,7 +14,7 @@ namespace Market.Application.Modules.Staff.Queries.GetById
         public async Task<GetStaffByIdDto> Handle(GetStaffByIdQuery req, CancellationToken ct)
         {
             var e = await db.EmployeeProfiles
-                .Include(x => x.AppUser)
+                .Include(x => x.ApplicationUser)
                 .FirstOrDefaultAsync(x => x.Id == req.Id, ct);
 
             if (e is null) throw new KeyNotFoundException("EmployeeProfile");
@@ -22,9 +22,9 @@ namespace Market.Application.Modules.Staff.Queries.GetById
             return new GetStaffByIdDto
             {
                 Id = e.Id,
-                AppUserId = e.AppUserId,
-                DisplayName = e.AppUser.DisplayName,
-                Email = e.AppUser.Email,
+                ApplicationUserId = e.ApplicationUserId,
+                DisplayName = e.ApplicationUser?.DisplayName ?? string.Empty,
+                Email = e.ApplicationUser?.Email ?? string.Empty,
                 Position = e.Position,
                 FirstName = e.FirstName,
                 LastName = e.LastName,

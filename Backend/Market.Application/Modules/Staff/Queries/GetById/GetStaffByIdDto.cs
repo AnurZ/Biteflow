@@ -9,7 +9,7 @@ namespace Market.Application.Modules.Staff.Queries.GetById
     public sealed class GetStaffByIdDto
     {
         public int Id { get; init; }
-        public int AppUserId { get; init; }
+        public Guid ApplicationUserId { get; init; }
         public string DisplayName { get; init; } = string.Empty;
         public string Email { get; init; } = string.Empty;
 

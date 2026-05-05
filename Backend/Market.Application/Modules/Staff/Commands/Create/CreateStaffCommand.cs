@@ -8,8 +8,6 @@ namespace Market.Application.Modules.Staff.Commands.Create
 {
     public sealed class CreateStaffCommand : IRequest<int>
     {
-        public int AppUserId { get; init; }
-
         public string? Email { get; init; }
         public string? DisplayName { get; init; }
         public string? PlainPassword { get; init; }

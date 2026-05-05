@@ -1,4 +1,3 @@
-using Market.Domain.Entities.Identity;
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.Staff;
 using Market.Shared.Constants;
@@ -21,20 +20,17 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     };
 
     private readonly IAppDbContext _db;
-    private readonly IPasswordHasher<AppUser> _hasher;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<CreateStaffCommandHandler> _logger;
     private readonly ITenantContext _tenantContext;
 
     public CreateStaffCommandHandler(
         IAppDbContext db,
-        IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
         ILogger<CreateStaffCommandHandler> logger,
         ITenantContext tenantContext)
     {
         _db = db;
-        _hasher = hasher;
         _userManager = userManager;
         _logger = logger;
         _tenantContext = tenantContext;
@@ -51,7 +47,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         var targetRole = NormalizeRole(r.Role);
 
         var email = r.Email?.Trim();
-        if (r.AppUserId == 0 && string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(email))
             throw new ValidationException("Email is required when creating a new user.");
 
         var displayName = string.IsNullOrWhiteSpace(r.DisplayName)
@@ -62,13 +58,11 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             ? Guid.NewGuid().ToString("N")
             : r.PlainPassword!;
 
-        var appUserId = await EnsureLegacyUserAsync(r.AppUserId, email!, displayName, plainPassword, tenantId, restaurantId, ct);
         var identityUser = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
 
         var profile = new EmployeeProfile
         {
             TenantId = tenantId,
-            AppUserId = appUserId,
             ApplicationUserId = identityUser.Id,
             Position = r.Position.Trim(),
             FirstName = r.FirstName.Trim(),
@@ -88,46 +82,6 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         await _db.SaveChangesAsync(ct);
 
         return profile.Id;
-    }
-
-    private async Task<int> EnsureLegacyUserAsync(
-        int existingAppUserId,
-        string email,
-        string displayName,
-        string plainPassword,
-        Guid tenantId,
-        Guid restaurantId,
-        CancellationToken ct)
-    {
-        if (existingAppUserId > 0)
-        {
-            var exists = await _db.Users.AnyAsync(u => u.Id == existingAppUserId, ct);
-            if (!exists) throw new ValidationException("AppUserId is invalid.");
-            return existingAppUserId;
-        }
-
-        var normalizedEmail = email.Trim();
-        var emailTaken = await _db.Users.AnyAsync(u => u.Email == normalizedEmail, ct);
-        if (emailTaken) throw new MarketConflictException("Email already in use.");
-
-        var user = new AppUser
-        {
-            TenantId = tenantId,
-            RestaurantId = restaurantId,
-            Email = normalizedEmail,
-            DisplayName = displayName,
-            IsEmailConfirmed = false,
-            IsLocked = false,
-            IsEnabled = true,
-            TokenVersion = 0
-        };
-
-        user.PasswordHash = _hasher.HashPassword(user, plainPassword);
-
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync(ct);
-
-        return user.Id;
     }
 
     private async Task<ApplicationUser> EnsureIdentityUserAsync(
