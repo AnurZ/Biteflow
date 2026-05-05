@@ -1,6 +1,7 @@
 ﻿import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { MyConfig } from '../../my-config';
 
 export interface UpdateTableReservationStatusDto {
   id: number;
@@ -9,12 +10,12 @@ export interface UpdateTableReservationStatusDto {
 
 @Injectable({ providedIn: 'root' })
 export class TableReservationUpdateStatusEndpoint {
-  private baseUrl = 'https://localhost:7260/api/TableReservation'; // full backend URL
+  private base = `${MyConfig.api_address}/TableReservation`;
 
   constructor(private http: HttpClient) {}
 
   handleAsync(dto: UpdateTableReservationStatusDto): Promise<void> {
-    return this.http.patch<void>(`${this.baseUrl}/update-status`, dto).toPromise();
+    return this.http.patch<void>(`${this.base}/update-status`, dto).toPromise();
   }
 }
 

@@ -10,6 +10,16 @@ steps:
   - checkout: self
 
   - script: |
+      matches="$(git grep -n "localhost:7260" -- ":(glob)Frontend/src/app/**/*.ts" ":(exclude)Frontend/src/app/my-config.ts" || true)"
+
+      if [ -n "$matches" ]; then
+        echo "Hardcoded backend localhost URL found outside Frontend/src/app/my-config.ts:"
+        echo "$matches"
+        exit 1
+      fi
+    displayName: "Block hardcoded frontend backend URLs"
+
+  - script: |
       git config user.name "Azure DevOps Mirror Bot"
       git config user.email "devops@azure.com"
 
