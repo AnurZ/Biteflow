@@ -1,8 +1,11 @@
-﻿using Market.Infrastructure;
+using Market.Infrastructure;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = PolicyNames.StaffMember)]
 public class FileController : ControllerBase
 {
     private readonly BlobStorageService _blobService;
@@ -12,19 +15,17 @@ public class FileController : ControllerBase
         _blobService = blobService;
     }
 
-    // 👇 This line is the key fix
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadImage([FromForm] FileUploadDto dto)
     {
-        if (dto.File == null || dto.File.Length == 0)
+        if (dto.File is not { Length: > 0 } file)
             return BadRequest("No file uploaded");
-        Console.WriteLine("FILE RECEIVED? => " + (dto.File != null));
-
+        Console.WriteLine("FILE RECEIVED? => " + (file != null));
 
         try
         {
-            var url = await _blobService.UploadAsync(dto.File);
+            var url = await _blobService.UploadAsync(file!);
             var fileName = Path.GetFileName(new Uri(url).LocalPath);
             return Ok(new { Url = url, FileName = fileName });
         }
@@ -35,16 +36,13 @@ public class FileController : ControllerBase
         }
     }
 
-
-
     [HttpGet("{fileName}")]
     public IActionResult GetImageUrl(string fileName)
-    {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+    {
         if (string.IsNullOrEmpty(fileName))
             return BadRequest("File name required");
 
         var url = _blobService.GetBlobUrl(fileName);
         return Ok(new { Url = url });
     }
-
 }

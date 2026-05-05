@@ -23,12 +23,56 @@ public static class DynamicDataSeeder
     {
         await context.Database.EnsureCreatedAsync();
 
+        await SeedDefaultTenantAndRestaurantAsync(context);
         await SeedProductCategoriesAsync(context);
         await SeedTenantActivationRequestAsync(context);
         await SeedTableLayoutsAndTablesAsync(context);
         await SeedMealCategoriesAsync(context);
         await SeedMealsAsync(context);
         await SeedOrdersAsync(context);
+    }
+
+    private static async Task SeedDefaultTenantAndRestaurantAsync(DatabaseContext context)
+    {
+        var now = DateTime.UtcNow;
+
+        var tenant = await context.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultTenantId);
+
+        if (tenant == null)
+        {
+            context.Tenants.Add(new Tenant
+            {
+                Id = SeedConstants.DefaultTenantId,
+                Name = "Demo Tenant",
+                Domain = "demo-tenant",
+                IsActive = true,
+                CreatedAtUtc = now
+            });
+        }
+
+        var restaurant = await context.Restaurants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultRestaurantId);
+
+        if (restaurant == null)
+        {
+            context.Restaurants.Add(new Restaurant
+            {
+                Id = SeedConstants.DefaultRestaurantId,
+                TenantId = SeedConstants.DefaultTenantId,
+                Name = "Demo Bistro",
+                Domain = "demo-bistro-restaurant",
+                Address = "Ulica 1",
+                City = "Mostar",
+                State = "FBIH",
+                IsActive = true,
+                CreatedAtUtc = now
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedProductCategoriesAsync(DatabaseContext context)

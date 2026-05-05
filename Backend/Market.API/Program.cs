@@ -15,6 +15,7 @@ using System.Linq;
 using Market.Domain.Entities.BlobStorageSettings;
 using Market.API.Hubs;
 using Market.Shared.Constants;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 public partial class Program
 {
@@ -123,21 +124,49 @@ public partial class Program
             }
 
             // CORS
-            var allowedOrigins = new[]
+            var corsSection = builder.Configuration.GetSection("Cors");
+            var allowedOrigins = corsSection.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+            var allowedHeaders = corsSection.GetSection("AllowedHeaders").Get<string[]>() ?? Array.Empty<string>();
+            var allowedMethods = corsSection.GetSection("AllowedMethods").Get<string[]>() ?? Array.Empty<string>();
+            var allowCredentials = corsSection.GetValue<bool>("AllowCredentials");
+            static void ConfigureCorsPolicy(
+                CorsPolicyBuilder policy,
+                string[] origins,
+                string[] headers,
+                string[] methods,
+                bool credentialsAllowed)
             {
-                "http://localhost:4200",
-                "https://localhost:4200",
-                "http://127.0.0.1:4200",
-                "https://127.0.0.1:4200"
-            };
+                policy.WithOrigins(origins);
+
+                if (headers.Length > 0)
+                {
+                    policy.WithHeaders(headers);
+                }
+                else
+                {
+                    policy.AllowAnyHeader();
+                }
+
+                if (methods.Length > 0)
+                {
+                    policy.WithMethods(methods);
+                }
+                else
+                {
+                    policy.AllowAnyMethod();
+                }
+
+                if (credentialsAllowed)
+                {
+                    policy.AllowCredentials();
+                }
+            }
+
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAngularDev", policy =>
                 {
-                    policy.WithOrigins(allowedOrigins)
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                    ConfigureCorsPolicy(policy, allowedOrigins, allowedHeaders, allowedMethods, allowCredentials);
                 });
             });
 
@@ -161,52 +190,9 @@ public partial class Program
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseCors("AllowAngularDev");
-
-            app.Use(async (context, next) =>
+            app.UseCors(policy =>
             {
-                if (HttpMethods.IsOptions(context.Request.Method))
-                {
-                    var origin = context.Request.Headers["Origin"].ToString();
-                    if (!string.IsNullOrWhiteSpace(origin) &&
-                        allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
-                    {
-                        context.Response.Headers["Access-Control-Allow-Origin"] = origin;
-                        context.Response.Headers["Vary"] = "Origin";
-                    }
-                    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-
-                    var requestMethod = context.Request.Headers["Access-Control-Request-Method"].ToString();
-                    if (!string.IsNullOrWhiteSpace(requestMethod))
-                    {
-                        context.Response.Headers["Access-Control-Allow-Methods"] = requestMethod;
-                    }
-
-                    var requestHeaders = context.Request.Headers["Access-Control-Request-Headers"].ToString();
-                    context.Response.Headers["Access-Control-Allow-Headers"] =
-                        !string.IsNullOrWhiteSpace(requestHeaders)
-                            ? requestHeaders
-                            : "Content-Type, Authorization";
-
-                    context.Response.StatusCode = StatusCodes.Status204NoContent;
-                    await context.Response.CompleteAsync();
-                    return;
-                }
-
-                var originForResponse = context.Request.Headers["Origin"].ToString();
-                if (!string.IsNullOrWhiteSpace(originForResponse) &&
-                    allowedOrigins.Contains(originForResponse, StringComparer.OrdinalIgnoreCase))
-                {
-                    context.Response.OnStarting(() =>
-                    {
-                        context.Response.Headers["Access-Control-Allow-Origin"] = originForResponse;
-                        context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-                        context.Response.Headers.Append("Vary", "Origin");
-                        return Task.CompletedTask;
-                    });
-                }
-
-                await next();
+                ConfigureCorsPolicy(policy, allowedOrigins, allowedHeaders, allowedMethods, allowCredentials);
             });
 
             app.UseIdentityServer();

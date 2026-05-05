@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Market.Application.Modules.TableReservation.Commands.CreateTableReservation;
 using Market.Application.Modules.TableReservation.Queries.GetTableReservations;
@@ -11,6 +12,7 @@ namespace Market.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public class TableReservationController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -3,11 +3,14 @@ using MediatR;
 using Market.Application.Modules.Analytics.Queries.GetOrdersPerDay;
 using Market.Application.Modules.Analytics.Queries.GetTopSellingItems;
 using Market.Application.Modules.Analytics.Queries.GetRevenuePerDay;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Market.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public class AnalyticsController : ControllerBase
     {
         private readonly IMediator _mediator;

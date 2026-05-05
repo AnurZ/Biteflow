@@ -28,50 +28,54 @@ public sealed class RequestResponseLoggingMiddleware(
             request.Body.Position = 0;
         }
 
-        // Capture original response stream
         var originalBodyStream = context.Response.Body;
         await using var responseBody = new MemoryStream();
         context.Response.Body = responseBody;
 
         try
         {
-            // Continue pipeline
             await next(context);
         }
         finally
         {
             stopwatch.Stop();
 
-            // Read response body
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-
-            var logMessage = new StringBuilder()
-                .AppendLine("HTTP Request/Response Log:")
-                .AppendLine($"  Path: {request.Path}")
-                .AppendLine($"  Method: {request.Method}")
-                .AppendLine($"  Status: {context.Response.StatusCode}")
-                .AppendLine($"  Duration: {stopwatch.ElapsedMilliseconds} ms");
-
-            if (!string.IsNullOrWhiteSpace(requestBody))
-                logMessage.AppendLine($"  Request Body: {requestBody}");
-
-            if (!string.IsNullOrWhiteSpace(responseText))
-                logMessage.AppendLine($"  Response Body: {responseText}");
-
-            var elapsed = stopwatch.ElapsedMilliseconds;
-            if (elapsed > SlowRequestThresholdMs)
+            try
             {
-                logger.LogWarning("[SLOW REQUEST] {Path} took {Elapsed} ms", request.Path, elapsed);
-                await File.AppendAllTextAsync("Logs/slow-requests.log",
-                    $"{DateTime.UtcNow:u} | {request.Path} | {elapsed} ms{Environment.NewLine}");
+                responseBody.Seek(0, SeekOrigin.Begin);
+                var responseText = await new StreamReader(responseBody).ReadToEndAsync();
+                responseBody.Seek(0, SeekOrigin.Begin);
+
+                var logMessage = new StringBuilder()
+                    .AppendLine("HTTP Request/Response Log:")
+                    .AppendLine($"  Path: {request.Path}")
+                    .AppendLine($"  Method: {request.Method}")
+                    .AppendLine($"  Status: {context.Response.StatusCode}")
+                    .AppendLine($"  Duration: {stopwatch.ElapsedMilliseconds} ms");
+
+                if (!string.IsNullOrWhiteSpace(requestBody))
+                    logMessage.AppendLine($"  Request Body: {requestBody}");
+
+                if (!string.IsNullOrWhiteSpace(responseText))
+                    logMessage.AppendLine($"  Response Body: {responseText}");
+
+                var elapsed = stopwatch.ElapsedMilliseconds;
+                if (elapsed > SlowRequestThresholdMs)
+                {
+                    logger.LogWarning("[SLOW REQUEST] {Path} took {Elapsed} ms", request.Path, elapsed);
+                    await File.AppendAllTextAsync("Logs/slow-requests.log",
+                        $"{DateTime.UtcNow:u} | {request.Path} | {elapsed} ms{Environment.NewLine}");
+                }
+
+                logger.LogInformation("{Log}", logMessage.ToString());
+
+                await responseBody.CopyToAsync(originalBodyStream);
+            }
+            finally
+            {
+                context.Response.Body = originalBodyStream;
             }
 
-            logger.LogInformation("{Log}", logMessage.ToString());
-
-            // Copy the response back to the original stream
-            await responseBody.CopyToAsync(originalBodyStream);
         }
     }
 }

@@ -68,8 +68,16 @@ public sealed class MarketExceptionHandler(
 
             case ValidationException vex:
                 code = "validation.error";
-                message = "Validation failed: " +
-                          string.Join("; ", vex.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"));
+                var validationErrors = vex.Errors
+                    .Select(e => string.IsNullOrWhiteSpace(e.PropertyName)
+                        ? e.ErrorMessage
+                        : $"{e.PropertyName}: {e.ErrorMessage}")
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .ToArray();
+
+                message = validationErrors.Length > 0
+                    ? "Validation failed: " + string.Join("; ", validationErrors)
+                    : vex.Message;
                 break;
         }
 

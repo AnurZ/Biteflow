@@ -87,7 +87,8 @@ public sealed class IdentitySeeder
                 UserName = email,
                 Email = email,
                 DisplayName = seedSection["DisplayName"] ?? "Seed Administrator",
-                TenantId = Guid.Empty,
+                TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 IsEnabled = true,
                 EmailConfirmed = true,
             };
@@ -99,6 +100,10 @@ public sealed class IdentitySeeder
                     string.Join(", ", create.Errors.Select(e => e.Description)));
                 throw new InvalidOperationException("Seed admin seeding failed.");
             }
+        }
+        else
+        {
+            await EnsureDemoRestaurantContextAsync(user, ct);
         }
 
         await EnsureRoleAsync(user, RoleNames.Admin, ct);
@@ -348,10 +353,29 @@ public sealed class IdentitySeeder
 
         if (identityUser != null)
         {
+            var changed = false;
+
             if (!string.Equals(identityUser.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
             {
                 identityUser.Email = normalizedEmail;
                 identityUser.NormalizedEmail = normalizedEmail.ToUpperInvariant();
+                changed = true;
+            }
+
+            if (identityUser.TenantId == Guid.Empty)
+            {
+                identityUser.TenantId = SeedConstants.DefaultTenantId;
+                changed = true;
+            }
+
+            if (identityUser.RestaurantId is null || identityUser.RestaurantId == Guid.Empty)
+            {
+                identityUser.RestaurantId = SeedConstants.DefaultRestaurantId;
+                changed = true;
+            }
+
+            if (changed)
+            {
                 var update = await _userManager.UpdateAsync(identityUser);
                 if (!update.Succeeded)
                 {
@@ -367,7 +391,8 @@ public sealed class IdentitySeeder
             UserName = username,
             Email = normalizedEmail,
             DisplayName = username,
-            TenantId = Guid.Empty,
+            TenantId = SeedConstants.DefaultTenantId,
+            RestaurantId = SeedConstants.DefaultRestaurantId,
             IsEnabled = true,
             EmailConfirmed = true
         };
@@ -381,6 +406,33 @@ public sealed class IdentitySeeder
         }
 
         return identityUser;
+    }
+
+    private async Task EnsureDemoRestaurantContextAsync(ApplicationUser user, CancellationToken ct)
+    {
+        var changed = false;
+
+        if (user.TenantId == Guid.Empty)
+        {
+            user.TenantId = SeedConstants.DefaultTenantId;
+            changed = true;
+        }
+
+        if (user.RestaurantId is null || user.RestaurantId == Guid.Empty)
+        {
+            user.RestaurantId = SeedConstants.DefaultRestaurantId;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        var update = await _userManager.UpdateAsync(user);
+        if (!update.Succeeded)
+        {
+            _logger.LogWarning("Failed updating restaurant context for user {UserId}: {Errors}",
+                user.Id, string.Join(", ", update.Errors.Select(e => e.Description)));
+        }
     }
 
     private async Task EnsureRoleAsync(ApplicationUser user, string role, CancellationToken ct)
