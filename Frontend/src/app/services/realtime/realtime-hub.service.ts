@@ -102,7 +102,8 @@ export class RealtimeHubService {
 
     this.connection = new HubConnectionBuilder()
       .withUrl(this.hubUrl, {
-        accessTokenFactory: () => this.auth.getAccessToken() ?? ''
+        accessTokenFactory: () => this.auth.getAccessToken() ?? '',
+        withCredentials: false
       })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)

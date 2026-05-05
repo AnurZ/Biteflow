@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { from, lastValueFrom, map, Observable } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
@@ -232,6 +232,13 @@ export class AuthService {
       );
       return result;
     } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+        console.warn('Stored access token was rejected by the identity server. Clearing local auth state.');
+        this.oauthService.logOut(true);
+        this.authInfo = null;
+        return undefined;
+      }
+
       console.warn('error loading user info', error);
       return undefined;
     }

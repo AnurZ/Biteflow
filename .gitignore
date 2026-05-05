@@ -545,3 +545,4 @@ http-client.private.env.json
 appsettings.Secrets.json
 Backend/Market.API/appsettings.secrets.json
 Frontend/src/environments/environment.hcaptcha.ts
+Backend/Market.API/keys/*.json
