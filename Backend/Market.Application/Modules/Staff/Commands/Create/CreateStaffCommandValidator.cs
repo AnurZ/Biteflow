@@ -15,8 +15,6 @@ public sealed class CreateStaffCommandValidator : AbstractValidator<CreateStaffC
 
     public CreateStaffCommandValidator()
     {
-        RuleFor(x => x.AppUserId).GreaterThanOrEqualTo(0);
-
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required.")
             .EmailAddress().WithMessage("Email format is invalid.")

@@ -30,12 +30,12 @@ namespace Market.Infrastructure.Database
             {
                 entity.ToTable("EmployeeProfiles", t => t.ExcludeFromMigrations());
                 entity.Property(x => x.Position).HasMaxLength(128);
-                entity.Property(x => x.ApplicationUserId).IsRequired(false);
+                entity.Property(x => x.ApplicationUserId).IsRequired();
 
                 entity.HasOne(x => x.ApplicationUser)
                       .WithOne(x => x.EmployeeProfile)
                       .HasForeignKey<EmployeeProfile>(x => x.ApplicationUserId)
-                      .OnDelete(DeleteBehavior.SetNull);
+                      .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

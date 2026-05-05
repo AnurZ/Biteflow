@@ -8,7 +8,6 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
     public sealed class ConfirmActivationHandler(
         IAppDbContext db,
         IActivationLinkService links,
-        IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
         IEmailService emailService)
         : IRequestHandler<ConfirmActivationCommand, ConfirmActivationResult>
@@ -83,22 +82,6 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
                     IsActive = true,
                     CreatedAtUtc = DateTime.UtcNow
                 });
-
-                var legacyAdmin = new AppUser
-                {
-                    TenantId = tenantId,
-                    RestaurantId = restaurantId,
-                    Email = adminEmail,
-                    DisplayName = $"{e.RestaurantName} Admin",
-                    IsEmailConfirmed = true,
-                    IsLocked = false,
-                    IsEnabled = true,
-                    TokenVersion = 0
-                };
-
-                legacyAdmin.PasswordHash = hasher.HashPassword(legacyAdmin, adminPassword);
-
-                db.Users.Add(legacyAdmin);
 
                 e.MarkActivated(tenantId);
                 await db.SaveChangesAsync(ct);
@@ -189,11 +172,6 @@ Biteflow Team
             {
                 var localPart = attempt == 0 ? baseLocal : $"{baseLocal}{requestId + attempt}";
                 var email = $"{localPart}@biteflow.com";
-
-                var inLegacy = await db.Users
-                    .AnyAsync(x => x.Email.ToLower() == email.ToLower(), ct);
-
-                if (inLegacy) continue;
 
                 var inIdentity = await userManager.FindByEmailAsync(email);
                 if (inIdentity != null) continue;

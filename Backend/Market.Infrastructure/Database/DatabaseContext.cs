@@ -27,8 +27,6 @@ public partial class DatabaseContext : DbContext, IAppDbContext
 
     public DbSet<ProductCategoryEntity> ProductCategories => Set<ProductCategoryEntity>();
     public DbSet<ProductEntity> Products => Set<ProductEntity>();
-    public DbSet<AppUser> Users => Set<AppUser>();
-    public DbSet<RefreshTokenEntity> RefreshTokens => Set<RefreshTokenEntity>();
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<TenantActivationRequest> TenantActivationRequests => Set<TenantActivationRequest>();

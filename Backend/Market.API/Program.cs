@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Http;
 using System.Linq;
 using Market.Domain.Entities.BlobStorageSettings;
 using Market.API.Hubs;
+using Market.Shared.Constants;
 
 public partial class Program
 {
@@ -108,7 +109,7 @@ public partial class Program
                     .AddInMemoryIdentityResources(Config.IdentityResources)
                     .AddInMemoryApiScopes(Config.ApiScopes)
                     .AddInMemoryApiResources(Config.ApiResources)
-                    .AddInMemoryClients(Config.Clients)
+                    .AddInMemoryClients(Config.Clients(builder.Environment.IsTest()))
                     .AddDeveloperSigningCredential()
                     .AddResourceOwnerValidator<ResourceOwnerPasswordValidator>()
                     .AddProfileService<CustomProfileService>();

@@ -10,7 +10,7 @@ namespace Market.Application.Modules.Staff.Queries.List
     public sealed class ListStaffItemDto
     {
         public int Id { get; init; }
-        public int AppUserId { get; init; }
+        public Guid ApplicationUserId { get; init; }
         public string DisplayName { get; init; } = string.Empty;
         public string Email { get; init; } = string.Empty;
         public string FirstName { get; init; } = string.Empty;
