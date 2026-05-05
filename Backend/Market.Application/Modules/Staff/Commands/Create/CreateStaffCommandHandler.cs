@@ -58,7 +58,8 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             ? Guid.NewGuid().ToString("N")
             : r.PlainPassword!;
 
-        var identityUser = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
+        var identityResult = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
+        var identityUser = identityResult.User;
 
         var profile = new EmployeeProfile
         {
@@ -79,12 +80,20 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         };
 
         _db.EmployeeProfiles.Add(profile);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            await CleanupIdentitySideEffectsAsync(identityResult, targetRole);
+            throw;
+        }
 
         return profile.Id;
     }
 
-    private async Task<ApplicationUser> EnsureIdentityUserAsync(
+    private async Task<IdentityUserProvisionResult> EnsureIdentityUserAsync(
         string email,
         string displayName,
         string plainPassword,
@@ -95,6 +104,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     {
         var normalizedEmail = email.Trim();
         var user = await _userManager.FindByEmailAsync(normalizedEmail);
+        var createdUser = false;
 
         if (user == null)
         {
@@ -116,8 +126,11 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
                 _logger.LogWarning("Failed to create identity user {Email}: {Message}", normalizedEmail, message);
                 throw new ValidationException($"Failed to create identity user: {message}");
             }
+
+            createdUser = true;
         }
 
+        var addedRole = false;
         if (!await _userManager.IsInRoleAsync(user, role))
         {
             var roleResult = await _userManager.AddToRoleAsync(user, role);
@@ -126,9 +139,39 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
                 var message = string.Join(", ", roleResult.Errors.Select(e => e.Description));
                 throw new ValidationException($"Failed to assign role '{role}' to user: {message}");
             }
+
+            addedRole = true;
         }
 
-        return user;
+        return new IdentityUserProvisionResult(user, createdUser, addedRole);
+    }
+
+    private async Task CleanupIdentitySideEffectsAsync(IdentityUserProvisionResult result, string role)
+    {
+        if (result.CreatedUser)
+        {
+            var delete = await _userManager.DeleteAsync(result.User);
+            if (!delete.Succeeded)
+            {
+                _logger.LogWarning("Failed to delete identity user {UserId} after staff profile creation failed: {Errors}",
+                    result.User.Id,
+                    string.Join(", ", delete.Errors.Select(e => e.Description)));
+            }
+
+            return;
+        }
+
+        if (result.AddedRole)
+        {
+            var removeRole = await _userManager.RemoveFromRoleAsync(result.User, role);
+            if (!removeRole.Succeeded)
+            {
+                _logger.LogWarning("Failed to remove role {Role} from identity user {UserId} after staff profile creation failed: {Errors}",
+                    role,
+                    result.User.Id,
+                    string.Join(", ", removeRole.Errors.Select(e => e.Description)));
+            }
+        }
     }
 
     private static string NormalizeRole(string? requestedRole)
@@ -144,4 +187,9 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
 
         return match;
     }
+
+    private sealed record IdentityUserProvisionResult(
+        ApplicationUser User,
+        bool CreatedUser,
+        bool AddedRole);
 }
