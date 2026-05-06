@@ -25,9 +25,11 @@ public sealed class StaffProfileService
         if (user is null)
             throw new ArgumentNullException(nameof(user));
 
-        var effectiveTenantId = user.TenantId == Guid.Empty
-            ? SeedConstants.DefaultTenantId
-            : user.TenantId;
+        if (user.TenantId == Guid.Empty)
+        {
+            _logger.LogWarning("Cannot create staff profile for user {UserId} without a tenant.", user.Id);
+            return false;
+        }
         var profile = await _db.EmployeeProfiles
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
@@ -37,7 +39,7 @@ public sealed class StaffProfileService
             if (profile.ApplicationUserId != user.Id)
             {
                 profile.ApplicationUserId = user.Id;
-                profile.TenantId = effectiveTenantId;
+                profile.TenantId = user.TenantId;
                 await _db.SaveChangesAsync(ct);
             }
             return true;
@@ -46,7 +48,7 @@ public sealed class StaffProfileService
         var newProfile = new EmployeeProfile
         {
             ApplicationUserId = user.Id,
-            TenantId = effectiveTenantId,
+            TenantId = user.TenantId,
             Position = "Unassigned",
             FirstName = user.DisplayName ?? "Staff",
             LastName = string.Empty,

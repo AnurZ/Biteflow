@@ -14,6 +14,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
             var domain = r.Domain.Trim().ToLowerInvariant();
 
             var exists = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
                 .AnyAsync(x => x.Domain.ToLower() == domain, ct);
 
             if (exists)

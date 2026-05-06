@@ -38,8 +38,8 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
 
     public async Task<int> Handle(CreateStaffCommand r, CancellationToken ct)
     {
-        var tenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId;
-        var restaurantId = _tenantContext.RestaurantId ?? Guid.Empty;
+        var tenantId = _tenantContext.RequireTenantId();
+        var restaurantId = _tenantContext.RequireRestaurantId();
 
         if (string.IsNullOrWhiteSpace(r.FirstName) || string.IsNullOrWhiteSpace(r.LastName))
             throw new ValidationException("FirstName and LastName are required.");

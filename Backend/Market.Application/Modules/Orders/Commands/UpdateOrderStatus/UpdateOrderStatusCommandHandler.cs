@@ -18,16 +18,20 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
         };
 
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public UpdateOrderStatusCommandHandler(IAppDbContext db)
+        public UpdateOrderStatusCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext = tenantContext;
         }
 
         public async Task Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
         {
+            var tenantId = _tenantContext.RequireTenantId();
+
             var order = await _db.Orders
-                .FirstOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(o => o.Id == request.Id && o.TenantId == tenantId, cancellationToken);
 
             if (order == null)
             {

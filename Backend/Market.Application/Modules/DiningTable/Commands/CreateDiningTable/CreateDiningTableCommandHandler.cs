@@ -10,10 +10,12 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
     public sealed class CreateDiningTableCommandHandler : IRequestHandler<CreateDiningTableCommandDto, int>
     {
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public CreateDiningTableCommandHandler(IAppDbContext db)
+        public CreateDiningTableCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext = tenantContext;
         }
 
         public async Task<int> Handle(CreateDiningTableCommandDto request, CancellationToken cancellationToken)
@@ -21,7 +23,13 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            
+            var restaurantId = _tenantContext.RequireRestaurantId();
+            var layoutExists = await _db.TableLayouts
+                .AnyAsync(l => l.Id == request.TableLayoutId && l.RestaurantId == restaurantId, cancellationToken);
+
+            if (!layoutExists)
+                throw new KeyNotFoundException($"TableLayout with ID {request.TableLayoutId} not found.");
+
             var exists = await _db.DiningTables
                 .AnyAsync(t => t.TableLayoutId == request.TableLayoutId
                                && t.Number == request.Number

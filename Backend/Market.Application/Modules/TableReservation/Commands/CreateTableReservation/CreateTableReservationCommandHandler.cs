@@ -15,15 +15,22 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
     {
         private readonly IAppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ITenantContext _tenantContext;
 
-        public CreateTableReservationCommandHandler(IAppDbContext db, UserManager<ApplicationUser> userManager)
+        public CreateTableReservationCommandHandler(
+            IAppDbContext db,
+            UserManager<ApplicationUser> userManager,
+            ITenantContext tenantContext)
         {
             _db = db;
             _userManager = userManager;
+            _tenantContext = tenantContext;
         }
 
         public async Task<int> Handle(CreateTableReservationCommandDto request, CancellationToken cancellationToken)
         {
+            var tenantId = _tenantContext.RequireTenantId();
+
             // Optional user lookup
             ApplicationUser? user = null;
             if (request.ApplicationUserId.HasValue)
@@ -31,6 +38,8 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
                 user = await _userManager.FindByIdAsync(request.ApplicationUserId.Value.ToString());
                 if (user == null)
                     throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+                if (user.TenantId != tenantId)
+                    throw new InvalidOperationException("User does not belong to the current tenant.");
             }
 
             // Basic validation
@@ -41,7 +50,8 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
                 throw new ArgumentException("Reservation start must be before reservation end.");
 
             // Find table
-            var table = await _db.DiningTables.FindAsync(new object[] { request.DiningTableId }, cancellationToken);
+            var table = await _db.DiningTables
+                .FirstOrDefaultAsync(t => t.Id == request.DiningTableId && t.TenantId == tenantId, cancellationToken);
             if (table == null)
                 throw new InvalidOperationException("Dining table not found.");
 
@@ -65,6 +75,7 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
             var reservation = new Domain.Entities.TableReservations.TableReservation
             {
                 DiningTableId = request.DiningTableId,
+                TenantId = tenantId,
                 NumberOfGuests = request.NumberOfGuests,
                 ApplicationUserId = request.ApplicationUserId,
                 FirstName = request.FirstName,

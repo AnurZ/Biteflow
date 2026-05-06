@@ -84,12 +84,14 @@ public static class DynamicDataSeeder
                 {
                     Name = "Racunari (demo)",
                     IsEnabled = true,
+                    TenantId = SeedConstants.DefaultTenantId,
                     CreatedAtUtc = DateTime.UtcNow
                 },
                 new ProductCategoryEntity
                 {
                     Name = "Mobilni uredaji (demo)",
                     IsEnabled = true,
+                    TenantId = SeedConstants.DefaultTenantId,
                     CreatedAtUtc = DateTime.UtcNow
                 }
             );
@@ -114,6 +116,7 @@ public static class DynamicDataSeeder
         }
 
         var req = new TenantActivationRequest();
+        req.TenantId = SeedConstants.DefaultTenantId;
         req.EditDraft(
             restaurantName: "Demo Bistro",
             domain: seedDomain,
@@ -143,7 +146,9 @@ public static class DynamicDataSeeder
         {
             Name = "Main Floor",
             BackgroundColor = "#f5f5f5",
-            FloorImageUrl = string.Empty
+            FloorImageUrl = string.Empty,
+            RestaurantId = SeedConstants.DefaultRestaurantId,
+            TenantId = SeedConstants.DefaultTenantId
         };
 
         var tables = new List<DiningTable>

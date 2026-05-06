@@ -22,12 +22,14 @@ namespace Market.API.Controllers
     {
         private readonly ISender _sender;
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
         private readonly IHubContext<OrdersHub> _hub;
 
-        public OrdersController(ISender sender, IAppDbContext db, IHubContext<OrdersHub> hub)
+        public OrdersController(ISender sender, IAppDbContext db, ITenantContext tenantContext, IHubContext<OrdersHub> hub)
         {
             _sender = sender;
             _db = db;
+            _tenantContext = tenantContext;
             _hub = hub;
         }
 
@@ -48,9 +50,10 @@ namespace Market.API.Controllers
         public async Task<ActionResult<int>> Create([FromBody] CreateOrderCommand command, CancellationToken ct)
         {
             var id = await _sender.Send(command, ct);
+            var tenantId = _tenantContext.RequireTenantId();
             var order = await _db.Orders
                 .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
+                .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
 
             if (order != null)
             {
@@ -107,9 +110,10 @@ namespace Market.API.Controllers
             command.Id = id;
             await _sender.Send(command, ct);
 
+            var tenantId = _tenantContext.RequireTenantId();
             var order = await _db.Orders
                 .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id, ct);
+                .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
 
             if (order != null)
             {
