@@ -39,8 +39,9 @@ This project seeds two important demo identity users in `IdentitySeeder`.
 - When a new restaurant is activated, create one tenant admin login account.
 - Username/email format:
   - `restaurantname.admin@biteflow.com`
-- Password format:
-  - `restaurantnamefirstpassword`
+- Password setup:
+  - No predictable or plaintext password is returned or emailed.
+  - The owner receives a short-lived, one-time password setup link by email after activation.
 - Role assignment:
   - `admin`
 - Scope:

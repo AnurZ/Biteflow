@@ -41,7 +41,11 @@ export interface PageResult<T> {
 
 export interface ConfirmActivationResult {
   tenantId: string;
-  restaurantName: string;
   adminUsername: string;
-  adminPassword: string;
+}
+
+export interface SetActivationPasswordRequest {
+  userId: string;
+  token: string;
+  password: string;
 }

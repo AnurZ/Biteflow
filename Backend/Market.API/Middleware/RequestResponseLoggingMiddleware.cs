@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Market.API.Middlewares;
 
@@ -54,10 +56,10 @@ public sealed class RequestResponseLoggingMiddleware(
                     .AppendLine($"  Duration: {stopwatch.ElapsedMilliseconds} ms");
 
                 if (!string.IsNullOrWhiteSpace(requestBody))
-                    logMessage.AppendLine($"  Request Body: {requestBody}");
+                    logMessage.AppendLine($"  Request Body: {RedactSensitiveBody(requestBody)}");
 
                 if (!string.IsNullOrWhiteSpace(responseText))
-                    logMessage.AppendLine($"  Response Body: {responseText}");
+                    logMessage.AppendLine($"  Response Body: {RedactSensitiveBody(responseText)}");
 
                 var elapsed = stopwatch.ElapsedMilliseconds;
                 if (elapsed > SlowRequestThresholdMs)
@@ -77,5 +79,82 @@ public sealed class RequestResponseLoggingMiddleware(
             }
 
         }
+    }
+
+    private static string RedactSensitiveBody(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return body;
+        }
+
+        var trimmed = body.TrimStart();
+        if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
+        {
+            try
+            {
+                var node = JsonNode.Parse(body);
+                RedactJsonNode(node);
+                return node?.ToJsonString(new JsonSerializerOptions { WriteIndented = false }) ?? body;
+            }
+            catch (JsonException)
+            {
+                return body;
+            }
+        }
+
+        if (body.Contains('='))
+        {
+            return string.Join("&", body.Split('&').Select(part =>
+            {
+                var separatorIndex = part.IndexOf('=');
+                if (separatorIndex < 0)
+                {
+                    return part;
+                }
+
+                var key = Uri.UnescapeDataString(part[..separatorIndex].Replace('+', ' '));
+                return IsSensitiveKey(key) ? $"{part[..separatorIndex]}=[REDACTED]" : part;
+            }));
+        }
+
+        return body;
+    }
+
+    private static void RedactJsonNode(JsonNode? node)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var property in obj.ToList())
+            {
+                if (IsSensitiveKey(property.Key))
+                {
+                    obj[property.Key] = "[REDACTED]";
+                    continue;
+                }
+
+                RedactJsonNode(property.Value);
+            }
+
+            return;
+        }
+
+        if (node is JsonArray array)
+        {
+            foreach (var item in array)
+            {
+                RedactJsonNode(item);
+            }
+        }
+    }
+
+    private static bool IsSensitiveKey(string key)
+    {
+        return key.Equals("password", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("newPassword", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("confirmPassword", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("token", StringComparison.OrdinalIgnoreCase) ||
+               key.EndsWith("Password", StringComparison.OrdinalIgnoreCase) ||
+               key.EndsWith("Token", StringComparison.OrdinalIgnoreCase);
     }
 }

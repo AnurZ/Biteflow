@@ -276,6 +276,105 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Fact]
+    public async Task ConfirmActivation_ShouldUseOneTimePasswordSetupLinkWithoutLeakingPassword()
+    {
+        CustomWebApplicationFactory<Program>.ClearSentEmails();
+        var client = _factory.CreateClient();
+        var restaurantName = $"Da Vinci {Guid.NewGuid():N}";
+        var ownerEmail = $"activation-owner-{Guid.NewGuid():N}@example.test";
+        var domain = $"activation-secure-{Guid.NewGuid():N}";
+
+        var createResponse = await client.PostAsJsonAsync("/api/activation-requests", new
+        {
+            RestaurantName = restaurantName,
+            Domain = domain,
+            OwnerFullName = "Activation Owner",
+            OwnerEmail = ownerEmail,
+            OwnerPhone = "123456",
+            Address = "Activation Address",
+            City = "Mostar",
+            State = "FBIH"
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var requestId = await createResponse.Content.ReadFromJsonAsync<int>();
+
+        var submitResponse = await client.PostAsync($"/api/activation-requests/{requestId}/submit", null);
+        submitResponse.EnsureSuccessStatusCode();
+
+        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "superadmin");
+        var approveResponse = await superAdmin.PostAsync($"/api/activation-requests/{requestId}/approve", null);
+        approveResponse.EnsureSuccessStatusCode();
+        var activationLink = await approveResponse.Content.ReadAsStringAsync();
+        var activationToken = GetQueryParam(activationLink, "token");
+
+        CustomWebApplicationFactory<Program>.ClearSentEmails();
+        var confirmResponse = await client.PostAsJsonAsync("/api/activation-requests/confirm", new
+        {
+            Token = activationToken
+        });
+        confirmResponse.EnsureSuccessStatusCode();
+
+        using var payload = JsonDocument.Parse(await confirmResponse.Content.ReadAsStringAsync());
+        var root = payload.RootElement;
+        Assert.True(root.TryGetProperty("tenantId", out _));
+        Assert.True(root.TryGetProperty("adminUsername", out var adminUsernameProperty));
+        Assert.False(root.TryGetProperty("adminPassword", out _));
+        Assert.False(root.TryGetProperty("restaurantName", out _));
+
+        var adminUsername = adminUsernameProperty.GetString()!;
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var admin = await userManager.FindByEmailAsync(adminUsername);
+
+        Assert.NotNull(admin);
+        Assert.True(await userManager.IsInRoleAsync(admin!, RoleNames.Admin));
+        Assert.False(await userManager.CheckPasswordAsync(admin!, "davincifirstpassword"));
+
+        var emails = CustomWebApplicationFactory<Program>.GetSentEmails();
+        var onboardingEmail = Assert.Single(emails, x => x.ToEmail == ownerEmail);
+        Assert.Contains(adminUsername, onboardingEmail.Body);
+        Assert.Contains("/activate/set-password", onboardingEmail.Body);
+        Assert.DoesNotContain("firstpassword", onboardingEmail.Body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("First-time password", onboardingEmail.Body, StringComparison.OrdinalIgnoreCase);
+
+        var setupLink = onboardingEmail.Body
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Single(x => x.Contains("/activate/set-password", StringComparison.OrdinalIgnoreCase));
+        setupLink = setupLink[setupLink.IndexOf("http", StringComparison.OrdinalIgnoreCase)..];
+        var setupUserId = GetQueryParam(setupLink, "userId");
+        var setupToken = GetQueryParam(setupLink, "token");
+        var newPassword = $"newpassword{Guid.NewGuid():N}";
+
+        var setPasswordResponse = await client.PostAsJsonAsync("/api/auth/set-password", new
+        {
+            UserId = setupUserId,
+            Token = setupToken,
+            Password = newPassword
+        });
+        setPasswordResponse.EnsureSuccessStatusCode();
+
+        var reuseResponse = await client.PostAsJsonAsync("/api/auth/set-password", new
+        {
+            UserId = setupUserId,
+            Token = setupToken,
+            Password = $"{newPassword}2"
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, reuseResponse.StatusCode);
+
+        var invalidTokenResponse = await client.PostAsJsonAsync("/api/auth/set-password", new
+        {
+            UserId = setupUserId,
+            Token = "invalid-token",
+            Password = $"{newPassword}3"
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, invalidTokenResponse.StatusCode);
+
+        var login = await _factory.GetAuthenticatedClientAsync(adminUsername, newPassword);
+        var protectedResponse = await login.GetAsync("/api/Analytics/revenue-per-day");
+        protectedResponse.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Admin_ShouldNotUpdateOrDeleteTableLayoutFromAnotherRestaurant()
     {
         var otherLayoutId = await CreateTableLayoutForOtherTenantAsync();
@@ -1054,6 +1153,22 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         }
 
         return $"{Base64Url(header)}.{Base64Url(payload)}.";
+    }
+
+    private static string GetQueryParam(string url, string name)
+    {
+        var query = new Uri(url).Query.TrimStart('?');
+        foreach (var part in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pair = part.Split('=', 2);
+            if (pair.Length == 2 &&
+                string.Equals(Uri.UnescapeDataString(pair[0]), name, StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(pair[1].Replace('+', ' '));
+            }
+        }
+
+        throw new InvalidOperationException($"Query parameter '{name}' was not found in '{url}'.");
     }
 
     private static string Base64Url(object value)

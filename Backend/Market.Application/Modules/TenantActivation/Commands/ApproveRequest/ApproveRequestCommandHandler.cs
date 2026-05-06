@@ -48,7 +48,7 @@ Your restaurant request for "{restaurantName}" has been approved.
 To continue onboarding, please activate your account using this link:
 {activationLink}
 
-After activation, we will send your first-time access username and password.
+After activation, we will send your admin username and a one-time link to set your password.
 
 Best regards,
 Biteflow Team

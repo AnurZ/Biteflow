@@ -4,6 +4,7 @@ import {
   ActivationDraftDto,
   ConfirmActivationResult,
   CreateDraftCommand, PageResult,
+  SetActivationPasswordRequest,
   UpdateDraftCommand
 } from '../../modules/public/models/activation.models';
 import { MyConfig } from '../../my-config';
@@ -35,6 +36,10 @@ export class ActivationRequests {
 
   confirm(token: string) {
     return this.http.post<ConfirmActivationResult>(`${this.base}/confirm`, { token }, { responseType: 'json' as const });
+  }
+
+  setPassword(body: SetActivationPasswordRequest) {
+    return this.http.post<void>(`${MyConfig.api_address}/auth/set-password`, body);
   }
 
   list(status?: number) {
