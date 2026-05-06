@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
@@ -10,7 +9,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MyConfig } from '../../../my-config';
-import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-tenant-activation',
@@ -25,14 +23,11 @@ import { map } from 'rxjs/operators';
 export class TenantActivationComponent implements OnInit {
   private fb = inject(FormBuilder);
   private snack = inject(MatSnackBar);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
   private http = inject(HttpClient);
 
   @ViewChild(MatStepper) stepper!: MatStepper;
 
-  draftId: number | null = null;
-  status = 0; // Draft
+  status = 0;
   isBusy = false;
 
   private base = `${MyConfig.api_address}/activation-requests`;
@@ -51,64 +46,21 @@ export class TenantActivationComponent implements OnInit {
     ownerPhone: ['', Validators.required],
   });
 
-  ngOnInit(): void {
-    const id = Number(this.route.snapshot.queryParamMap.get('id'));
-    if (id && !Number.isNaN(id)) {
-      this.draftId = id;
-      this.load(id);
-    }
-  }
-
-  private load(id: number) {
-    this.isBusy = true;
-    this.http.get<any>(`${this.base}/${id}`).subscribe({
-      next: dto => {
-        this.restaurantForm.patchValue({
-          restaurantName: dto.restaurantName,
-          domain: dto.domain,
-          address: dto.address,
-          city: dto.city,
-          state: dto.state
-        });
-        this.ownerForm.patchValue({
-          ownerFullName: dto.ownerFullName,
-          ownerEmail: dto.ownerEmail,
-          ownerPhone: dto.ownerPhone
-        });
-        this.status = dto.status ?? 0;
-        this.isBusy = false;
-      },
-      error: (_err: any) => {
-        this.isBusy = false;
-        this.snack.open('Draft not found', 'Close', { duration: 2200 });
-      }
-    });
-  }
+  ngOnInit(): void {}
 
   private buildBody() {
     const r = this.restaurantForm.value;
     const o = this.ownerForm.value;
     return {
       restaurantName: (r.restaurantName ?? '').trim(),
-      domain:         (r.domain ?? '').trim(),
-      address:        (r.address ?? '').trim(),
-      city:           (r.city ?? '').trim(),
-      state:          (r.state ?? '').trim(),
-      ownerFullName:  (o.ownerFullName ?? '').trim(),
-      ownerEmail:     (o.ownerEmail ?? '').trim(),
-      ownerPhone:     (o.ownerPhone ?? '').trim()
+      domain: (r.domain ?? '').trim(),
+      address: (r.address ?? '').trim(),
+      city: (r.city ?? '').trim(),
+      state: (r.state ?? '').trim(),
+      ownerFullName: (o.ownerFullName ?? '').trim(),
+      ownerEmail: (o.ownerEmail ?? '').trim(),
+      ownerPhone: (o.ownerPhone ?? '').trim()
     };
-  }
-
-  private createOrUpdateDraft() {
-    const body = this.buildBody();
-    if (!this.draftId) {
-      return this.http.post<number>(this.base, body); // Create vraća id
-    } else {
-      return this.http
-        .put<void>(`${this.base}/${this.draftId}`, { id: this.draftId, ...body })
-        .pipe(map(() => this.draftId!));
-    }
   }
 
   saveStep1() {
@@ -118,48 +70,24 @@ export class TenantActivationComponent implements OnInit {
 
   saveStep2() {
     if (this.ownerForm.invalid || this.restaurantForm.invalid) return;
-    this.isBusy = true;
-
-    this.createOrUpdateDraft().subscribe({
-      next: (id: number) => {
-        this.draftId = id;
-        this.isBusy = false;
-        this.stepper.next();
-        this.snack.open('Saved', 'Close', { duration: 1200 });
-      },
-      error: (err: any) => {
-        this.isBusy = false;
-        const msg = err?.error?.message || 'Save failed';
-        this.snack.open(msg, 'Close', { duration: 2200 });
-      }
-
-    });
+    this.stepper.next();
   }
 
   submit() {
-    const doSubmit = (id: number) => {
-      this.http.post<void>(`${this.base}/${id}/submit`, {}).subscribe({
-        next: () => {
-          this.status = 1;
-          this.isBusy = false;
-          this.snack.open('Submitted', 'Close', { duration: 1600 });
-        },
-        error: (err: any) => {
-          this.isBusy = false;
-          const msg = err?.error?.message || 'Save failed';
-          this.snack.open(msg, 'Close', { duration: 2200 });
-        }
-
-      });
-    };
+    if (this.ownerForm.invalid || this.restaurantForm.invalid) return;
 
     this.isBusy = true;
 
-    this.createOrUpdateDraft().subscribe({
-      next: (id: number) => doSubmit(id),
+    this.http.post<void>(this.base, this.buildBody()).subscribe({
+      next: () => {
+        this.status = 1;
+        this.isBusy = false;
+        this.snack.open('Submitted', 'Close', { duration: 1600 });
+      },
       error: (err: any) => {
         this.isBusy = false;
-        this.snack.open('Create/Save failed', 'Close', { duration: 2200 });
+        const msg = err?.error?.message || 'Submit failed';
+        this.snack.open(msg, 'Close', { duration: 2200 });
       }
     });
   }

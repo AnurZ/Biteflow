@@ -5,9 +5,6 @@ using Market.Application.Modules.TenantActivation.Commands.ApproveRequest;
 using Market.Application.Modules.TenantActivation.Commands.ConfirmActivation;
 using Market.Application.Modules.TenantActivation.Commands.Create;
 using Market.Application.Modules.TenantActivation.Commands.RejectRequest;
-using Market.Application.Modules.TenantActivation.Commands.Submit;
-using Market.Application.Modules.TenantActivation.Commands.Update;
-using Market.Application.Modules.TenantActivation.Queries.GetById;
 using Market.Application.Modules.TenantActivation.Queries.List;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Tenants;
@@ -27,78 +24,16 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
 
 
 
-    // Create draft
+    // Submit activation request
     [AllowAnonymous]
     [HttpPost]
-    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<int>> Create([FromBody] CreateDraftCommand cmd)
-    {
-        if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        var id = await mediator.Send(cmd);   // expect: returns int id
-        return Ok(id);
-    }
-
-    // Update draft
-    [AllowAnonymous]
-    [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateDraftCommand body)
+    public async Task<IActionResult> Create([FromBody] CreateDraftCommand cmd)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
-        if (id != body.Id) return BadRequest("Route id and payload id differ.");
-        try
-        {
-            await mediator.Send(body);
-            return NoContent();
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound();
-        }
-    }
-
-    // Submit draft
-    [AllowAnonymous]
-    [HttpPost("{id:int}/submit")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Submit(int id)
-    {
-        try
-        {
-            await mediator.Send(new SubmitDraftCommand(id));
-            return NoContent();
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-            //not in Draft
-            return Conflict(ex.Message);
-        }
-    }
-
-    // Get one
-    [AllowAnonymous]
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(ActivationDraftDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ActivationDraftDto>> Get(int id)
-    {
-        try
-        {
-            var dto = await mediator.Send(new GetTenantActivationByIdRequestQuery(id));
-            return Ok(dto);
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound();
-        }
+        await mediator.Send(cmd);
+        return NoContent();
     }
 
 

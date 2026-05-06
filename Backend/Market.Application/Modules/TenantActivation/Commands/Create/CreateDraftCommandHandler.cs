@@ -1,4 +1,5 @@
-﻿using Market.Domain.Entities.Tenants;
+using Market.Domain.Common.Enums;
+using Market.Domain.Entities.Tenants;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,18 +8,28 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.TenantActivation.Commands.Create
 {
-    public sealed class CreateDraftCommandHandler(IAppDbContext db) : IRequestHandler<CreateDraftCommand, int>
+    public sealed class CreateDraftCommandHandler(IAppDbContext db) : IRequestHandler<CreateDraftCommand>
     {
-        public async Task<int> Handle(CreateDraftCommand r, CancellationToken ct)
+        public async Task Handle(CreateDraftCommand r, CancellationToken ct)
         {
             var domain = r.Domain.Trim().ToLowerInvariant();
 
-            var exists = await db.TenantActivationRequests
+            var domainProvisioned = await db.Tenants
                 .IgnoreQueryFilters()
-                .AnyAsync(x => x.Domain.ToLower() == domain, ct);
+                .AnyAsync(x => x.Domain.ToLower() == domain, ct)
+                || await db.Restaurants
+                    .IgnoreQueryFilters()
+                    .AnyAsync(x => x.Domain.ToLower() == domain, ct);
 
-            if (exists)
+            if (domainProvisioned)
                 throw new MarketConflictException("Domain already in use.");
+
+            var requestAlreadySubmitted = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
+                .AnyAsync(x => x.Domain.ToLower() == domain && x.Status != ActivationStatus.Activated, ct);
+
+            if (requestAlreadySubmitted)
+                return;
 
             var e = new TenantActivationRequest();
             e.EditDraft(
@@ -26,10 +37,10 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
                 r.OwnerFullName, r.OwnerEmail, r.OwnerPhone,
                 r.Address, r.City, r.State
             );
+            e.Submit();
 
             db.TenantActivationRequests.Add(e);
             await db.SaveChangesAsync(ct);
-            return e.Id;
         }
     }
 }
