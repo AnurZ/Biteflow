@@ -86,6 +86,56 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData(RoleNames.SuperAdmin)]
+    [InlineData(RoleNames.Admin)]
+    public async Task RestaurantAdmin_ShouldNotCreatePrivilegedStaffRole(string role)
+    {
+        var email = $"privilege-escalation-{role}-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, role));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email);
+
+        Assert.Null(user);
+    }
+
+    [Theory]
+    [InlineData(RoleNames.Staff)]
+    [InlineData(RoleNames.Waiter)]
+    [InlineData(RoleNames.Kitchen)]
+    public async Task RestaurantAdmin_ShouldCreateOnlyRestaurantScopedStaffRoles(string role)
+    {
+        var email = $"restaurant-staff-{role}-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, role));
+
+        response.EnsureSuccessStatusCode();
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var user = await userManager.FindByEmailAsync(email);
+
+        Assert.NotNull(user);
+        Assert.Equal(SeedConstants.DefaultTenantId, user!.TenantId);
+        Assert.Equal(SeedConstants.DefaultRestaurantId, user.RestaurantId);
+        Assert.True(await userManager.IsInRoleAsync(user, role));
+
+        var profile = await db.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+        Assert.NotNull(profile);
+        Assert.Equal(SeedConstants.DefaultTenantId, profile!.TenantId);
+    }
+
     [Fact]
     public async Task AnonymousCustomerRegistration_WithKnownDomain_ShouldCreateCustomerInResolvedTenant()
     {
@@ -677,6 +727,29 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             DisplayName = "Authorization Test Customer",
             CaptchaToken = CaptchaBypassToken
         });
+    }
+
+    private static object CreateStaffPayload(string email, string? role)
+    {
+        return new
+        {
+            Email = email,
+            DisplayName = "Restaurant Staff Test",
+            PlainPassword = "staffpass123",
+            Role = role,
+            Position = "Server",
+            FirstName = "Restaurant",
+            LastName = "Staff",
+            PhoneNumber = "123456",
+            HireDate = DateTime.UtcNow.Date,
+            HourlyRate = 10m,
+            EmploymentType = "FullTime",
+            ShiftType = "Morning",
+            ShiftStart = "08:00:00",
+            ShiftEnd = "16:00:00",
+            IsActive = true,
+            Notes = "Authorization integration test"
+        };
     }
 
     private async Task<int> CreateDiningTableForOtherTenantAsync()

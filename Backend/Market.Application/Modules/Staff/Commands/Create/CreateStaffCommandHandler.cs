@@ -10,10 +10,17 @@ namespace Market.Application.Modules.Staff.Commands.Create;
 
 public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffCommand, int>
 {
-    private static readonly string[] AllowedRoles =
+    private static readonly string[] AllAssignableRoles =
     {
         RoleNames.SuperAdmin,
         RoleNames.Admin,
+        RoleNames.Staff,
+        RoleNames.Waiter,
+        RoleNames.Kitchen
+    };
+
+    private static readonly string[] RestaurantAdminAssignableRoles =
+    {
         RoleNames.Staff,
         RoleNames.Waiter,
         RoleNames.Kitchen
@@ -45,6 +52,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             throw new ValidationException("FirstName and LastName are required.");
 
         var targetRole = NormalizeRole(r.Role);
+        EnsureRoleAllowedForCaller(targetRole);
 
         var email = r.Email?.Trim();
         if (string.IsNullOrWhiteSpace(email))
@@ -179,13 +187,26 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         if (string.IsNullOrWhiteSpace(requestedRole))
             return RoleNames.Staff;
 
-        var match = AllowedRoles.FirstOrDefault(r =>
+        var match = AllAssignableRoles.FirstOrDefault(r =>
             string.Equals(r, requestedRole, StringComparison.OrdinalIgnoreCase));
 
         if (match is null)
             throw new ValidationException("Role is invalid.");
 
         return match;
+    }
+
+    private void EnsureRoleAllowedForCaller(string role)
+    {
+        if (_tenantContext.IsSuperAdmin)
+        {
+            return;
+        }
+
+        if (!RestaurantAdminAssignableRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ValidationException("Role is not allowed for the current user.");
+        }
     }
 
     private sealed record IdentityUserProvisionResult(
