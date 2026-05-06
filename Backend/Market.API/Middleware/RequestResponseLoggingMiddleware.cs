@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -7,27 +7,46 @@ namespace Market.API.Middlewares;
 
 /// <summary>
 /// Middleware that logs incoming HTTP requests and outgoing responses,
-/// including duration, method, path, and status code.
+/// including duration, method, path, status code, and correlation id.
 /// </summary>
 public sealed class RequestResponseLoggingMiddleware(
     RequestDelegate next,
+    IWebHostEnvironment environment,
     ILogger<RequestResponseLoggingMiddleware> logger)
 {
-    private const int SlowRequestThresholdMs = 400; // 2 seconds
+    private const int SlowRequestThresholdMs = 400; // 400 ms
 
     public async Task InvokeAsync(HttpContext context)
     {
         var stopwatch = Stopwatch.StartNew();
         var request = context.Request;
+        var shouldLogBodies = environment.IsDevelopment();
+        var shouldCaptureRequestBody = shouldLogBodies &&
+                                       request.Method is "POST" or "PUT" &&
+                                       IsLoggableContentType(request.ContentType);
 
-        // Read request body (only for POST/PUT)
         string? requestBody = null;
-        if (request.Method is "POST" or "PUT")
+        if (shouldCaptureRequestBody)
         {
             request.EnableBuffering();
             using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
             requestBody = await reader.ReadToEndAsync();
             request.Body.Position = 0;
+        }
+
+        if (!shouldLogBodies)
+        {
+            try
+            {
+                await next(context);
+            }
+            finally
+            {
+                stopwatch.Stop();
+                LogRequest(context, stopwatch.ElapsedMilliseconds);
+            }
+
+            return;
         }
 
         var originalBodyStream = context.Response.Body;
@@ -45,31 +64,12 @@ public sealed class RequestResponseLoggingMiddleware(
             try
             {
                 responseBody.Seek(0, SeekOrigin.Begin);
-                var responseText = await new StreamReader(responseBody).ReadToEndAsync();
+                var responseText = IsLoggableContentType(context.Response.ContentType)
+                    ? await new StreamReader(responseBody).ReadToEndAsync()
+                    : null;
                 responseBody.Seek(0, SeekOrigin.Begin);
 
-                var logMessage = new StringBuilder()
-                    .AppendLine("HTTP Request/Response Log:")
-                    .AppendLine($"  Path: {request.Path}")
-                    .AppendLine($"  Method: {request.Method}")
-                    .AppendLine($"  Status: {context.Response.StatusCode}")
-                    .AppendLine($"  Duration: {stopwatch.ElapsedMilliseconds} ms");
-
-                if (!string.IsNullOrWhiteSpace(requestBody))
-                    logMessage.AppendLine($"  Request Body: {RedactSensitiveBody(requestBody)}");
-
-                if (!string.IsNullOrWhiteSpace(responseText))
-                    logMessage.AppendLine($"  Response Body: {RedactSensitiveBody(responseText)}");
-
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                if (elapsed > SlowRequestThresholdMs)
-                {
-                    logger.LogWarning("[SLOW REQUEST] {Path} took {Elapsed} ms", request.Path, elapsed);
-                    await File.AppendAllTextAsync("Logs/slow-requests.log",
-                        $"{DateTime.UtcNow:u} | {request.Path} | {elapsed} ms{Environment.NewLine}");
-                }
-
-                logger.LogInformation("{Log}", logMessage.ToString());
+                LogRequest(context, stopwatch.ElapsedMilliseconds, requestBody, responseText);
 
                 await responseBody.CopyToAsync(originalBodyStream);
             }
@@ -77,8 +77,69 @@ public sealed class RequestResponseLoggingMiddleware(
             {
                 context.Response.Body = originalBodyStream;
             }
-
         }
+    }
+
+    private void LogRequest(HttpContext context, long elapsed)
+        => LogRequest(context, elapsed, requestBody: null, responseBody: null);
+
+    private void LogRequest(HttpContext context, long elapsed, string? requestBody, string? responseBody)
+    {
+        var request = context.Request;
+        var correlationId = Activity.Current?.Id ?? context.TraceIdentifier;
+
+        if (elapsed > SlowRequestThresholdMs)
+        {
+            logger.LogWarning(
+                "[SLOW REQUEST] {Method} {Path} took {Elapsed} ms. CorrelationId={CorrelationId}",
+                request.Method,
+                request.Path,
+                elapsed,
+                correlationId);
+        }
+
+        var redactedRequestBody = string.IsNullOrWhiteSpace(requestBody)
+            ? null
+            : RedactSensitiveBody(requestBody);
+        var redactedResponseBody = string.IsNullOrWhiteSpace(responseBody)
+            ? null
+            : RedactSensitiveBody(responseBody);
+
+        if (redactedRequestBody is null && redactedResponseBody is null)
+        {
+            logger.LogInformation(
+                "HTTP {Method} {Path} responded {StatusCode} in {Elapsed} ms. CorrelationId={CorrelationId}",
+                request.Method,
+                request.Path,
+                context.Response.StatusCode,
+                elapsed,
+                correlationId);
+            return;
+        }
+
+        logger.LogInformation(
+            "HTTP {Method} {Path} responded {StatusCode} in {Elapsed} ms. CorrelationId={CorrelationId}. RequestBody={RequestBody}. ResponseBody={ResponseBody}",
+            request.Method,
+            request.Path,
+            context.Response.StatusCode,
+            elapsed,
+            correlationId,
+            redactedRequestBody,
+            redactedResponseBody);
+    }
+
+    private static bool IsLoggableContentType(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        var mediaType = contentType.Split(';', 2)[0].Trim();
+        return mediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase) ||
+               mediaType.EndsWith("+json", StringComparison.OrdinalIgnoreCase) ||
+               mediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase) ||
+               mediaType.StartsWith("text/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string RedactSensitiveBody(string body)
@@ -153,7 +214,12 @@ public sealed class RequestResponseLoggingMiddleware(
         return key.Equals("password", StringComparison.OrdinalIgnoreCase) ||
                key.Equals("newPassword", StringComparison.OrdinalIgnoreCase) ||
                key.Equals("confirmPassword", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("refreshToken", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("accessToken", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("adminPassword", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("secret", StringComparison.OrdinalIgnoreCase) ||
                key.Equals("token", StringComparison.OrdinalIgnoreCase) ||
+               key.Equals("email", StringComparison.OrdinalIgnoreCase) ||
                key.EndsWith("Password", StringComparison.OrdinalIgnoreCase) ||
                key.EndsWith("Token", StringComparison.OrdinalIgnoreCase);
     }
