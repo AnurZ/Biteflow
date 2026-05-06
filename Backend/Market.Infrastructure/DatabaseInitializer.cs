@@ -30,9 +30,10 @@ public static class DatabaseInitializer
             return;
         }
 
-        // SQL Server or similar
-        await ctx.Database.MigrateAsync();
+        // SQL Server or similar. Identity tables must exist before app migrations
+        // that add foreign keys to AspNetUsers.
         await identityCtx.Database.MigrateAsync();
+        await ctx.Database.MigrateAsync();
 
         if (env.IsDevelopment())
         {

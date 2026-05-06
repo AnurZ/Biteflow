@@ -22,18 +22,6 @@ export interface CreateDraftCommand {
   state?: string;
 }
 
-export interface UpdateDraftCommand {
-  id: number;
-  restaurantName: string;
-  domain: string;
-  ownerFullName: string;
-  ownerEmail: string;
-  ownerPhone: string;
-  address: string;
-  city: string;
-  state: string;
-}
-
 export interface PageResult<T> {
   total: number;
   items: T[];

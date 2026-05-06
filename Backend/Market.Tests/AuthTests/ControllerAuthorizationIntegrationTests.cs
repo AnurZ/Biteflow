@@ -219,17 +219,18 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Fact]
-    public async Task Anonymous_ShouldCreateUpdateReadAndSubmitTenantActivationRequest()
+    public async Task Anonymous_ShouldSubmitTenantActivationRequestWithSinglePost()
     {
         var client = _factory.CreateClient();
         var domain = $"join-{Guid.NewGuid():N}";
+        var ownerEmail = $"join-{Guid.NewGuid():N}@example.test";
 
         var createResponse = await client.PostAsJsonAsync("/api/activation-requests", new
         {
             RestaurantName = "Join Test Bistro",
             Domain = domain,
             OwnerFullName = "Join Owner",
-            OwnerEmail = $"join-{Guid.NewGuid():N}@example.test",
+            OwnerEmail = ownerEmail,
             OwnerPhone = "123456",
             Address = "Join Address",
             City = "Mostar",
@@ -237,42 +238,60 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         });
 
         createResponse.EnsureSuccessStatusCode();
-        var requestId = await createResponse.Content.ReadFromJsonAsync<int>();
+        Assert.Equal(HttpStatusCode.NoContent, createResponse.StatusCode);
 
-        var getResponse = await client.GetAsync($"/api/activation-requests/{requestId}");
-        getResponse.EnsureSuccessStatusCode();
-        var draft = await getResponse.Content.ReadFromJsonAsync<ActivationDraftDto>();
-
-        Assert.NotNull(draft);
-        Assert.Equal(ActivationStatus.Draft, draft!.Status);
-
-        var updatedDomain = $"{domain}-updated";
-        var updateResponse = await client.PutAsJsonAsync($"/api/activation-requests/{requestId}", new
+        var duplicateResponse = await client.PostAsJsonAsync("/api/activation-requests", new
         {
-            Id = requestId,
-            RestaurantName = "Updated Join Test Bistro",
-            Domain = updatedDomain,
-            OwnerFullName = "Join Owner",
-            OwnerEmail = $"join-updated-{Guid.NewGuid():N}@example.test",
+            RestaurantName = "Join Test Bistro Duplicate",
+            Domain = domain,
+            OwnerFullName = "Join Owner Duplicate",
+            OwnerEmail = $"join-duplicate-{Guid.NewGuid():N}@example.test",
             OwnerPhone = "654321",
-            Address = "Updated Join Address",
+            Address = "Duplicate Join Address",
             City = "Sarajevo",
             State = "FBIH"
         });
-        updateResponse.EnsureSuccessStatusCode();
-
-        var submitResponse = await client.PostAsync($"/api/activation-requests/{requestId}/submit", null);
-        submitResponse.EnsureSuccessStatusCode();
+        duplicateResponse.EnsureSuccessStatusCode();
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
         var request = await db.TenantActivationRequests
             .IgnoreQueryFilters()
-            .FirstAsync(x => x.Id == requestId);
+            .FirstAsync(x => x.Domain == domain);
+        var requestCount = await db.TenantActivationRequests
+            .IgnoreQueryFilters()
+            .CountAsync(x => x.Domain == domain);
+
+        var numericGetResponse = await client.GetAsync($"/api/activation-requests/{request.Id}");
+        var numericUpdateResponse = await client.PutAsJsonAsync($"/api/activation-requests/{request.Id}", new
+        {
+            RestaurantName = "Should Not Update",
+            Domain = $"{domain}-numeric",
+            OwnerFullName = "Join Owner",
+            OwnerEmail = $"join-numeric-{Guid.NewGuid():N}@example.test",
+            OwnerPhone = "000000",
+            Address = "Numeric Address",
+            City = "Sarajevo",
+            State = "FBIH"
+        });
+        var numericSubmitResponse = await client.PostAsync($"/api/activation-requests/{request.Id}/submit", null);
 
         Assert.Equal(Guid.Empty, request.TenantId);
-        Assert.Equal(updatedDomain, request.Domain);
+        Assert.Equal(domain, request.Domain);
+        Assert.Equal(ownerEmail, request.OwnerEmail);
         Assert.Equal(ActivationStatus.Submitted, request.Status);
+        Assert.Equal(1, requestCount);
+        Assert.False(numericGetResponse.IsSuccessStatusCode);
+        Assert.False(numericUpdateResponse.IsSuccessStatusCode);
+        Assert.False(numericSubmitResponse.IsSuccessStatusCode);
+
+        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "superadmin");
+        var adminListResponse = await superAdmin.GetAsync("/api/activation-requests");
+        adminListResponse.EnsureSuccessStatusCode();
+        using var adminListPayload = JsonDocument.Parse(await adminListResponse.Content.ReadAsStringAsync());
+        var adminItem = adminListPayload.RootElement.GetProperty("items").EnumerateArray()
+            .First(x => x.GetProperty("id").GetInt32() == request.Id);
+        Assert.Equal(domain, adminItem.GetProperty("domain").GetString());
     }
 
     [Fact]
@@ -296,10 +315,14 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             State = "FBIH"
         });
         createResponse.EnsureSuccessStatusCode();
-        var requestId = await createResponse.Content.ReadFromJsonAsync<int>();
 
-        var submitResponse = await client.PostAsync($"/api/activation-requests/{requestId}/submit", null);
-        submitResponse.EnsureSuccessStatusCode();
+        using var requestScope = _factory.Services.CreateScope();
+        var requestDb = requestScope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var requestId = await requestDb.TenantActivationRequests
+            .IgnoreQueryFilters()
+            .Where(x => x.Domain == domain)
+            .Select(x => x.Id)
+            .SingleAsync();
 
         var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "superadmin");
         var approveResponse = await superAdmin.PostAsync($"/api/activation-requests/{requestId}/approve", null);
