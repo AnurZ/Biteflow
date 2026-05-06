@@ -19,10 +19,20 @@ namespace Market.Application.Modules.TableLayout.Commands.DeleteTableLayout
 
         public async Task Handle(DeleteTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
-            var restaurantId = _tenantContext.RequireRestaurantId();
-            var layout = await _db.TableLayouts
+            var restaurantId = _tenantContext.IsSuperAdmin
+                ? (Guid?)null
+                : _tenantContext.RequireRestaurantId();
+
+            var query = _db.TableLayouts
                 .Include(t => t.Tables)
-                .FirstOrDefaultAsync(x => x.Id == request.Id && x.RestaurantId == restaurantId, cancellationToken);
+                .WhereTenantOwned(_tenantContext);
+
+            if (restaurantId.HasValue)
+            {
+                query = query.Where(x => x.RestaurantId == restaurantId.Value);
+            }
+
+            var layout = await query.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (layout == null)
                 throw new KeyNotFoundException($"TableLayout with ID {request.Id} not found.");

@@ -6,8 +6,13 @@ using Market.Application.Abstractions;
 using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
 using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
 using Market.Domain.Common.Enums;
+using Market.Domain.Entities.Catalog;
 using Market.Domain.Entities.DiningTables;
+using Market.Domain.Entities.InventoryItem;
+using Market.Domain.Entities.Meal;
+using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.TableLayout;
+using Market.Domain.Entities.TableReservations;
 using Market.Domain.Entities.Tenants;
 using Market.Domain.Entities.IdentityV2;
 using Market.Shared.Constants;
@@ -274,6 +279,109 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             .FirstOrDefaultAsync(x => x.Id == otherLayoutId);
 
         Assert.NotNull(layout);
+    }
+
+    [Fact]
+    public async Task Admin_ShouldNotMutateResourcesFromAnotherTenant()
+    {
+        var ids = await CreateMutableResourcesForOtherTenantAsync();
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var responses = new[]
+        {
+            await client.PutAsJsonAsync($"/api/DiningTable/{ids.DiningTableId}", new
+            {
+                Number = 77701,
+                NumberOfSeats = 4,
+                IsActive = true,
+                ids.TableLayoutId,
+                X = 10,
+                Y = 10,
+                Height = 100,
+                Width = 100,
+                Shape = "rectangle",
+                Color = "#ffffff",
+                TableType = 0,
+                Status = 0,
+                LastUsedAt = (DateTime?)null
+            }),
+            await client.DeleteAsync($"/api/DiningTable/{ids.DiningTableId}"),
+            await client.PutAsJsonAsync($"/api/MealCategory/{ids.MealCategoryId}", new
+            {
+                Name = "Should Not Update",
+                Description = "Foreign"
+            }),
+            await client.DeleteAsync($"/api/MealCategory/{ids.MealCategoryId}"),
+            await client.PutAsJsonAsync($"/api/Meal/{ids.MealId}", new
+            {
+                Name = "Should Not Update",
+                Description = "Foreign",
+                BasePrice = 10,
+                IsAvailable = true,
+                IsFeatured = false,
+                ImageField = "",
+                StockManaged = false,
+                CategoryId = (int?)null,
+                Ingredients = Array.Empty<object>()
+            }),
+            await client.DeleteAsync($"/api/Meal/{ids.MealId}"),
+            await client.PutAsJsonAsync($"/api/InventoryItem/{ids.InventoryItemId}", new
+            {
+                ids.RestaurantId,
+                Name = "Should Not Update",
+                Sku = "foreign-sku",
+                UnitType = 0,
+                ReorderQty = 1,
+                ReorderFrequency = 1,
+                CurrentQty = 1
+            }),
+            await client.DeleteAsync($"/api/InventoryItem/{ids.InventoryItemId}"),
+            await client.PutAsJsonAsync($"/ProductCategories/{ids.ProductCategoryId}", new
+            {
+                Name = "Should Not Update"
+            }),
+            await client.PutAsync($"/ProductCategories/{ids.ProductCategoryId}/disable", null),
+            await client.DeleteAsync($"/ProductCategories/{ids.ProductCategoryId}"),
+            await client.PutAsJsonAsync($"/api/TableReservation/{ids.TableReservationId}", new
+            {
+                ids.DiningTableId,
+                NumberOfGuests = 2,
+                ReservationStart = DateTime.UtcNow.AddDays(30),
+                ReservationEnd = DateTime.UtcNow.AddDays(30).AddHours(1),
+                FirstName = "Foreign",
+                LastName = "Guest",
+                Email = "foreign@example.test",
+                PhoneNumber = "123",
+                Status = 0
+            }),
+            await client.PatchAsJsonAsync("/api/TableReservation/update-status", new
+            {
+                Id = ids.TableReservationId,
+                Status = 1
+            }),
+            await client.DeleteAsync($"/api/TableReservation/{ids.TableReservationId}")
+        };
+
+        foreach (var response in responses)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.True(
+                response.StatusCode == HttpStatusCode.NotFound,
+                $"Expected 404, got {(int)response.StatusCode} {response.StatusCode}. Body: {body}");
+        }
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var meal = await db.Meals.IgnoreQueryFilters().FirstAsync(x => x.Id == ids.MealId);
+        var inventoryItem = await db.InventoryItems.IgnoreQueryFilters().FirstAsync(x => x.Id == ids.InventoryItemId);
+        var productCategory = await db.ProductCategories.IgnoreQueryFilters().FirstAsync(x => x.Id == ids.ProductCategoryId);
+        var reservation = await db.TableReservations.IgnoreQueryFilters().FirstAsync(x => x.Id == ids.TableReservationId);
+
+        Assert.NotEqual("Should Not Update", meal.Name);
+        Assert.NotEqual("Should Not Update", inventoryItem.Name);
+        Assert.NotEqual("Should Not Update", productCategory.Name);
+        Assert.False(productCategory.IsDeleted);
+        Assert.Equal(ReservationStatus.Pending, reservation.Status);
     }
 
     [Fact]
@@ -697,6 +805,153 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
         return layout.Id;
     }
+
+    private async Task<CrossTenantResourceIds> CreateMutableResourcesForOtherTenantAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+
+        var tenantId = Guid.NewGuid();
+        var restaurantId = Guid.NewGuid();
+
+        db.Tenants.Add(new Tenant
+        {
+            Id = tenantId,
+            Name = $"Mutable Other Tenant {tenantId:N}",
+            Domain = $"mutable-other-{tenantId:N}",
+            IsActive = true
+        });
+
+        db.Restaurants.Add(new Restaurant
+        {
+            Id = restaurantId,
+            TenantId = tenantId,
+            Name = "Mutable Other Restaurant",
+            Domain = $"mutable-other-restaurant-{restaurantId:N}",
+            Address = "Other Address",
+            City = "Other City",
+            State = "Other State",
+            IsActive = true
+        });
+
+        var layout = new TableLayout
+        {
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
+            Name = $"Mutable Other Layout {Guid.NewGuid():N}",
+            BackgroundColor = "#ffffff",
+            FloorImageUrl = string.Empty
+        };
+        db.TableLayouts.Add(layout);
+        await db.SaveChangesAsync();
+
+        var diningTable = new DiningTable
+        {
+            TenantId = tenantId,
+            Number = Random.Shared.Next(10_000, 99_999),
+            NumberOfSeats = 4,
+            IsActive = true,
+            TableLayoutId = layout.Id,
+            X = 0,
+            Y = 0,
+            Width = 100,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#ffffff"
+        };
+        var reservationTable = new DiningTable
+        {
+            TenantId = tenantId,
+            Number = Random.Shared.Next(10_000, 99_999),
+            NumberOfSeats = 4,
+            IsActive = true,
+            TableLayoutId = layout.Id,
+            X = 0,
+            Y = 120,
+            Width = 100,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#ffffff"
+        };
+        var mealCategory = new MealCategory
+        {
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
+            Name = $"Mutable Other Meal Category {Guid.NewGuid():N}",
+            Description = "Other"
+        };
+        var meal = new Meal
+        {
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
+            Name = $"Mutable Other Meal {Guid.NewGuid():N}",
+            Description = "Other",
+            BasePrice = 10,
+            IsAvailable = true,
+            ImageField = string.Empty
+        };
+        var inventoryItem = new InventoryItem
+        {
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
+            Name = $"Mutable Other Inventory {Guid.NewGuid():N}",
+            Sku = $"sku-{Guid.NewGuid():N}",
+            UnitType = 0,
+            ReorderQty = 1,
+            ReorderFrequency = 1,
+            CurrentQty = 1
+        };
+        var productCategory = new ProductCategoryEntity
+        {
+            TenantId = tenantId,
+            Name = $"Mutable Other Product Category {Guid.NewGuid():N}",
+            IsEnabled = true
+        };
+        var reservation = new TableReservation
+        {
+            TenantId = tenantId,
+            DiningTable = reservationTable,
+            NumberOfGuests = 2,
+            ReservationStart = DateTime.UtcNow.AddDays(20),
+            ReservationEnd = DateTime.UtcNow.AddDays(20).AddHours(1),
+            FirstName = "Foreign",
+            LastName = "Guest",
+            Email = "foreign@example.test",
+            PhoneNumber = "123",
+            Status = ReservationStatus.Pending
+        };
+
+        db.DiningTables.Add(diningTable);
+        db.DiningTables.Add(reservationTable);
+        db.MealCategories.Add(mealCategory);
+        db.Meals.Add(meal);
+        db.InventoryItems.Add(inventoryItem);
+        db.ProductCategories.Add(productCategory);
+        db.TableReservations.Add(reservation);
+        await db.SaveChangesAsync();
+
+        return new CrossTenantResourceIds(
+            tenantId,
+            restaurantId,
+            layout.Id,
+            diningTable.Id,
+            mealCategory.Id,
+            meal.Id,
+            inventoryItem.Id,
+            productCategory.Id,
+            reservation.Id);
+    }
+
+    private sealed record CrossTenantResourceIds(
+        Guid TenantId,
+        Guid RestaurantId,
+        int TableLayoutId,
+        int DiningTableId,
+        int MealCategoryId,
+        int MealId,
+        int InventoryItemId,
+        int ProductCategoryId,
+        int TableReservationId);
 
     private sealed class TestTenantContext(Guid tenantId, Guid restaurantId) : ITenantContext
     {

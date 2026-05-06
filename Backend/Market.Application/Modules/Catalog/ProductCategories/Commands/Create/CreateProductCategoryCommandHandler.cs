@@ -1,6 +1,6 @@
 ﻿namespace Market.Application.Modules.Catalog.ProductCategories.Commands.Create;
 
-public class CreateProductCategoryCommandHandler(IAppDbContext context)
+public class CreateProductCategoryCommandHandler(IAppDbContext context, ITenantContext tenantContext)
     : IRequestHandler<CreateProductCategoryCommand, int>
 {
     public async Task<int> Handle(CreateProductCategoryCommand request, CancellationToken cancellationToken)
@@ -12,6 +12,7 @@ public class CreateProductCategoryCommandHandler(IAppDbContext context)
 
         // Check if a category with the same name already exists.
         bool exists = await context.ProductCategories
+            .WhereTenantOwned(tenantContext)
             .AnyAsync(x => x.Name == normalized, cancellationToken);
 
         if (exists)

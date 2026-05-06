@@ -20,15 +20,27 @@ namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
 
         public async Task Handle(UpdateTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
-            var restaurantId = _tenantContext.RequireRestaurantId();
-            var layout = await _db.TableLayouts
-                .FirstOrDefaultAsync(x => x.Id == request.Id && x.RestaurantId == restaurantId, cancellationToken);
+            var restaurantId = _tenantContext.IsSuperAdmin
+                ? (Guid?)null
+                : _tenantContext.RequireRestaurantId();
+
+            var layoutQuery = _db.TableLayouts.WhereTenantOwned(_tenantContext);
+            if (restaurantId.HasValue)
+            {
+                layoutQuery = layoutQuery.Where(x => x.RestaurantId == restaurantId.Value);
+            }
+
+            var layout = await layoutQuery
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (layout == null)
                 throw new KeyNotFoundException($"TableLayout with ID {request.Id} not found.");
 
             var nameExists = await _db.TableLayouts
-             .AnyAsync(m => m.Id != request.Id && m.RestaurantId == restaurantId && m.Name == request.Name, cancellationToken);
+                .WhereTenantOwned(_tenantContext)
+                .AnyAsync(m => m.Id != request.Id &&
+                               (!restaurantId.HasValue || m.RestaurantId == restaurantId.Value) &&
+                               m.Name == request.Name, cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A table layout with the name '{request.Name.Trim()}' already exists.");

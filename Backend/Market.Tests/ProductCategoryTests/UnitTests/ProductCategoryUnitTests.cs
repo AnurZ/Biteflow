@@ -1,4 +1,6 @@
 using Market.Application.Modules.Catalog.ProductCategories.Commands.Create;
+using Market.Application.Abstractions;
+using Market.Shared.Constants;
 
 namespace Market.Tests.ProductCategoryTests.UnitTests;
 
@@ -20,7 +22,7 @@ public class ProductCategoryUnitTests
     {
         // Arrange
         using var context = GetInMemoryDbContext(); // dispose
-        var handler = new CreateProductCategoryCommandHandler(context);
+        var handler = new CreateProductCategoryCommandHandler(context, new TestTenantContext());
         var command = new CreateProductCategoryCommand { Name = "Test Category" };
 
         // Act
@@ -32,5 +34,12 @@ public class ProductCategoryUnitTests
         Assert.Equal("Test Category", category!.Name);
         // (Optional) if using UTC:
         // Assert.True(category.CreatedAt > DateTime.MinValue);
+    }
+
+    private sealed class TestTenantContext : ITenantContext
+    {
+        public Guid? TenantId => SeedConstants.DefaultTenantId;
+        public Guid? RestaurantId => SeedConstants.DefaultRestaurantId;
+        public bool IsSuperAdmin => false;
     }
 }
