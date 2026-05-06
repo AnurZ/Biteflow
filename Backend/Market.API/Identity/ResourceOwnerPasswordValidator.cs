@@ -12,13 +12,17 @@ public sealed class ResourceOwnerPasswordValidator(
     SignInManager<ApplicationUser> signInManager,
     ILogger<ResourceOwnerPasswordValidator> logger) : IResourceOwnerPasswordValidator
 {
+    private const string InvalidLoginMessage = "Neispravni podaci za prijavu.";
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<ApplicationUser>().HashPassword(new ApplicationUser(), "DummyPasswordForTimingOnly");
+
     public async Task ValidateAsync(ResourceOwnerPasswordValidationContext context)
     {
         var username = (context.UserName ?? string.Empty).Trim();
 
         if (string.IsNullOrWhiteSpace(username))
         {
-            context.Result = new GrantValidationResult(TokenRequestErrors.InvalidGrant, "Username required.");
+            context.Result = InvalidGrant();
             return;
         }
 
@@ -29,8 +33,17 @@ public sealed class ResourceOwnerPasswordValidator(
 
         if (user is null)
         {
+            VerifyDummyPassword(context.Password);
             logger.LogWarning("Resource owner password flow failed. User '{Username}' not found.", username);
-            context.Result = new GrantValidationResult(TokenRequestErrors.InvalidGrant, "Invalid credentials.");
+            context.Result = InvalidGrant();
+            return;
+        }
+
+        if (!user.IsEnabled)
+        {
+            VerifyDummyPassword(context.Password);
+            logger.LogWarning("Resource owner password flow failed. User '{Username}' is disabled.", user.UserName);
+            context.Result = InvalidGrant();
             return;
         }
 
@@ -40,13 +53,13 @@ public sealed class ResourceOwnerPasswordValidator(
             if (signIn.IsLockedOut)
             {
                 logger.LogWarning("User '{Username}' is locked out.", user.UserName);
-                context.Result = new GrantValidationResult(TokenRequestErrors.InvalidGrant, "Account locked. Try again later.");
             }
             else
             {
                 logger.LogWarning("Invalid credentials supplied for '{Username}'.", user.UserName);
-                context.Result = new GrantValidationResult(TokenRequestErrors.InvalidGrant, "Invalid credentials.");
             }
+
+            context.Result = InvalidGrant();
             return;
         }
 
@@ -63,6 +76,15 @@ public sealed class ResourceOwnerPasswordValidator(
             claims: claims);
 
         logger.LogInformation("Resource owner password flow succeeded for '{UserName}'.", user.UserName);
+    }
+
+    private static GrantValidationResult InvalidGrant()
+        => new(TokenRequestErrors.InvalidGrant, InvalidLoginMessage);
+
+    private static void VerifyDummyPassword(string? password)
+    {
+        var hasher = new PasswordHasher<ApplicationUser>();
+        hasher.VerifyHashedPassword(new ApplicationUser(), DummyPasswordHash, password ?? string.Empty);
     }
 
     private static IEnumerable<Claim> BuildClaims(ApplicationUser user, IEnumerable<string> roles)

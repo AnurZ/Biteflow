@@ -15,6 +15,10 @@ using Microsoft.AspNetCore.Authentication.Google;
 [Route("account")]
 public sealed class AccountController : Controller
 {
+    private const string InvalidLoginMessage = "Neispravni podaci za prijavu.";
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<ApplicationUser>().HashPassword(new ApplicationUser(), "DummyPasswordForTimingOnly");
+
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interaction;
@@ -86,16 +90,23 @@ public sealed class AccountController : Controller
         var user = await _userManager.FindByEmailAsync(model.Email)
                    ?? await _userManager.FindByNameAsync(model.Email);
 
-        if (user is null || !user.IsEnabled)
+        if (user is null)
         {
-            ModelState.AddModelError(string.Empty, "Invalid credentials.");
-            return View("Login", model);
+            VerifyDummyPassword(model.Password);
+            _logger.LogWarning("Login UI rejected because user '{Email}' was not found.", model.Email);
+            return InvalidLoginView(model);
         }
 
-        var result = await _signInManager.PasswordSignInAsync(
-            user.UserName ?? user.Email ?? model.Email,
+        if (!user.IsEnabled)
+        {
+            VerifyDummyPassword(model.Password);
+            _logger.LogWarning("Login UI rejected because user {UserId} is disabled.", user.Id);
+            return InvalidLoginView(model);
+        }
+
+        var result = await _signInManager.CheckPasswordSignInAsync(
+            user,
             model.Password,
-            model.RememberLogin,
             lockoutOnFailure: true);
 
         if (result.Succeeded)
@@ -116,16 +127,14 @@ public sealed class AccountController : Controller
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "Account locked. Try again later.");
             _logger.LogWarning("User {UserId} is locked out.", user.Id);
         }
         else
         {
-            ModelState.AddModelError(string.Empty, "Invalid credentials.");
             _logger.LogWarning("Invalid credentials for user {UserId}.", user.Id);
         }
 
-        return View("Login", model);
+        return InvalidLoginView(model);
     }
 
     [HttpGet("logout")]
@@ -154,6 +163,18 @@ public sealed class AccountController : Controller
         }
 
         return Redirect("~/");
+    }
+
+    private IActionResult InvalidLoginView(LoginInputModel model)
+    {
+        ModelState.AddModelError(string.Empty, InvalidLoginMessage);
+        return View("Login", model);
+    }
+
+    private static void VerifyDummyPassword(string? password)
+    {
+        var hasher = new PasswordHasher<ApplicationUser>();
+        hasher.VerifyHashedPassword(new ApplicationUser(), DummyPasswordHash, password ?? string.Empty);
     }
 
     [HttpGet("external/google")]
