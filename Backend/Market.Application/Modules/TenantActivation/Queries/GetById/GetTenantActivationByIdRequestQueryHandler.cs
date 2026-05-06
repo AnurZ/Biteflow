@@ -17,6 +17,7 @@ namespace Market.Application.Modules.TenantActivation.Queries.GetById
         public async Task<ActivationDraftDto> Handle(GetTenantActivationByIdRequestQuery q, CancellationToken ct)
         {
             var dto = await _db.TenantActivationRequests
+                .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Where(x => x.Id == q.Id)
                 .Select(x => new ActivationDraftDto(

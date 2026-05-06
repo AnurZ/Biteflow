@@ -1,7 +1,6 @@
 using Market.Application.Abstractions;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Orders;
-using Market.Shared.Constants;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
@@ -21,6 +20,8 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
 
         public async Task<int> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
         {
+            var tenantId = _tenantContext.RequireTenantId();
+
             if (request.Items == null || request.Items.Count == 0)
             {
                 throw new ValidationException("Order must contain at least one item.");
@@ -58,7 +59,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 TableNumber = tableNumber,
                 Status = OrderStatus.New,
                 Notes = request.Notes,
-                TenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId
+                TenantId = tenantId
             };
 
             foreach (var item in request.Items)
@@ -69,7 +70,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                     Name = item.Name.Trim(),
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    TenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId
+                    TenantId = tenantId
                 });
             }
 

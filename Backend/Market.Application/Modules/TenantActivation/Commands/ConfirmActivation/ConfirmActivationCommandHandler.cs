@@ -16,8 +16,10 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
         {
             var requestId = await links.ValidateAndConsumeAsync(r.token, ct);
 
-            var e = await db.TenantActivationRequests.FindAsync(new object[] { requestId }, ct)
-                     ?? throw new MarketNotFoundException("Request not found");
+            var e = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == requestId, ct)
+                ?? throw new MarketNotFoundException("Request not found");
 
             if (await db.Tenants.AnyAsync(x => x.Domain == e.Domain, ct) ||
                 await db.Restaurants.AnyAsync(x => x.Domain == e.Domain, ct))

@@ -1,6 +1,5 @@
 using System.Security.Claims;
 using Market.Application.Abstractions;
-using Market.Shared.Constants;
 using Microsoft.AspNetCore.Http;
 
 namespace Market.Infrastructure.Common;
@@ -16,10 +15,10 @@ public sealed class AppTenantContext(IHttpContextAccessor accessor) : ITenantCon
             var raw = User?.FindFirstValue("tenant_id");
             if (!Guid.TryParse(raw, out var parsed))
             {
-                return SeedConstants.DefaultTenantId;
+                return null;
             }
 
-            return parsed == Guid.Empty ? SeedConstants.DefaultTenantId : parsed;
+            return parsed == Guid.Empty ? null : parsed;
         }
     }
 

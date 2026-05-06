@@ -10,22 +10,31 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
     public sealed class UpdateDiningTableCommandHandler : IRequestHandler<UpdateDiningTableCommandDto>
     {
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public UpdateDiningTableCommandHandler(IAppDbContext db)
+        public UpdateDiningTableCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext = tenantContext;
         }
 
         public async Task Handle(UpdateDiningTableCommandDto request, CancellationToken cancellationToken)
         {
             // Find existing table
-            var table = await _db.DiningTables.FindAsync(new object[] { request.Id }, cancellationToken);
+            var table = await _db.DiningTables.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
             if (table == null)
                 throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");
 
             // Validate inputs
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
+
+            var restaurantId = _tenantContext.RequireRestaurantId();
+            var layoutExists = await _db.TableLayouts
+                .AnyAsync(l => l.Id == request.TableLayoutId && l.RestaurantId == restaurantId, cancellationToken);
+
+            if (!layoutExists)
+                throw new KeyNotFoundException($"TableLayout with ID {request.TableLayoutId} not found.");
 
             // Check for duplicate table number in the same layout
             bool numberExists = await _db.DiningTables

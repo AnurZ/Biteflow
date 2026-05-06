@@ -33,20 +33,23 @@ namespace Market.API.Identity
 
             _logger.LogInformation("Issuing profile claims for user {UserId} ({Email}) with display name '{DisplayName}'", user.Id, user.Email, user.DisplayName);
 
-            var effectiveTenantId = user.TenantId == Guid.Empty
-                ? SeedConstants.DefaultTenantId
-                : user.TenantId;
-            var tenantName = await ResolveTenantNameAsync(effectiveTenantId, CancellationToken.None);
+            var tenantName = user.TenantId == Guid.Empty
+                ? null
+                : await ResolveTenantNameAsync(user.TenantId, CancellationToken.None);
             var position = await ResolvePositionAsync(user, CancellationToken.None);
 
             var claims = new List<Claim>
             {
                 new("restaurant_id", user.RestaurantId?.ToString() ?? string.Empty),
-                new("tenant_id", effectiveTenantId.ToString()),
                 new("display_name", user.DisplayName ?? string.Empty),
                 new(JwtClaimTypes.Name, user.DisplayName ?? user.UserName ?? string.Empty),
                 new(JwtClaimTypes.PreferredUserName, user.UserName ?? string.Empty)
             };
+
+            if (user.TenantId != Guid.Empty)
+            {
+                claims.Add(new("tenant_id", user.TenantId.ToString()));
+            }
 
             var roles = await _userManager.GetRolesAsync(user);
             claims.AddRange(roles.Select(role => new Claim(JwtClaimTypes.Role, role)));

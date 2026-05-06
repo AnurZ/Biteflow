@@ -10,8 +10,10 @@ namespace Market.Application.Modules.TenantActivation.Commands.Submit
     {
         public async Task Handle(SubmitDraftCommand r, CancellationToken ct)
         {
-            var e = await db.TenantActivationRequests.FindAsync([r.Id], ct)
-               ?? throw new MarketNotFoundException("Request not found");
+            var e = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
+                ?? throw new MarketNotFoundException("Request not found");
             e.Submit();
             await db.SaveChangesAsync(ct);
         }

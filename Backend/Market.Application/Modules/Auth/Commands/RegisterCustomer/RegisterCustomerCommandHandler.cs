@@ -1,7 +1,6 @@
 using FluentValidation;
 using Market.Application.Abstractions;
 using Market.Domain.Entities.IdentityV2;
-using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -14,18 +13,18 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ICaptchaVerifier _captchaVerifier;
     private readonly ILogger<RegisterCustomerCommandHandler> _logger;
-    private readonly ITenantContext _tenantContext;
+    private readonly IPublicTenantResolver _publicTenantResolver;
 
     public RegisterCustomerCommandHandler(
         UserManager<ApplicationUser> userManager,
         ICaptchaVerifier captchaVerifier,
         ILogger<RegisterCustomerCommandHandler> logger,
-        ITenantContext tenantContext)
+        IPublicTenantResolver publicTenantResolver)
     {
         _userManager = userManager;
         _captchaVerifier = captchaVerifier;
         _logger = logger;
-        _tenantContext = tenantContext;
+        _publicTenantResolver = publicTenantResolver;
     }
 
     public async Task Handle(RegisterCustomerCommand request, CancellationToken ct)
@@ -40,8 +39,7 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
         var displayName = string.IsNullOrWhiteSpace(request.DisplayName)
             ? email
             : request.DisplayName.Trim();
-        var tenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId;
-        var restaurantId = _tenantContext.RestaurantId ?? Guid.Empty;
+        var publicTenant = await _publicTenantResolver.ResolveRequiredAsync(ct);
 
         var identityUserExists = await _userManager.FindByEmailAsync(email);
         if (identityUserExists != null)
@@ -52,8 +50,8 @@ public sealed class RegisterCustomerCommandHandler : IRequestHandler<RegisterCus
             UserName = email,
             Email = email,
             DisplayName = displayName,
-            TenantId = tenantId,
-            RestaurantId = restaurantId == Guid.Empty ? null : restaurantId,
+            TenantId = publicTenant.TenantId,
+            RestaurantId = publicTenant.RestaurantId,
             EmailConfirmed = true,
             IsEnabled = true
         };

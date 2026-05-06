@@ -1,4 +1,6 @@
 ﻿using Market.Domain.Common;
+using Market.Application.Common.Exceptions;
+using Market.Domain.Entities.Tenants;
 using Market.Infrastructure.Database.Seeders;
 using System.Linq.Expressions;
 
@@ -15,11 +17,21 @@ public partial class DatabaseContext
             switch (entry.State)
             {
                 case EntityState.Added:
-                    if (entry.Entity.TenantId == Guid.Empty &&
-                        CurrentTenantId.HasValue &&
-                        !IsSuperAdmin)
+                    if (entry.Entity.TenantId == Guid.Empty)
                     {
-                        entry.Entity.TenantId = CurrentTenantId.Value;
+                        if (entry.Entity is TenantActivationRequest)
+                        {
+                            // Activation requests are created before a tenant exists.
+                        }
+                        else if (CurrentTenantId.HasValue && !IsSuperAdmin)
+                        {
+                            entry.Entity.TenantId = CurrentTenantId.Value;
+                        }
+                        else
+                        {
+                            throw new TenantContextMissingException(
+                                $"Cannot create {entry.Entity.GetType().Name} without an explicit tenant.");
+                        }
                     }
 
                     entry.Entity.CreatedAtUtc = UtcNow;

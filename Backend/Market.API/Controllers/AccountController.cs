@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Duende.IdentityModel;
+using Market.Application.Abstractions;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authentication.Google;
 
@@ -17,17 +18,20 @@ public sealed class AccountController : Controller
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interaction;
+    private readonly IPublicTenantResolver _publicTenantResolver;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IIdentityServerInteractionService interaction,
+        IPublicTenantResolver publicTenantResolver,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _interaction = interaction;
+        _publicTenantResolver = publicTenantResolver;
         _logger = logger;
     }
 
@@ -191,14 +195,26 @@ public sealed class AccountController : Controller
 
         if (user == null)
         {
+            PublicTenantContext publicTenant;
+            try
+            {
+                publicTenant = await _publicTenantResolver.ResolveRequiredAsync(HttpContext.RequestAborted);
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Google login rejected because tenant domain could not be resolved for {Email}.", email);
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
             user = new ApplicationUser
             {
                 UserName = email,
                 Email = email,
                 EmailConfirmed = true,
                 DisplayName = info.Principal?.Identity?.Name ?? email,
-                TenantId = Guid.Empty,
-                RestaurantId = null,
+                TenantId = publicTenant.TenantId,
+                RestaurantId = publicTenant.RestaurantId,
                 IsEnabled = true
             };
 
