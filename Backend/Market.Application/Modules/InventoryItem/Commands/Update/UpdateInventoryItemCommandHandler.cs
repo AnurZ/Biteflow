@@ -8,15 +8,21 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
     {
         public async Task Handle(UpdateInventoryItemCommand r, CancellationToken ct)
         {
-            var restaurantId = tenantContext.RestaurantId ?? r.RestaurantId;
+            var restaurantId = tenantContext.IsSuperAdmin
+                ? r.RestaurantId
+                : tenantContext.RequireRestaurantId();
+
             if (restaurantId == Guid.Empty)
                 throw new ValidationException("Restaurant context is missing.");
 
-            var ie = await db.InventoryItems.FirstOrDefaultAsync(x => x.Id == r.Id, ct);
+            var ie = await db.InventoryItems
+                .WhereNullableRestaurantOwned(tenantContext)
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
             if (ie is null)
                 throw new KeyNotFoundException("Inventory item not found.");
 
             bool duplicateExists = await db.InventoryItems
+                .WhereNullableRestaurantOwned(tenantContext)
                 .AnyAsync(x => x.Id != r.Id &&
                                x.RestaurantId == restaurantId &&
                                x.Name.ToLower() == r.Name.ToLower(), ct);

@@ -17,15 +17,18 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
         private readonly IAppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ITenantContext _tenantContext;
 
         public UpdateTableReservationCommandHandler(
             IAppDbContext db,
             UserManager<ApplicationUser> userManager,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            ITenantContext tenantContext)
         {
             _db = db;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
+            _tenantContext = tenantContext;
         }
 
         public async Task Handle(UpdateTableReservationCommandDto request, CancellationToken cancellationToken)
@@ -37,10 +40,32 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
                 user = await _userManager.FindByIdAsync(request.ApplicationUserId.Value.ToString());
                 if (user == null)
                     throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+
+                if (!_tenantContext.IsSuperAdmin &&
+                    (user.TenantId != _tenantContext.RequireTenantId() ||
+                     user.RestaurantId != _tenantContext.RequireRestaurantId()))
+                {
+                    throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
+                }
             }
 
-            var reservation = await _db.TableReservations
+            var restaurantId = _tenantContext.IsSuperAdmin
+                ? (Guid?)null
+                : _tenantContext.RequireRestaurantId();
+
+            var reservationQuery = _db.TableReservations
                 .Include(r => r.DiningTable)
+                .ThenInclude(t => t!.TableLayout)
+                .WhereTenantOwned(_tenantContext);
+
+            if (restaurantId.HasValue)
+            {
+                reservationQuery = reservationQuery
+                    .Where(r => r.DiningTable != null &&
+                                r.DiningTable.TableLayout.RestaurantId == restaurantId.Value);
+            }
+
+            var reservation = await reservationQuery
                 .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
             if (reservation == null)
@@ -53,7 +78,16 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
             if (request.ReservationEnd.HasValue && request.ReservationStart >= request.ReservationEnd)
                 throw new ValidationException("Reservation start must be before reservation end.");
 
-            var newTable = await _db.DiningTables
+            var newTableQuery = _db.DiningTables
+                .Include(t => t.TableLayout)
+                .WhereTenantOwned(_tenantContext);
+
+            if (restaurantId.HasValue)
+            {
+                newTableQuery = newTableQuery.Where(t => t.TableLayout.RestaurantId == restaurantId.Value);
+            }
+
+            var newTable = await newTableQuery
                 .FirstOrDefaultAsync(t => t.Id == request.DiningTableId, cancellationToken);
 
             if (newTable == null)
@@ -64,6 +98,7 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
 
             // Overlapping reservations (consider nullable ReservationEnd)
             bool overlapping = await _db.TableReservations
+                .WhereTenantOwned(_tenantContext)
                 .Where(r => r.DiningTableId == request.DiningTableId && r.Id != request.Id)
                 .AnyAsync(r =>
                     (r.ReservationEnd.HasValue

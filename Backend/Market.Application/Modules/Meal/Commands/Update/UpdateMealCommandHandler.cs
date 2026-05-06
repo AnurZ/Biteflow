@@ -8,12 +8,13 @@ using System.Linq;
 
 namespace Market.Application.Modules.Meal.Commands.Update
 {
-    public sealed class UpdateMealCommandHandler(IAppDbContext db)
+    public sealed class UpdateMealCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         : IRequestHandler<UpdateMealCommand>
     {
         public async Task Handle(UpdateMealCommand request, CancellationToken cancellationToken)
         {
             var meal = await db.Meals
+                .WhereNullableRestaurantOwned(tenantContext)
                 .Include(m => m.Ingredients)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
@@ -21,13 +22,24 @@ namespace Market.Application.Modules.Meal.Commands.Update
                 throw new KeyNotFoundException($"Meal with ID {request.Id} not found.");
 
            var nameExists = await db.Meals
-             .AnyAsync(m => m.Id != request.Id && m.Name == meal.Name, cancellationToken);
+                .WhereNullableRestaurantOwned(tenantContext)
+                .AnyAsync(m => m.Id != request.Id && m.Name == request.Name.Trim(), cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal with the name '{request.Name.Trim()}' already exists.");
 
             if (request.BasePrice < 0)
                 throw new ValidationException("BasePrice cannot be negative.");
+
+            if (request.CategoryId.HasValue)
+            {
+                var categoryExists = await db.MealCategories
+                    .WhereNullableRestaurantOwned(tenantContext)
+                    .AnyAsync(c => c.Id == request.CategoryId.Value, cancellationToken);
+
+                if (!categoryExists)
+                    throw new ValidationException($"MealCategoryId {request.CategoryId.Value} is invalid.");
+            }
 
             // Update meal basic properties
             meal.Name = request.Name.Trim();
@@ -57,6 +69,7 @@ namespace Market.Application.Modules.Meal.Commands.Update
             {
                 // Validate InventoryItem exists
                 var exists = await db.InventoryItems
+                    .WhereNullableRestaurantOwned(tenantContext)
                     .AnyAsync(i => i.Id == ingredientDto.InventoryItemId, cancellationToken);
 
                 if (!exists)

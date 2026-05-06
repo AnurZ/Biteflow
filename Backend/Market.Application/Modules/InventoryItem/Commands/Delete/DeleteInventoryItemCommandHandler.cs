@@ -7,13 +7,17 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.InventoryItem.Commands.Delete
 {
-    public sealed class DeleteInventoryItemCommandHandler(IAppDbContext db)
+    public sealed class DeleteInventoryItemCommandHandler(IAppDbContext db, ITenantContext tenantContext)
     : IRequestHandler<DeleteInventoryItemCommand>
     {
         public async Task Handle(DeleteInventoryItemCommand r, CancellationToken ct)
         {
-            var ie = await db.InventoryItems.FirstOrDefaultAsync(x => x.Id == r.Id, ct);
-            if (ie is null) return; // idempotent
+            var ie = await db.InventoryItems
+                .WhereNullableRestaurantOwned(tenantContext)
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
+            if (ie is null)
+                throw new KeyNotFoundException("Inventory item not found.");
+
             db.InventoryItems.Remove(ie);
             await db.SaveChangesAsync(ct);
         }
