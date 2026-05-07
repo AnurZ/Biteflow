@@ -1,11 +1,8 @@
-﻿using Market.Application.Modules.Staff.Commands.Create;
-using Market.Domain.Entities.Meal;
+﻿using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealIngredient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Market.Application.Common.Exceptions;
+using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Meal.Commands.Create
 {
@@ -22,27 +19,53 @@ namespace Market.Application.Modules.Meal.Commands.Create
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ValidationException("Meal name is required.");
 
+            var normalizedName = request.Name.Trim().ToLower();
+
+            // 1. Name uniqueness check (per restaurant)
             var nameExists = await db.Meals
-                .AnyAsync(m => m.Name.ToLower() == request.Name.Trim().ToLower()
-                && m.RestaurantId == restaurantId, cancellationToken);
+                .AnyAsync(m =>
+                    m.RestaurantId == restaurantId &&
+                    m.Name.ToLower() == normalizedName,
+                    cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal with the name '{request.Name.Trim()}' already exists.");
 
-
             if (request.BasePrice < 0)
                 throw new ValidationException("BasePrice cannot be negative.");
 
+            // 2. Category validation (tenant-safe)
             if (request.CategoryId.HasValue)
             {
                 var categoryExists = await db.MealCategories
                     .WhereNullableRestaurantOwned(tenantContext)
-                    .AnyAsync(c => c.Id == request.CategoryId.Value, cancellationToken);
+                    .AnyAsync(c =>
+                        c.Id == request.CategoryId.Value,
+                        cancellationToken);
 
                 if (!categoryExists)
                     throw new ValidationException($"MealCategoryId {request.CategoryId.Value} is invalid.");
             }
 
+            // 3. Ingredient validation (bulk, no N+1)
+            var ingredientIds = request.Ingredients
+                .Select(i => i.InventoryItemId)
+                .ToList();
+
+            var validIds = (await db.InventoryItems
+                .WhereNullableRestaurantOwned(tenantContext)
+                .Where(i => ingredientIds.Contains(i.Id))
+                .Select(i => i.Id)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
+
+            if (!ingredientIds.All(validIds.Contains))
+                throw new ValidationException("One or more InventoryItemIds are invalid.");
+
+            if (request.Ingredients.Any(i => i.Quantity <= 0))
+                throw new ValidationException("Ingredient quantity must be greater than zero.");
+
+            // 4. Create meal
             var newMeal = new Domain.Entities.Meal.Meal
             {
                 Name = request.Name.Trim(),
@@ -59,30 +82,17 @@ namespace Market.Application.Modules.Meal.Commands.Create
             db.Meals.Add(newMeal);
             await db.SaveChangesAsync(cancellationToken);
 
+            // 5. Create ingredients
             foreach (var ingredientDto in request.Ingredients)
             {
-                // Optional: check if InventoryItem exists
-                var exists = await db.InventoryItems
-                    .WhereNullableRestaurantOwned(tenantContext)
-                    .AnyAsync(i => i.Id == ingredientDto.InventoryItemId, cancellationToken);
-                if (!exists)
-                    throw new ValidationException($"InventoryItemId {ingredientDto.InventoryItemId} is invalid.");
-
-                if (ingredientDto.Quantity <= 0)
-                    throw new ValidationException($"Quantity for InventoryItemId {ingredientDto.InventoryItemId} must be greater than zero.");
-
-
-                var mealIngredient = new MealIngredient
+                db.MealIngredients.Add(new MealIngredient
                 {
                     MealId = newMeal.Id,
                     InventoryItemId = ingredientDto.InventoryItemId,
                     Quantity = ingredientDto.Quantity,
                     UnitTypes = ingredientDto.UnitType
-                };
-
-                db.MealIngredients.Add(mealIngredient);
+                });
             }
-
 
             await db.SaveChangesAsync(cancellationToken);
 

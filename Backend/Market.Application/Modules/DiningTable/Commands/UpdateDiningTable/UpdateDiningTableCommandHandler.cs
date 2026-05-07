@@ -1,13 +1,11 @@
 ﻿using Market.Domain.Entities.DiningTables;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
 {
-    public sealed class UpdateDiningTableCommandHandler : IRequestHandler<UpdateDiningTableCommandDto>
+    public sealed class UpdateDiningTableCommandHandler
+        : IRequestHandler<UpdateDiningTableCommandDto>
     {
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
@@ -20,52 +18,39 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
 
         public async Task Handle(UpdateDiningTableCommandDto request, CancellationToken cancellationToken)
         {
-            var restaurantId = _tenantContext.IsSuperAdmin
-                ? (Guid?)null
-                : _tenantContext.RequireRestaurantId();
-
-            var tableQuery = _db.DiningTables
+            var table = await _db.DiningTables
                 .Include(x => x.TableLayout)
-                .WhereTenantOwned(_tenantContext);
+                .WhereTenantOwned(_tenantContext)
+                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-            if (restaurantId.HasValue)
-            {
-                tableQuery = tableQuery.Where(x => x.TableLayout.RestaurantId == restaurantId.Value);
-            }
-
-            var table = await tableQuery.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
             if (table == null)
                 throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");
 
-            // Validate inputs
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            var layoutQuery = _db.TableLayouts
-                .WhereTenantOwned(_tenantContext);
-
-            if (restaurantId.HasValue)
-            {
-                layoutQuery = layoutQuery.Where(l => l.RestaurantId == restaurantId.Value);
-            }
-
-            var layoutExists = await layoutQuery
+            // Validate layout belongs to tenant
+            var layoutExists = await _db.TableLayouts
+                .WhereTenantOwned(_tenantContext)
                 .AnyAsync(l => l.Id == request.TableLayoutId, cancellationToken);
 
             if (!layoutExists)
                 throw new KeyNotFoundException($"TableLayout with ID {request.TableLayoutId} not found.");
 
-            // Check for duplicate table number in the same layout
-            bool numberExists = await _db.DiningTables
+            // Duplicate number check (same layout)
+            var numberExists = await _db.DiningTables
                 .WhereTenantOwned(_tenantContext)
-                .AnyAsync(t => t.TableLayoutId == request.TableLayoutId
-                               && t.Number == request.Number
-                               && t.Id != request.Id, cancellationToken);
+                .AnyAsync(t =>
+                    t.TableLayoutId == request.TableLayoutId &&
+                    t.Number == request.Number &&
+                    t.Id != request.Id,
+                    cancellationToken);
 
             if (numberExists)
-                throw new ArgumentException($"A table with number {request.Number} already exists in this layout.");
+                throw new ArgumentException(
+                    $"A table with number {request.Number} already exists in this layout.");
 
-            // Update table properties
+            // Update
             table.Number = request.Number;
             table.NumberOfSeats = request.NumberOfSeats;
             table.IsActive = request.IsActive;
@@ -75,7 +60,8 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
             table.Y = request.Y;
             table.Height = request.Height;
             table.Width = request.Width;
-            table.Shape = request.Shape.Trim();
+
+            table.Shape = request.Shape?.Trim() ?? string.Empty;
             table.Color = request.Color;
 
             table.TableType = request.TableType;
@@ -84,6 +70,5 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
 
             await _db.SaveChangesAsync(cancellationToken);
         }
-
     }
 }

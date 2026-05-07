@@ -13,7 +13,7 @@ namespace Market.Domain.Entities.Meal
         public Guid? RestaurantId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public double BasePrice { get; set; }
+        public decimal BasePrice { get; set; }
         public bool IsAvailable { get; set; }
         public bool IsFeatured { get; set; }
         public string ImageField { get; set; } = string.Empty;

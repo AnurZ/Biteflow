@@ -1,6 +1,7 @@
 namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
 {
-    public sealed class CreateTableLayoutCommandHandler : IRequestHandler<CreateTableLayoutCommandDto, int>
+    public sealed class CreateTableLayoutCommandHandler
+        : IRequestHandler<CreateTableLayoutCommandDto, int>
     {
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
@@ -14,12 +15,14 @@ namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
         public async Task<int> Handle(CreateTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
-            var restaurantId = _tenantContext.RequireRestaurantId();
             var name = request.Name.Trim();
 
+            // Tenant-scoped uniqueness
             var nameExists = await _db.TableLayouts
-                .AnyAsync(m => m.Name.ToLower() == name.ToLower()
-                               && m.RestaurantId == restaurantId, cancellationToken);
+                .AnyAsync(x =>
+                    x.TenantId == tenantId &&
+                    x.Name.ToLower() == name.ToLower(),
+                    cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A table layout with the name '{name}' already exists.");
@@ -29,7 +32,6 @@ namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
                 Name = name,
                 BackgroundColor = request.BackgroundColor,
                 FloorImageUrl = request.FloorImageUrl,
-                RestaurantId = restaurantId,
                 TenantId = tenantId
             };
 
