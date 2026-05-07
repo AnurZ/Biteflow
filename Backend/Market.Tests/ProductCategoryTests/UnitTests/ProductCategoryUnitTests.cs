@@ -29,7 +29,8 @@ public class ProductCategoryUnitTests
         var resultId = await handler.Handle(command, CancellationToken.None);
 
         // Assert
-        var category = await context.ProductCategories.FindAsync(resultId);
+        var category = await context.ProductCategories
+            .FirstOrDefaultAsync(x => x.Id == resultId);
         Assert.NotNull(category);
         Assert.Equal("Test Category", category!.Name);
         // (Optional) if using UTC:
