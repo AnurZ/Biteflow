@@ -1,17 +1,15 @@
 ﻿using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.TableReservations;
-using Market.Application.Modules.TableReservation.Commands.CreateTableReservation;
+using Market.Domain.Common.Enums;
+using Market.Application.Abstractions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using MediatR;
 
 namespace Market.Application.Modules.TableReservation.Commands.CreateTableReservation
 {
-    public sealed class CreateTableReservationCommandHandler : IRequestHandler<CreateTableReservationCommandDto, int>
+    public sealed class CreateTableReservationCommandHandler
+        : IRequestHandler<CreateTableReservationCommandDto, int>
     {
         private readonly IAppDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -27,51 +25,58 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
             _tenantContext = tenantContext;
         }
 
-        public async Task<int> Handle(CreateTableReservationCommandDto request, CancellationToken cancellationToken)
+        public async Task<int> Handle(
+            CreateTableReservationCommandDto request,
+            CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
 
-            // Optional user lookup
-            ApplicationUser? user = null;
-            if (request.ApplicationUserId.HasValue)
-            {
-                user = await _userManager.FindByIdAsync(request.ApplicationUserId.Value.ToString());
-                if (user == null)
-                    throw new KeyNotFoundException($"User with ID {request.ApplicationUserId} not found.");
-                if (user.TenantId != tenantId)
-                    throw new InvalidOperationException("User does not belong to the current tenant.");
-            }
-
-            // Basic validation
             if (request.NumberOfGuests <= 0)
                 throw new ArgumentException("Number of guests must be greater than zero.");
 
-            if (request.ReservationEnd.HasValue && request.ReservationStart >= request.ReservationEnd)
+            if (request.ReservationEnd.HasValue &&
+                request.ReservationStart >= request.ReservationEnd)
                 throw new ArgumentException("Reservation start must be before reservation end.");
 
-            // Find table
+            if (request.ApplicationUserId.HasValue)
+            {
+                var user = await _userManager.FindByIdAsync(request.ApplicationUserId.Value.ToString());
+
+                if (user == null)
+                    throw new KeyNotFoundException("User not found.");
+
+                if (user.TenantId != tenantId)
+                    throw new InvalidOperationException("User does not belong to this tenant.");
+            }
+
             var table = await _db.DiningTables
-                .FirstOrDefaultAsync(t => t.Id == request.DiningTableId && t.TenantId == tenantId, cancellationToken);
+                .FirstOrDefaultAsync(t =>
+                    t.Id == request.DiningTableId &&
+                    t.TenantId == tenantId,
+                    cancellationToken);
+
             if (table == null)
                 throw new InvalidOperationException("Dining table not found.");
 
             if (request.NumberOfGuests > table.NumberOfSeats)
                 throw new ArgumentException("Too many guests for this table.");
 
-            // Check overlapping reservations
-            var overlappingReservation = await _db.TableReservations
+            var overlapping = await _db.TableReservations
                 .AnyAsync(r =>
                     r.DiningTableId == request.DiningTableId &&
                     (
-                        (r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationEnd && request.ReservationEnd > r.ReservationStart) ||
-                        (!r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationStart)
+                        (r.ReservationEnd.HasValue &&
+                         request.ReservationStart < r.ReservationEnd &&
+                         request.ReservationEnd > r.ReservationStart)
+                        ||
+                        (!r.ReservationEnd.HasValue &&
+                         request.ReservationStart < r.ReservationStart)
                     ),
                     cancellationToken);
 
-            if (overlappingReservation)
-                throw new InvalidOperationException("The table is already reserved during the requested time.");
+            if (overlapping)
+                throw new InvalidOperationException("Table already reserved in this time slot.");
 
-            // Create reservation
             var reservation = new Domain.Entities.TableReservations.TableReservation
             {
                 DiningTableId = request.DiningTableId,
@@ -85,7 +90,7 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
                 Notes = request.Notes,
                 ReservationStart = request.ReservationStart,
                 ReservationEnd = request.ReservationEnd,
-                Status = Domain.Common.Enums.ReservationStatus.Pending
+                Status = ReservationStatus.Pending
             };
 
             _db.TableReservations.Add(reservation);
