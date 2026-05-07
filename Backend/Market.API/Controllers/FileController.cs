@@ -17,22 +17,27 @@ public class FileController : ControllerBase
 
     [HttpPost("upload")]
     [Consumes("multipart/form-data")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<IActionResult> UploadImage([FromForm] FileUploadDto dto)
     {
         if (dto.File is not { Length: > 0 } file)
-            return BadRequest("No file uploaded");
-        Console.WriteLine("FILE RECEIVED? => " + (file != null));
+            return BadRequest("No file uploaded.");
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest("Maximum file size is 5 MB.");
 
         try
         {
-            var url = await _blobService.UploadAsync(file!);
-            var fileName = Path.GetFileName(new Uri(url).LocalPath);
-            return Ok(new { Url = url, FileName = fileName });
+            var result = await _blobService.UploadAsync(file);
+
+            return Ok(result);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"Upload failed: {ex}");
-            return StatusCode(500, new { error = ex.Message });
+            return StatusCode(500, new
+            {
+                error = "An unexpected error occurred."
+            });
         }
     }
 
