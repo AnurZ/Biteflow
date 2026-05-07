@@ -21,9 +21,16 @@ namespace Market.API.Controllers
         }
 
         [HttpGet("orders-per-day")]
-        public async Task<IActionResult> GetOrdersPerDay()
+        public async Task<IActionResult> GetOrdersPerDay(
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
         {
-            var result = await _mediator.Send(new GetOrdersPerDayQuery());
+            var result = await _mediator.Send(new GetOrdersPerDayQuery
+            {
+                From = from,
+                To = to
+            });
+
             return Ok(result);
         }
 

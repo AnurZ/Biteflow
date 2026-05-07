@@ -1,18 +1,28 @@
 <div class="button-group">
-  <input routerLink="staff" type="radio" id="btn1" name="option" checked>
-  <label for="btn1">Staff</label>
 
-  <input routerLink="meals" type="radio" id="btn2" name="option">
-  <label for="btn2">Meals</label>
+  <a routerLink="dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    Dashboard
+  </a>
 
-  <input routerLink="inventory-items" type="radio" id="btn3" name="option">
-  <label for="btn3">Inventory items</label>
+  <a routerLink="staff" routerLinkActive="active">
+    Staff
+  </a>
 
-  <input routerLink="table-reservations" type="radio" id="btn6" name="option">
-  <label for="btn6">Table reservations</label>
+  <a routerLink="meals" routerLinkActive="active">
+    Meals
+  </a>
 
-  <input routerLink="tables-layout" type="radio" id="btn5" name="option">
-  <label for="btn5">Tables layout</label>
+  <a routerLink="inventory-items" routerLinkActive="active">
+    Inventory items
+  </a>
+
+  <a routerLink="table-reservations" routerLinkActive="active">
+    Table reservations
+  </a>
+
+  <a routerLink="tables-layout" routerLinkActive="active">
+    Tables layout
+  </a>
 
 </div>
 
