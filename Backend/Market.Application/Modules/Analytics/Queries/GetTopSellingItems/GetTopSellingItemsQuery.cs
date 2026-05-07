@@ -10,5 +10,6 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
     {
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+        public int TopN { get; set; } = 10;
     }
 }
