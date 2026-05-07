@@ -44,9 +44,18 @@ export class AuthService {
     this.oauthService.initLoginFlow(target);
   }
 
-  startGoogleLogin(returnUrl?: string): void {
-    const target = returnUrl ?? window.location.pathname;
-    this.oauthService.initLoginFlow(target, { idp: 'Google' });
+  startGoogleLogin(
+    returnUrl?: string,
+    tenantContext?: { tenantId: string; restaurantId: string }
+  ): void {
+    const tenantId = tenantContext?.tenantId?.trim();
+    const restaurantId = tenantContext?.restaurantId?.trim();
+    if (!tenantId || !restaurantId) {
+      throw new Error('Tenant and restaurant context are required for Google login.');
+    }
+
+    const target = this.withTenantContext(returnUrl ?? window.location.pathname, tenantId, restaurantId);
+    this.oauthService.initLoginFlow(target, { idp: 'Google', tenantId, restaurantId });
   }
 
   async handleLoginCallback(): Promise<MyAuthInfo | null> {
@@ -239,6 +248,13 @@ export class AuthService {
   registerCustomer(payload: { email: string; password: string; displayName?: string; captchaToken: string }): Promise<void> {
     const url = `${MyConfig.api_address}/auth/register/customer`;
     return lastValueFrom(this.http.post<void>(url, payload));
+  }
+
+  private withTenantContext(returnUrl: string, tenantId: string, restaurantId: string): string {
+    const url = new URL(returnUrl, window.location.origin);
+    url.searchParams.set('tenantId', tenantId);
+    url.searchParams.set('restaurantId', restaurantId);
+    return `${url.pathname}${url.search}${url.hash}`;
   }
 
 }

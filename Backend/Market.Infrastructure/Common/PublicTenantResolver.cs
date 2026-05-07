@@ -34,6 +34,32 @@ public sealed class PublicTenantResolver(IHttpContextAccessor accessor, IAppDbCo
         return context;
     }
 
+    public async Task<PublicTenantContext> ResolveRequiredAsync(Guid tenantId, Guid restaurantId, CancellationToken ct = default)
+    {
+        if (tenantId == Guid.Empty || restaurantId == Guid.Empty)
+        {
+            throw new ValidationException("Tenant and restaurant ids are required.");
+        }
+
+        var context = await db.Restaurants
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(r => r.IsActive && r.Id == restaurantId && r.TenantId == tenantId)
+            .Join(
+                db.Tenants.AsNoTracking().IgnoreQueryFilters().Where(t => t.IsActive && t.Id == tenantId),
+                r => r.TenantId,
+                t => t.Id,
+                (r, t) => new PublicTenantContext(t.Id, r.Id, r.Domain))
+            .FirstOrDefaultAsync(ct);
+
+        if (context is null)
+        {
+            throw new ValidationException("Tenant or restaurant is invalid or inactive.");
+        }
+
+        return context;
+    }
+
     private string? ResolveDomain()
     {
         var request = accessor.HttpContext?.Request;

@@ -278,6 +278,31 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Fact]
+    public async Task PublicTenantResolver_WithExplicitKnownIds_ShouldReturnTenantContext()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var resolver = scope.ServiceProvider.GetRequiredService<IPublicTenantResolver>();
+
+        var context = await resolver.ResolveRequiredAsync(
+            SeedConstants.DefaultTenantId,
+            SeedConstants.DefaultRestaurantId);
+
+        Assert.Equal(SeedConstants.DefaultTenantId, context.TenantId);
+        Assert.Equal(SeedConstants.DefaultRestaurantId, context.RestaurantId);
+        Assert.Equal(DemoRestaurantDomain, context.Domain);
+    }
+
+    [Fact]
+    public async Task PublicTenantResolver_WithExplicitMismatchedIds_ShouldRejectContext()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var resolver = scope.ServiceProvider.GetRequiredService<IPublicTenantResolver>();
+
+        await Assert.ThrowsAsync<FluentValidation.ValidationException>(() =>
+            resolver.ResolveRequiredAsync(SeedConstants.DefaultTenantId, Guid.NewGuid()));
+    }
+
+    [Fact]
     public async Task PublicReservation_WithKnownDomain_ShouldCreateReservationInResolvedTenant()
     {
         var client = CreateClientForDomain(DemoRestaurantDomain);
