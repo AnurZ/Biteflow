@@ -5,6 +5,7 @@ using Market.Application.Abstractions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MediatR;
+using Market.Domain.Common.Enums;
 
 namespace Market.Application.Modules.TableReservation.Commands.CreateTableReservation
 {
@@ -63,16 +64,12 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
 
             var overlapping = await _db.TableReservations
                 .AnyAsync(r =>
-                    r.DiningTableId == request.DiningTableId &&
-                    (
-                        (r.ReservationEnd.HasValue &&
-                         request.ReservationStart < r.ReservationEnd &&
-                         request.ReservationEnd > r.ReservationStart)
-                        ||
-                        (!r.ReservationEnd.HasValue &&
-                         request.ReservationStart < r.ReservationStart)
-                    ),
-                    cancellationToken);
+                     r.DiningTableId == request.DiningTableId &&
+                     r.Status != ReservationStatus.Cancelled &&
+                     request.ReservationStart < (r.ReservationEnd ?? DateTime.MaxValue) &&
+                     r.ReservationStart < (request.ReservationEnd ?? DateTime.MaxValue),
+                     cancellationToken);
+
 
             if (overlapping)
                 throw new InvalidOperationException("Table already reserved in this time slot.");
