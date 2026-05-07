@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Market.Application.Abstractions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,9 +7,11 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.TenantActivation.Commands.RejectRequest
 {
-    public sealed class RejectRequestCommandHandler(IAppDbContext db)
+    public sealed class RejectRequestCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         : IRequestHandler<RejectRequestCommand>
     {
+
+
         public async Task Handle(RejectRequestCommand r, CancellationToken ct)
         {
 
@@ -16,9 +19,14 @@ namespace Market.Application.Modules.TenantActivation.Commands.RejectRequest
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ValidationException("Reason is required.");
 
-            // Load the request
-            var e = await db.TenantActivationRequests.FindAsync(new object[] { r.Id }, ct)
-                    ?? throw new MarketNotFoundException("Request not found");
+            var tenantId = tenantContext.RequireTenantId();
+
+            var e = await db.TenantActivationRequests
+                .FirstOrDefaultAsync(x =>
+                    x.Id == r.Id &&
+                    x.TenantId == tenantId,
+                    ct)
+                ?? throw new MarketNotFoundException("Request not found");
 
             e.Reject(reason);
 

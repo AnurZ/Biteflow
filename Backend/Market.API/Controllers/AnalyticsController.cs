@@ -21,6 +21,7 @@ namespace Market.API.Controllers
         }
 
         [HttpGet("orders-per-day")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> GetOrdersPerDay(
             [FromQuery] DateTime? from,
             [FromQuery] DateTime? to)
@@ -35,6 +36,7 @@ namespace Market.API.Controllers
         }
 
         [HttpGet("top-selling-items")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> GetTopSellingItems([FromQuery] GetTopSellingItemsQuery query)
         {
             var result = await _mediator.Send(query);
@@ -42,6 +44,7 @@ namespace Market.API.Controllers
         }
 
         [HttpGet("revenue-per-day")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> GetRevenuePerDay([FromQuery] GetRevenuePerDayQuery query)
         {
             var result = await _mediator.Send(query);

@@ -1,4 +1,5 @@
 ﻿using Market.Application.Abstractions;
+using Market.Domain.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Analytics.Queries.GetRevenuePerDay
@@ -23,7 +24,7 @@ namespace Market.Application.Modules.Analytics.Queries.GetRevenuePerDay
         {
             var query = _context.OrderItems
                 .AsNoTracking()
-                .Where(oi => !oi.Order.IsDeleted
+                .Where(oi => !oi.Order.IsDeleted && oi.Order.Status != OrderStatus.Cancelled
                              && oi.Order.TenantId == _tenantContext.TenantId);
 
             if (request.From.HasValue)
