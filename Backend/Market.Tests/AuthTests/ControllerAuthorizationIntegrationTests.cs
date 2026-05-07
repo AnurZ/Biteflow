@@ -34,9 +34,9 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Theory]
-    [InlineData("waiter1", "waiter1", "/api/TableLayout")]
-    [InlineData("string", "string", "/api/Analytics/revenue-per-day")]
-    [InlineData("string", "string", "/api/inventoryitem")]
+    [InlineData("waiter1", "WaiterUser1!", "/api/TableLayout")]
+    [InlineData("string", "StringUser1!", "/api/Analytics/revenue-per-day")]
+    [InlineData("string", "StringUser1!", "/api/inventoryitem")]
     public async Task StaffOrAdmin_ShouldAccessRepresentativeProtectedEndpoints(
         string username,
         string password,
@@ -285,7 +285,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         Assert.False(numericUpdateResponse.IsSuccessStatusCode);
         Assert.False(numericSubmitResponse.IsSuccessStatusCode);
 
-        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "superadmin");
+        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "Superadmin1!");
         var adminListResponse = await superAdmin.GetAsync("/api/activation-requests");
         adminListResponse.EnsureSuccessStatusCode();
         using var adminListPayload = JsonDocument.Parse(await adminListResponse.Content.ReadAsStringAsync());
@@ -324,7 +324,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             .Select(x => x.Id)
             .SingleAsync();
 
-        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "superadmin");
+        var superAdmin = await _factory.GetAuthenticatedClientAsync("superadmin", "Superadmin1!");
         var approveResponse = await superAdmin.PostAsync($"/api/activation-requests/{requestId}/approve", null);
         approveResponse.EnsureSuccessStatusCode();
         var activationLink = await approveResponse.Content.ReadAsStringAsync();
@@ -366,7 +366,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         setupLink = setupLink[setupLink.IndexOf("http", StringComparison.OrdinalIgnoreCase)..];
         var setupUserId = GetQueryParam(setupLink, "userId");
         var setupToken = GetQueryParam(setupLink, "token");
-        var newPassword = $"newpassword{Guid.NewGuid():N}";
+        var newPassword = $"Newpassword1!{Guid.NewGuid():N}";
 
         var setPasswordResponse = await client.PostAsJsonAsync("/api/auth/set-password", new
         {
@@ -820,7 +820,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     private async Task<HttpClient> CreateCustomerClientAsync()
     {
         var email = $"customer-{Guid.NewGuid():N}@example.test";
-        const string password = "customer123";
+        const string password = "Customer123!";
         var anonymousClient = CreateClientForDomain(DemoRestaurantDomain);
 
         var registerResponse = await PostCustomerRegistrationAsync(anonymousClient, email, password);
@@ -840,7 +840,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     private static Task<HttpResponseMessage> PostCustomerRegistrationAsync(
         HttpClient client,
         string email,
-        string password = "customer123")
+        string password = "Customer123!")
     {
         return client.PostAsJsonAsync("/api/auth/register/customer", new
         {
@@ -857,7 +857,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         {
             Email = email,
             DisplayName = "Restaurant Staff Test",
-            PlainPassword = "staffpass123",
+            PlainPassword = "StaffPass123!",
             Role = role,
             Position = "Server",
             FirstName = "Restaurant",

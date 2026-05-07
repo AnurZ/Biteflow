@@ -40,7 +40,7 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<Progr
         => SentEmails.ToArray();
 
     public async Task<HttpClient> GetAuthenticatedClientAsync()
-        => await GetAuthenticatedClientAsync("string", "string");
+        => await GetAuthenticatedClientAsync("string", "StringUser1!");
 
     public async Task<HttpClient> GetAuthenticatedClientAsync(string username, string password)
     {

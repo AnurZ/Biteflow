@@ -45,7 +45,7 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
     public async Task IdentityServerToken_InvalidCredentials_ShouldUseSamePublicError_ForMissingAndWrongPassword()
     {
         var username = $"wrong-password-{Guid.NewGuid():N}@example.test";
-        await CreateIdentityUserAsync(username, "correct-password");
+        await CreateIdentityUserAsync(username, "CorrectPass1!");
         var client = _factory.CreateClient();
 
         var missingUser = await RequestPasswordTokenAsync(client, $"missing-{Guid.NewGuid():N}@example.test", "any-password");
@@ -63,10 +63,10 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
     public async Task IdentityServerToken_LockedUser_ShouldUseGenericPublicError()
     {
         var username = $"locked-{Guid.NewGuid():N}@example.test";
-        await CreateIdentityUserAsync(username, "correct-password", lockedOut: true);
+        await CreateIdentityUserAsync(username, "CorrectPass1!", lockedOut: true);
 
         var client = _factory.CreateClient();
-        var locked = await RequestPasswordTokenAsync(client, username, "correct-password");
+        var locked = await RequestPasswordTokenAsync(client, username, "CorrectPass1!");
 
         Assert.Equal(HttpStatusCode.BadRequest, locked.StatusCode);
         Assert.Equal("invalid_grant", locked.Error);

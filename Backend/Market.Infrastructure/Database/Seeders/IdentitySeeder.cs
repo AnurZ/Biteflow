@@ -124,7 +124,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "string",
-            password: "string",
+            password: "StringUser1!",
             primaryRole: RoleNames.Admin,
             position: "Manager",
             firstName: "Admin",
@@ -133,7 +133,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "waiter1",
-            password: "waiter1",
+            password: "WaiterUser1!",
             primaryRole: RoleNames.Waiter,
             position: "Waiter",
             firstName: "Waiter",
@@ -142,7 +142,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "kitchen1",
-            password: "kitchen1",
+            password: "KitchenUser1!",
             primaryRole: RoleNames.Kitchen,
             position: "Kitchen",
             firstName: "Kitchen",
@@ -260,13 +260,13 @@ public sealed class IdentitySeeder
     }
 
     // Dedicated demo platform owner account.
-    // Intended credentials: superadmin / superadmin.
+    // Intended credentials: superadmin / Superadmin1!
     // Intended role set: superadmin only (exclusive).
     private async Task EnsureExclusiveDemoSuperAdminAsync(CancellationToken ct)
     {
         const string username = "superadmin";
         const string email = "superadmin@demo.local";
-        const string password = "superadmin";
+        const string password = "Superadmin1!";
 
         var demoSuperAdmin = await _userManager.FindByNameAsync(username)
             ?? await _userManager.FindByEmailAsync(email);

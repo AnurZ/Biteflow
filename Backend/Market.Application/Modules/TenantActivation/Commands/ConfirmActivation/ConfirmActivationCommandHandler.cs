@@ -158,7 +158,7 @@ Biteflow Team
             return Convert.ToBase64String(buffer)
                 .TrimEnd('=')
                 .Replace('+', '-')
-                .Replace('/', '_') + "a1";
+                .Replace('/', '_') + "Aa1!";
         }
 
         private static string BuildPasswordSetupLink(string baseUrl, Guid userId, string token)

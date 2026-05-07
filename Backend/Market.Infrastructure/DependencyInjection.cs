@@ -4,6 +4,7 @@ using Market.Infrastructure.Database;
 using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Market.Shared.Options;
+using Market.Shared.Security;
 using Duende.IdentityModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,12 +68,12 @@ public static class DependencyInjection
 
         var identityBuilder = services.AddIdentityCore<ApplicationUser>(options =>
         {
-            options.Password.RequireDigit = false;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequiredLength = 4;
-            options.Password.RequiredUniqueChars = 1;
+            options.Password.RequireDigit = PasswordPolicy.RequireDigit;
+            options.Password.RequireLowercase = PasswordPolicy.RequireLowercase;
+            options.Password.RequireUppercase = PasswordPolicy.RequireUppercase;
+            options.Password.RequireNonAlphanumeric = PasswordPolicy.RequireNonAlphanumeric;
+            options.Password.RequiredLength = PasswordPolicy.RequiredLength;
+            options.Password.RequiredUniqueChars = PasswordPolicy.RequiredUniqueChars;
 
             options.User.RequireUniqueEmail = true;
 
