@@ -22,7 +22,7 @@ namespace Market.Infrastructure.Database.Configurations.Meals
 
             builder.Property(m => m.BasePrice)
                 .IsRequired()
-                .HasColumnType("decimal(10,2)");
+                .HasColumnType("decimal(18,2)");
 
             builder.Property(m => m.IsAvailable)
                 .HasDefaultValue(true);
