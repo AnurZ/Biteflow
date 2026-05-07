@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Market.Domain.Common.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
     public sealed class UpdateTableReservationStatusDto : IRequest
     {
         public int Id { get; set; }
-        public int Status { get; set; }
+        public ReservationStatus Status { get; set; }
     }
 
 }
