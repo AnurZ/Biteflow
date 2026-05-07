@@ -30,6 +30,14 @@
             <mat-error *ngIf="form.controls.plainPassword.hasError('required')">Password is required</mat-error>
             <mat-error *ngIf="form.controls.plainPassword.hasError('minlength')">Min 8 characters</mat-error>
           </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Role</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.controls.role.hasError('required')">Role is required.</mat-error>
+          </mat-form-field>
         </div>
       </div>
     } @else {
@@ -51,6 +59,14 @@
             <mat-label>Plain password</mat-label>
             <input matInput value="********" disabled>
           </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Role</mat-label>
+            <mat-select formControlName="role" required>
+              <mat-option *ngFor="let role of roleOptions" [value]="role.value">{{ role.label }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.controls.role.hasError('required')">Role is required.</mat-error>
+          </mat-form-field>
         </div>
       </div>
     }
@@ -59,16 +75,6 @@
       <h3 class="section-title">Employee profile</h3>
 
       <div class="inner-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Position</mat-label>
-          <mat-select formControlName="position" required>
-            <mat-option value="Waiter">Waiter</mat-option>
-            <mat-option value="Cook">Cook</mat-option>
-            <mat-option value="Manager">Manager</mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.controls.position.hasError('required')">Position is required</mat-error>
-        </mat-form-field>
-
         <mat-form-field appearance="outline">
           <mat-label>Name</mat-label>
           <input matInput formControlName="firstName" required>

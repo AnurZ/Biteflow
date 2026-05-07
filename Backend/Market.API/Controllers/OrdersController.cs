@@ -60,7 +60,7 @@ namespace Market.API.Controllers
                 var notification = new NotificationEntity
                 {
                     TenantId = order.TenantId,
-                    TargetRole = "Kitchen",
+                    TargetRole = RoleNames.Kitchen,
                     Title = "Nova narudzba",
                     Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
                     Type = "OrderCreated",
@@ -135,7 +135,7 @@ namespace Market.API.Controllers
                     var notification = new NotificationEntity
                     {
                         TenantId = order.TenantId,
-                        TargetRole = "Waiter",
+                        TargetRole = RoleNames.Waiter,
                         Title = "Narudzba spremna",
                         Message = $"Sto {order.TableNumber ?? order.DiningTableId} - narudzba je spremna.",
                         Type = "OrderReady",
@@ -183,8 +183,8 @@ namespace Market.API.Controllers
                         await _db.SaveChangesAsync(ct);
                     }
 
-                    var waiterRole = OrdersHubGroups.Role("Waiter", order.TenantId);
-                    var kitchenRole = OrdersHubGroups.Role("Kitchen", order.TenantId);
+                    var waiterRole = OrdersHubGroups.Role(RoleNames.Waiter, order.TenantId);
+                    var kitchenRole = OrdersHubGroups.Role(RoleNames.Kitchen, order.TenantId);
                     var groups = new[] { waiterRole, kitchenRole }
                         .Where(g => !string.IsNullOrWhiteSpace(g))
                         .ToArray();

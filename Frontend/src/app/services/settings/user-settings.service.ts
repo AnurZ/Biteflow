@@ -68,12 +68,11 @@ export class UserSettingsService {
   private autoRoute(auth: AuthService): string {
     const isSuperAdmin = auth.hasRole('superadmin');
     const isAdmin = auth.hasRole('admin') && !isSuperAdmin;
-    const isStaff = auth.hasRole('staff');
 
     if (isSuperAdmin) return '/superadmin';
     if (isAdmin) return '/admin';
-    if (auth.hasWaiterAccess() || isStaff) return '/waiter';
-    if (auth.hasKitchenAccess() || isStaff) return '/kitchen';
+    if (auth.hasWaiterAccess()) return '/waiter';
+    if (auth.hasKitchenAccess()) return '/kitchen';
     return '/public';
   }
 

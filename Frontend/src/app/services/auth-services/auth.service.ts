@@ -128,13 +128,11 @@ export class AuthService {
   }
 
   hasWaiterAccess(): boolean {
-    const position = this.getPosition().trim().toLowerCase();
-    return this.hasRole('waiter') || position.includes('waiter') || position.includes('konobar') || position.includes('server');
+    return this.hasRole('waiter');
   }
 
   hasKitchenAccess(): boolean {
-    const position = this.getPosition().trim().toLowerCase();
-    return this.hasRole('kitchen') || position.includes('kitchen') || position.includes('cook') || position.includes('chef') || position.includes('kuhar');
+    return this.hasRole('kitchen');
   }
 
   private updateAuthInfoFromToken(userInfo?: Record<string, any>): void {

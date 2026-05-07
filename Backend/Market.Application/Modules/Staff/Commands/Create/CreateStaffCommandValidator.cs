@@ -9,7 +9,6 @@ public sealed class CreateStaffCommandValidator : AbstractValidator<CreateStaffC
     {
         RoleNames.SuperAdmin,
         RoleNames.Admin,
-        RoleNames.Staff,
         RoleNames.Waiter,
         RoleNames.Kitchen
     };
@@ -26,10 +25,6 @@ public sealed class CreateStaffCommandValidator : AbstractValidator<CreateStaffC
         RuleFor(x => x.DisplayName)
             .MaximumLength(100)
             .When(x => !string.IsNullOrWhiteSpace(x.DisplayName));
-
-        RuleFor(x => x.Position)
-            .NotEmpty().WithMessage("Position is required.")
-            .MaximumLength(50);
 
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("FirstName is required.")

@@ -74,12 +74,12 @@ export class Header implements OnInit, OnDestroy {
 
   get canAccessWaiter(): boolean {
     if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
-    return this.authService.hasWaiterAccess() || this.authService.hasRole('staff') || this.isRestaurantAdmin;
+    return this.authService.hasWaiterAccess() || this.isRestaurantAdmin;
   }
 
   get canAccessKitchen(): boolean {
     if (!this.authService.isLoggedIn() || this.isSuperAdmin) return false;
-    return this.authService.hasKitchenAccess() || this.authService.hasRole('staff') || this.isRestaurantAdmin;
+    return this.authService.hasKitchenAccess() || this.isRestaurantAdmin;
   }
 
   get brandName(): string {

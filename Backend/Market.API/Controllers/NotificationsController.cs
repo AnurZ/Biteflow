@@ -30,12 +30,13 @@ namespace Market.API.Controllers
             CancellationToken ct = default)
         {
             var userId = ResolveUserId(User);
-            var roles = await ResolveRolesAsync(User, ct);
+            var roles = ResolveRoles(User);
             var tenantId = ResolveTenantId(User);
 
-            var baseQuery = _db.Notifications
-                .AsNoTracking()
-                .Where(n => MatchesTarget(n, userId, roles));
+            var baseQuery = ApplyTargetFilter(
+                _db.Notifications.AsNoTracking(),
+                userId,
+                roles);
 
             if (tenantId.HasValue)
             {
@@ -91,15 +92,18 @@ namespace Market.API.Controllers
         public async Task<IActionResult> MarkRead(int id, CancellationToken ct)
         {
             var userId = ResolveUserId(User);
-            var roles = await ResolveRolesAsync(User, ct);
+            var roles = ResolveRoles(User);
             var tenantId = ResolveTenantId(User);
 
-            var notification = await _db.Notifications
-                .FirstOrDefaultAsync(n =>
-                    n.Id == id &&
-                    MatchesTarget(n, userId, roles) &&
-                    (!tenantId.HasValue || n.TenantId == tenantId.Value),
-                    ct);
+            var query = ApplyTargetFilter(_db.Notifications, userId, roles)
+                .Where(n => n.Id == id);
+
+            if (tenantId.HasValue)
+            {
+                query = query.Where(n => n.TenantId == tenantId.Value);
+            }
+
+            var notification = await query.FirstOrDefaultAsync(ct);
 
             if (notification == null)
             {
@@ -119,14 +123,16 @@ namespace Market.API.Controllers
         public async Task<IActionResult> MarkAllRead(CancellationToken ct)
         {
             var userId = ResolveUserId(User);
-            var roles = await ResolveRolesAsync(User, ct);
+            var roles = ResolveRoles(User);
             var tenantId = ResolveTenantId(User);
 
-            var query = _db.Notifications
-                .Where(n =>
-                    n.ReadAtUtc == null &&
-                    MatchesTarget(n, userId, roles) &&
-                    (!tenantId.HasValue || n.TenantId == tenantId.Value));
+            var query = ApplyTargetFilter(_db.Notifications, userId, roles)
+                .Where(n => n.ReadAtUtc == null);
+
+            if (tenantId.HasValue)
+            {
+                query = query.Where(n => n.TenantId == tenantId.Value);
+            }
 
             var items = await query.ToListAsync(ct);
             if (items.Count == 0)
@@ -155,6 +161,34 @@ namespace Market.API.Controllers
             return userMatch || roleMatch;
         }
 
+        private static IQueryable<NotificationEntity> ApplyTargetFilter(
+            IQueryable<NotificationEntity> query,
+            string? userId,
+            HashSet<string> roles)
+        {
+            var normalizedUserId = string.IsNullOrWhiteSpace(userId)
+                ? null
+                : userId.Trim().ToLower();
+            var normalizedRoles = roles
+                .Where(role => !string.IsNullOrWhiteSpace(role))
+                .Select(role => role.Trim().ToLower())
+                .Distinct()
+                .ToArray();
+
+            if (normalizedUserId is null && normalizedRoles.Length == 0)
+            {
+                return query.Where(_ => false);
+            }
+
+            return query.Where(n =>
+                (normalizedUserId != null &&
+                 n.TargetUserId != null &&
+                 n.TargetUserId.ToLower() == normalizedUserId) ||
+                (normalizedRoles.Length > 0 &&
+                 n.TargetRole != null &&
+                 normalizedRoles.Contains(n.TargetRole.ToLower())));
+        }
+
         private static string? ResolveUserId(ClaimsPrincipal user)
         {
             return user.FindFirstValue(ClaimTypes.NameIdentifier) ??
@@ -162,7 +196,7 @@ namespace Market.API.Controllers
                 user.FindFirstValue("subject");
         }
 
-        private async Task<HashSet<string>> ResolveRolesAsync(ClaimsPrincipal user, CancellationToken ct)
+        private static HashSet<string> ResolveRoles(ClaimsPrincipal user)
         {
             var roles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -177,41 +211,7 @@ namespace Market.API.Controllers
                 }
             }
 
-            var position = await GetPositionAsync(user, ct);
-            var normalized = (position ?? string.Empty).Trim().ToLowerInvariant();
-
-            if (LooksLikeKitchen(normalized))
-            {
-                roles.Add("Kitchen");
-            }
-
-            if (LooksLikeWaiter(normalized))
-            {
-                roles.Add("Waiter");
-            }
-
-            if (!LooksLikeKitchen(normalized) && !LooksLikeWaiter(normalized))
-            {
-                // Fallback for demo data when position isn't set.
-                roles.Add("Kitchen");
-                roles.Add("Waiter");
-            }
-
             return roles;
-        }
-
-        private async Task<string?> GetPositionAsync(ClaimsPrincipal user, CancellationToken ct)
-        {
-            var subject = ResolveUserId(user);
-            if (Guid.TryParse(subject, out var userId))
-            {
-                var profile = await _db.EmployeeProfiles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.ApplicationUserId == userId, ct);
-                return profile?.Position;
-            }
-
-            return null;
         }
 
         private static Guid? ResolveTenantId(ClaimsPrincipal user)
@@ -222,28 +222,12 @@ namespace Market.API.Controllers
                 return null;
             }
 
-            if (tenantId == Guid.Empty || tenantId == SeedConstants.DefaultTenantId)
+            if (tenantId == Guid.Empty)
             {
                 return null;
             }
 
             return tenantId;
-        }
-
-        private static bool LooksLikeKitchen(string position)
-        {
-            return position.Contains("kitchen") ||
-                position.Contains("chef") ||
-                position.Contains("cook") ||
-                position.Contains("kuhar") ||
-                position.Contains("kuhinja");
-        }
-
-        private static bool LooksLikeWaiter(string position)
-        {
-            return position.Contains("waiter") ||
-                position.Contains("server") ||
-                position.Contains("konobar");
         }
     }
 }

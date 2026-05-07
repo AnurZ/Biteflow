@@ -90,7 +90,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
     [Theory]
     [InlineData(RoleNames.SuperAdmin)]
-    [InlineData(RoleNames.Admin)]
     public async Task RestaurantAdmin_ShouldNotCreatePrivilegedStaffRole(string role)
     {
         var email = $"privilege-escalation-{role}-{Guid.NewGuid():N}@example.test";
@@ -108,7 +107,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Theory]
-    [InlineData(RoleNames.Staff)]
+    [InlineData(RoleNames.Admin)]
     [InlineData(RoleNames.Waiter)]
     [InlineData(RoleNames.Kitchen)]
     public async Task RestaurantAdmin_ShouldCreateOnlyRestaurantScopedStaffRoles(string role)
@@ -136,6 +135,53 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
         Assert.NotNull(profile);
         Assert.Equal(SeedConstants.DefaultTenantId, profile!.TenantId);
+        Assert.Equal(ExpectedPositionForRole(role), profile.Position);
+    }
+
+    [Fact]
+    public async Task RestaurantAdmin_ShouldUpdateRoleAndDerivedPosition()
+    {
+        var email = $"restaurant-staff-update-role-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var createResponse = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, RoleNames.Waiter));
+        createResponse.EnsureSuccessStatusCode();
+        var staffId = await ReadCreatedIdAsync(createResponse);
+
+        var updateResponse = await client.PutAsJsonAsync($"/api/Staff/{staffId}", new
+        {
+            DisplayName = "Restaurant Staff Test",
+            Role = RoleNames.Kitchen,
+            FirstName = "Restaurant",
+            LastName = "Staff",
+            PhoneNumber = "123456",
+            HireDate = DateTime.UtcNow.Date,
+            HourlyRate = 10m,
+            EmploymentType = "FullTime",
+            ShiftType = "Morning",
+            ShiftStart = "08:00:00",
+            ShiftEnd = "16:00:00",
+            IsActive = true,
+            Notes = "Authorization integration test"
+        });
+
+        updateResponse.EnsureSuccessStatusCode();
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var user = await userManager.FindByEmailAsync(email);
+
+        Assert.NotNull(user);
+        Assert.True(await userManager.IsInRoleAsync(user!, RoleNames.Kitchen));
+        Assert.False(await userManager.IsInRoleAsync(user!, RoleNames.Waiter));
+
+        var profile = await db.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+        Assert.NotNull(profile);
+        Assert.Equal("Cook", profile!.Position);
     }
 
     [Fact]
@@ -996,7 +1042,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             DisplayName = "Restaurant Staff Test",
             PlainPassword = "StaffPass123!",
             Role = role,
-            Position = "Server",
             FirstName = "Restaurant",
             LastName = "Staff",
             PhoneNumber = "123456",
@@ -1008,6 +1053,17 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             ShiftEnd = "16:00:00",
             IsActive = true,
             Notes = "Authorization integration test"
+        };
+    }
+
+    private static string ExpectedPositionForRole(string role)
+    {
+        return role.ToLowerInvariant() switch
+        {
+            RoleNames.Admin => "Manager",
+            RoleNames.Waiter => "Waiter",
+            RoleNames.Kitchen => "Cook",
+            _ => "Manager"
         };
     }
 

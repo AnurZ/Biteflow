@@ -20,6 +20,7 @@ export interface StaffDetails {
   applicationUserId: string;
   displayName: string;
   email: string;
+  role: string;
   position: string;
   firstName: string;
   lastName: string;
@@ -45,7 +46,6 @@ export interface CreateStaffRequest {
   plainPassword?: string;
   role?: string;
 
-  position: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;
@@ -62,7 +62,7 @@ export interface CreateStaffRequest {
 export interface UpdateStaffRequest {
   id: number;
   displayName?:string;
-  position: string;
+  role?: string;
   firstName: string;
   lastName: string;
   phoneNumber?: string;

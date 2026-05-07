@@ -43,14 +43,19 @@ export class StaffFormDialogComponent implements OnInit {
 
   loading = false;
   showPwd = true;
+  readonly roleOptions = [
+    { value: 'admin', label: 'Admin' },
+    { value: 'waiter', label: 'Waiter' },
+    { value: 'kitchen', label: 'Kitchen' }
+  ];
 
   form = this.fb.group({
     email: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     displayName: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required] }),
     plainPassword: this.fb.control<string>(this.generateRandomPassword(), { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
+    role: this.fb.control<string>('admin', { validators: [Validators.required], nonNullable: true }),
 
     id: this.fb.control<number | null>(null),
-    position: this.fb.control<string>('', { validators: [Validators.required], nonNullable: true }),
     firstName: this.fb.control<string>('', { validators: [Validators.required], nonNullable: true }),
     lastName: this.fb.control<string>('', { validators: [Validators.required], nonNullable: true }),
     phoneNumber: this.fb.control<string | null>(null),
@@ -78,7 +83,7 @@ export class StaffFormDialogComponent implements OnInit {
             id: dto.id,
             email: dto.email ?? '',
             displayName: dto.displayName ?? '',
-            position: dto.position,
+            role: dto.role || 'admin',
             firstName: dto.firstName,
             lastName: dto.lastName,
             phoneNumber: dto.phoneNumber ?? null,
@@ -115,16 +120,12 @@ export class StaffFormDialogComponent implements OnInit {
 
     const raw = this.form.getRawValue();
     if (this.data.mode === 'create') {
-      const normalizedPosition = raw.position?.toLowerCase() ?? '';
-      const derivedRole = normalizedPosition === 'manager' ? 'admin' : 'staff';
-
       const body: CreateStaffRequest = {
         email: raw.email.trim(),
         displayName: raw.displayName.trim(),
         plainPassword: raw.plainPassword.trim(),
-        role: derivedRole,
+        role: raw.role.trim(),
 
-        position: raw.position.trim(),
         firstName: raw.firstName.trim(),
         lastName: raw.lastName.trim(),
         phoneNumber: raw.phoneNumber ?? undefined,
@@ -146,7 +147,7 @@ export class StaffFormDialogComponent implements OnInit {
       const body: UpdateStaffRequest = {
         id: raw.id!,
         displayName: raw.displayName,
-        position: raw.position.trim(),
+        role: raw.role.trim(),
         firstName: raw.firstName.trim(),
         lastName: raw.lastName.trim(),
         phoneNumber: raw.phoneNumber ?? undefined,

@@ -14,14 +14,13 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     {
         RoleNames.SuperAdmin,
         RoleNames.Admin,
-        RoleNames.Staff,
         RoleNames.Waiter,
         RoleNames.Kitchen
     };
 
     private static readonly string[] RestaurantAdminAssignableRoles =
     {
-        RoleNames.Staff,
+        RoleNames.Admin,
         RoleNames.Waiter,
         RoleNames.Kitchen
     };
@@ -73,7 +72,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         {
             TenantId = tenantId,
             ApplicationUserId = identityUser.Id,
-            Position = r.Position.Trim(),
+            Position = ResolvePosition(targetRole),
             FirstName = r.FirstName.Trim(),
             LastName = r.LastName.Trim(),
             PhoneNumber = r.PhoneNumber,
@@ -185,7 +184,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     private static string NormalizeRole(string? requestedRole)
     {
         if (string.IsNullOrWhiteSpace(requestedRole))
-            return RoleNames.Staff;
+            return RoleNames.Admin;
 
         var match = AllAssignableRoles.FirstOrDefault(r =>
             string.Equals(r, requestedRole, StringComparison.OrdinalIgnoreCase));
@@ -207,6 +206,17 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         {
             throw new ValidationException("Role is not allowed for the current user.");
         }
+    }
+
+    private static string ResolvePosition(string role)
+    {
+        return role.ToLowerInvariant() switch
+        {
+            RoleNames.Admin => "Manager",
+            RoleNames.Waiter => "Waiter",
+            RoleNames.Kitchen => "Cook",
+            _ => "Manager"
+        };
     }
 
     private sealed record IdentityUserProvisionResult(
