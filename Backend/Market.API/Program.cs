@@ -7,15 +7,12 @@ using Market.API.Middlewares;
 using Market.Application;
 using Market.Domain.Entities.IdentityV2;
 using Market.Infrastructure;
-using Microsoft.AspNetCore.Identity;
-using Serilog;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using System.Linq;
 using Market.Domain.Entities.BlobStorageSettings;
 using Market.API.Hubs;
 using Market.Shared.Constants;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Cors.Infrastructure;
+using Serilog;
 
 public partial class Program
 {
@@ -31,36 +28,14 @@ public partial class Program
 
             var builder = WebApplication.CreateBuilder(args);
 
-            // Load configuration
+            // ---------------- CONFIG ----------------
             builder.Configuration
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables()
                 .AddUserSecrets<Program>();
 
-            // --- DEBUG WRAPPER FOR BLOB SETTINGS ---
-            var blobSection = builder.Configuration.GetSection("AzureBlobStorage");
-            var blobSettings = blobSection.Get<BlobStorageSettings>();
-
-            if (blobSettings is null ||
-                string.IsNullOrWhiteSpace(blobSettings.ConnectionString) ||
-                string.IsNullOrWhiteSpace(blobSettings.ContainerName))
-            {
-                Log.Warning("AzureBlobStorage configuration missing or invalid. Blob storage will not be configured.");
-            }
-            else
-            {
-                Log.Information("AzureBlobStorage configuration loaded successfully.");
-
-                // Register strongly-typed settings
-                builder.Services.AddSingleton(blobSettings);
-
-                // If your BlobStorageService depends on BlobStorageSettings, e.g. ctor(BlobStorageSettings settings)
-                builder.Services.AddSingleton<BlobStorageService>();
-            }
-
-
-
+            // ---------------- SERILOG ----------------
             builder.Host.UseSerilog((ctx, services, cfg) =>
             {
                 cfg.ReadFrom.Configuration(ctx.Configuration)
@@ -73,62 +48,57 @@ public partial class Program
 
             builder.Logging.ClearProviders();
 
-            // --- WRAP SERVICE REGISTRATION ---
-            try
-            {
-                builder.Services
-                    .AddAPI(builder.Configuration, builder.Environment)
-                    .AddInfrastructure(builder.Configuration, builder.Environment)
-                    .AddApplication();
+            // ---------------- BLOB STORAGE (CLEAN DI) ----------------
+            builder.Services
+                .AddOptions<BlobStorageSettings>()
+                .BindConfiguration("AzureBlobStorage")
+                .ValidateOnStart();
 
-                builder.Services.AddSingleton<BlobStorageService>();
-                Log.Information("Services registered successfully.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error registering services");
-                throw;
-            }
+            builder.Services.AddSingleton<BlobStorageService>();
 
-            // --- IdentityServer ---
-            try
-            {
-                builder.Services
-                    .AddIdentityServer(options =>
-                    {
-                        options.Events.RaiseSuccessEvents = true;
-                        options.Events.RaiseFailureEvents = true;
-                        options.Events.RaiseErrorEvents = true;
-                        options.EmitStaticAudienceClaim = true;
-                        options.Cors.CorsPolicyName = "AllowAngularDev";
-                        options.Authentication.CookieAuthenticationScheme = IdentityConstants.ApplicationScheme;
-                        options.Authentication.CookieLifetime = TimeSpan.FromHours(8);
-                        options.UserInteraction.LoginUrl = "/account/login";
-                        options.UserInteraction.LogoutUrl = "/account/logout";
-                    })
-                    .AddAspNetIdentity<ApplicationUser>()
-                    .AddInMemoryIdentityResources(Config.IdentityResources)
-                    .AddInMemoryApiScopes(Config.ApiScopes)
-                    .AddInMemoryApiResources(Config.ApiResources)
-                    .AddInMemoryClients(Config.Clients(builder.Environment.IsTest()))
-                    .AddDeveloperSigningCredential()
-                    .AddResourceOwnerValidator<ResourceOwnerPasswordValidator>()
-                    .AddProfileService<CustomProfileService>();
+            // ---------------- APPLICATION LAYERS ----------------
+            builder.Services
+                .AddAPI(builder.Configuration, builder.Environment)
+                .AddInfrastructure(builder.Configuration, builder.Environment)
+                .AddApplication();
 
-                Log.Information("IdentityServer configured successfully.");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error configuring IdentityServer");
-                throw;
-            }
+            Log.Information("Services registered successfully.");
 
-            // CORS
+            // ---------------- IDENTITY SERVER ----------------
+            builder.Services
+                .AddIdentityServer(options =>
+                {
+                    options.Events.RaiseSuccessEvents = true;
+                    options.Events.RaiseFailureEvents = true;
+                    options.Events.RaiseErrorEvents = true;
+                    options.EmitStaticAudienceClaim = true;
+
+                    options.Cors.CorsPolicyName = "AllowAngularDev";
+
+                    options.Authentication.CookieAuthenticationScheme = IdentityConstants.ApplicationScheme;
+                    options.Authentication.CookieLifetime = TimeSpan.FromHours(8);
+
+                    options.UserInteraction.LoginUrl = "/account/login";
+                    options.UserInteraction.LogoutUrl = "/account/logout";
+                })
+                .AddAspNetIdentity<ApplicationUser>()
+                .AddInMemoryIdentityResources(Config.IdentityResources)
+                .AddInMemoryApiScopes(Config.ApiScopes)
+                .AddInMemoryApiResources(Config.ApiResources)
+                .AddInMemoryClients(Config.Clients(builder.Environment.IsTest()))
+                .AddDeveloperSigningCredential()
+                .AddResourceOwnerValidator<ResourceOwnerPasswordValidator>()
+                .AddProfileService<CustomProfileService>();
+
+            Log.Information("IdentityServer configured successfully.");
+
+            // ---------------- CORS ----------------
             var corsSection = builder.Configuration.GetSection("Cors");
             var allowedOrigins = corsSection.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
             var allowedHeaders = corsSection.GetSection("AllowedHeaders").Get<string[]>() ?? Array.Empty<string>();
             var allowedMethods = corsSection.GetSection("AllowedMethods").Get<string[]>() ?? Array.Empty<string>();
             var allowCredentials = corsSection.GetValue<bool>("AllowCredentials");
+
             static void ConfigureCorsPolicy(
                 CorsPolicyBuilder policy,
                 string[] origins,
@@ -139,27 +109,17 @@ public partial class Program
                 policy.WithOrigins(origins);
 
                 if (headers.Length > 0)
-                {
                     policy.WithHeaders(headers);
-                }
                 else
-                {
                     policy.AllowAnyHeader();
-                }
 
                 if (methods.Length > 0)
-                {
                     policy.WithMethods(methods);
-                }
                 else
-                {
                     policy.AllowAnyMethod();
-                }
 
                 if (credentialsAllowed)
-                {
                     policy.AllowCredentials();
-                }
             }
 
             builder.Services.AddCors(options =>
@@ -170,6 +130,7 @@ public partial class Program
                 });
             });
 
+            // ---------------- BUILD APP ----------------
             var app = builder.Build();
 
             if (app.Environment.IsDevelopment())
@@ -189,7 +150,9 @@ public partial class Program
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
+
             app.UseCors(policy =>
             {
                 ConfigureCorsPolicy(policy, allowedOrigins, allowedHeaders, allowedMethods, allowCredentials);
@@ -202,7 +165,7 @@ public partial class Program
             app.MapControllers();
             app.MapHub<OrdersHub>("/hubs/orders");
 
-            // --- Wrap database initialization ---
+            // ---------------- DB INIT ----------------
             try
             {
                 await app.Services.InitializeDatabaseAsync(app.Environment);
@@ -219,7 +182,7 @@ public partial class Program
         }
         catch (HostAbortedException)
         {
-            Log.Information("Host aborted by EF Core tooling (design-time) - it's ok.");
+            Log.Information("Host aborted by EF Core tooling - ok.");
         }
         catch (Exception ex)
         {
