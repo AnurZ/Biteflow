@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Market.Domain.Entities.IdentityV2;
+using Market.Domain.Common.Enums;
 
 namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReservation
 {
@@ -101,9 +102,9 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
                 .WhereTenantOwned(_tenantContext)
                 .Where(r => r.DiningTableId == request.DiningTableId && r.Id != request.Id)
                 .AnyAsync(r =>
-                    (r.ReservationEnd.HasValue
-                        ? request.ReservationStart < r.ReservationEnd && request.ReservationEnd > r.ReservationStart
-                        : request.ReservationStart < r.ReservationStart),
+                    r.Status != ReservationStatus.Cancelled &&
+                    request.ReservationStart < (r.ReservationEnd ?? DateTime.MaxValue) &&
+                    r.ReservationStart < (request.ReservationEnd ?? DateTime.MaxValue),
                     cancellationToken);
 
             if (overlapping)
