@@ -8,7 +8,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
         public Guid RestaurantId { get; set; }
         public string Name { get; init; } = string.Empty;
         public string Description { get; init; } = string.Empty;
-        public double BasePrice { get; init; }
+        public decimal BasePrice { get; init; }
         public bool IsAvailable { get; init; }
         public bool IsFeatured { get; init; }
         public string ImageField { get; init; } = string.Empty;

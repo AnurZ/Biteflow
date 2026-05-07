@@ -138,36 +138,177 @@ public static class DynamicDataSeeder
     private static async Task SeedTableLayoutsAndTablesAsync(DatabaseContext context)
     {
         if (await context.TableLayouts.AnyAsync() || await context.DiningTables.AnyAsync())
-        {
             return;
-        }
 
         var layout = new TableLayout
         {
             Name = "Main Floor",
             BackgroundColor = "#f5f5f5",
             FloorImageUrl = string.Empty,
-            RestaurantId = SeedConstants.DefaultRestaurantId,
+
+            // OPCIJA 1 RULE:
             TenantId = SeedConstants.DefaultTenantId
         };
 
         var tables = new List<DiningTable>
+    {
+        new()
         {
-            new() { Number = 1, NumberOfSeats = 2, TableLayout = layout, X = 50, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#e5e7eb", TableType = TableTypes.LowTable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 2, NumberOfSeats = 2, TableLayout = layout, X = 220, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#dbeafe", TableType = TableTypes.LowTable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 3, NumberOfSeats = 4, TableLayout = layout, X = 390, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#dbeafe", TableType = TableTypes.LowTable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 4, NumberOfSeats = 4, TableLayout = layout, X = 560, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#dcfce7", TableType = TableTypes.LowTable, Status = TableStatus.Serving, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 5, NumberOfSeats = 4, TableLayout = layout, X = 730, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#e5e7eb", TableType = TableTypes.LowTable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 6, NumberOfSeats = 2, TableLayout = layout, X = 900, Y = 80, Width = 150, Height = 80, Shape = "rectangle", Color = "#fee2e2", TableType = TableTypes.LowTable, Status = TableStatus.Paying, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 9, NumberOfSeats = 6, TableLayout = layout, X = 50, Y = 200, Width = 250, Height = 100, Shape = "rectangle", Color = "#dcfce7", TableType = TableTypes.Hightable, Status = TableStatus.Serving, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 10, NumberOfSeats = 6, TableLayout = layout, X = 320, Y = 200, Width = 250, Height = 100, Shape = "rectangle", Color = "#dbeafe", TableType = TableTypes.Hightable, Status = TableStatus.Seated, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 11, NumberOfSeats = 6, TableLayout = layout, X = 590, Y = 200, Width = 250, Height = 100, Shape = "rectangle", Color = "#e5e7eb", TableType = TableTypes.Hightable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId },
-            new() { Number = 12, NumberOfSeats = 6, TableLayout = layout, X = 860, Y = 200, Width = 250, Height = 100, Shape = "rectangle", Color = "#e5e7eb", TableType = TableTypes.Hightable, Status = TableStatus.Free, TenantId = SeedConstants.DefaultTenantId }
-        };
+            Number = 1,
+            NumberOfSeats = 2,
+            TableLayout = layout,
+            X = 50,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#e5e7eb",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 2,
+            NumberOfSeats = 2,
+            TableLayout = layout,
+            X = 220,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#dbeafe",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 3,
+            NumberOfSeats = 4,
+            TableLayout = layout,
+            X = 390,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#dbeafe",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 4,
+            NumberOfSeats = 4,
+            TableLayout = layout,
+            X = 560,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#dcfce7",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Serving,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 5,
+            NumberOfSeats = 4,
+            TableLayout = layout,
+            X = 730,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#e5e7eb",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 6,
+            NumberOfSeats = 2,
+            TableLayout = layout,
+            X = 900,
+            Y = 80,
+            Width = 150,
+            Height = 80,
+            Shape = "rectangle",
+            Color = "#fee2e2",
+            TableType = TableTypes.LowTable,
+            Status = TableStatus.Paying,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 9,
+            NumberOfSeats = 6,
+            TableLayout = layout,
+            X = 50,
+            Y = 200,
+            Width = 250,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#dcfce7",
+            TableType = TableTypes.Hightable,
+            Status = TableStatus.Serving,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 10,
+            NumberOfSeats = 6,
+            TableLayout = layout,
+            X = 320,
+            Y = 200,
+            Width = 250,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#dbeafe",
+            TableType = TableTypes.Hightable,
+            Status = TableStatus.Seated,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 11,
+            NumberOfSeats = 6,
+            TableLayout = layout,
+            X = 590,
+            Y = 200,
+            Width = 250,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#e5e7eb",
+            TableType = TableTypes.Hightable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        },
+        new()
+        {
+            Number = 12,
+            NumberOfSeats = 6,
+            TableLayout = layout,
+            X = 860,
+            Y = 200,
+            Width = 250,
+            Height = 100,
+            Shape = "rectangle",
+            Color = "#e5e7eb",
+            TableType = TableTypes.Hightable,
+            Status = TableStatus.Free,
+            TenantId = SeedConstants.DefaultTenantId
+        }
+    };
 
         context.TableLayouts.Add(layout);
         context.DiningTables.AddRange(tables);
+
         await context.SaveChangesAsync();
+
         Console.WriteLine("Seed: table layout and dining tables added.");
     }
 
@@ -215,7 +356,7 @@ public static class DynamicDataSeeder
             {
                 Name = "House Burger",
                 Description = "Signature burger with cheddar",
-                BasePrice = 14.99,
+                BasePrice = 14.99m,
                 IsAvailable = true,
                 IsFeatured = true,
                 ImageField = string.Empty,
@@ -227,7 +368,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Truffle Pasta",
                 Description = "Creamy truffle fettuccine",
-                BasePrice = 18.99,
+                BasePrice = 18.99m,
                 IsAvailable = true,
                 IsFeatured = true,
                 ImageField = string.Empty,
@@ -239,7 +380,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Grilled Salmon",
                 Description = "Seared salmon with lemon butter",
-                BasePrice = 24.99,
+                BasePrice = 24.99m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -251,7 +392,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Ribeye Steak",
                 Description = "Chargrilled ribeye with herb butter",
-                BasePrice = 22.50,
+                BasePrice = 22.50m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -263,7 +404,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Caesar Salad",
                 Description = "Romaine, parmesan, house dressing",
-                BasePrice = 11.50,
+                BasePrice = 11.50m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -275,7 +416,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Tomato Soup",
                 Description = "Slow-roasted tomato soup",
-                BasePrice = 8.25,
+                BasePrice = 8.25m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -287,7 +428,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Cheesecake",
                 Description = "Classic vanilla cheesecake",
-                BasePrice = 7.75,
+                BasePrice = 7.75m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -299,7 +440,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Tiramisu",
                 Description = "Coffee-soaked ladyfingers & mascarpone",
-                BasePrice = 7.95,
+                BasePrice = 7.95m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -311,7 +452,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Espresso",
                 Description = "Single shot",
-                BasePrice = 3.50,
+                BasePrice = 3.50m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -323,7 +464,7 @@ public static class DynamicDataSeeder
             {
                 Name = "Iced Tea",
                 Description = "Refreshing lemon iced tea",
-                BasePrice = 4.25,
+                BasePrice = 4.25m,
                 IsAvailable = true,
                 IsFeatured = false,
                 ImageField = string.Empty,
@@ -355,7 +496,7 @@ public static class DynamicDataSeeder
         var meals = await context.Meals.ToListAsync();
         var newMeals = new List<Meal>();
 
-        Meal EnsureMeal(string name, double price, string categoryName)
+        Meal EnsureMeal(string name, decimal price, string categoryName)
         {
             var existing = meals.FirstOrDefault(m => m.Name == name);
             if (existing != null) return existing;
@@ -381,12 +522,12 @@ public static class DynamicDataSeeder
             return meal;
         }
 
-        var mBurger = EnsureMeal("House Burger", 14.99, "Mains");
-        var mCaesar = EnsureMeal("Caesar Salad", 11.50, "Starters");
-        var mSalmon = EnsureMeal("Grilled Salmon", 24.99, "Mains");
-        var mTruffle = EnsureMeal("Truffle Pasta", 18.99, "Mains");
-        var mRibeye = EnsureMeal("Ribeye Steak", 22.50, "Mains");
-        var mTiramisu = EnsureMeal("Tiramisu", 7.95, "Desserts");
+        var mBurger = EnsureMeal("House Burger", 14.99m, "Mains");
+        var mCaesar = EnsureMeal("Caesar Salad", 11.50m, "Starters");
+        var mSalmon = EnsureMeal("Grilled Salmon", 24.99m, "Mains");
+        var mTruffle = EnsureMeal("Truffle Pasta", 18.99m, "Mains");
+        var mRibeye = EnsureMeal("Ribeye Steak", 22.50m, "Mains");
+        var mTiramisu = EnsureMeal("Tiramisu", 7.95m, "Desserts");
 
         if (newMeals.Count > 0)
         {

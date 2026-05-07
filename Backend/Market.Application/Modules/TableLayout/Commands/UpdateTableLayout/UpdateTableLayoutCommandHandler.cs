@@ -1,9 +1,6 @@
-﻿using Market.Domain.Entities.Meal;
-using Market.Domain.Entities.TableLayout;
+﻿using Market.Domain.Entities.TableLayout;
 using MediatR;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
 {
@@ -20,32 +17,28 @@ namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
 
         public async Task Handle(UpdateTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
-            var restaurantId = _tenantContext.IsSuperAdmin
-                ? (Guid?)null
-                : _tenantContext.RequireRestaurantId();
+            var tenantId = _tenantContext.RequireTenantId();
 
-            var layoutQuery = _db.TableLayouts.WhereTenantOwned(_tenantContext);
-            if (restaurantId.HasValue)
-            {
-                layoutQuery = layoutQuery.Where(x => x.RestaurantId == restaurantId.Value);
-            }
-
-            var layout = await layoutQuery
+            var layout = await _db.TableLayouts
+                .Where(x => x.TenantId == tenantId)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (layout == null)
                 throw new KeyNotFoundException($"TableLayout with ID {request.Id} not found.");
 
+            var normalizedName = request.Name.Trim();
+
             var nameExists = await _db.TableLayouts
-                .WhereTenantOwned(_tenantContext)
-                .AnyAsync(m => m.Id != request.Id &&
-                               (!restaurantId.HasValue || m.RestaurantId == restaurantId.Value) &&
-                               m.Name == request.Name, cancellationToken);
+                .AnyAsync(x =>
+                    x.TenantId == tenantId &&
+                    x.Id != request.Id &&
+                    x.Name == normalizedName,
+                    cancellationToken);
 
             if (nameExists)
-                throw new ValidationException($"A table layout with the name '{request.Name.Trim()}' already exists.");
+                throw new ValidationException($"A table layout with the name '{normalizedName}' already exists.");
 
-            layout.Name = request.Name.Trim();
+            layout.Name = normalizedName;
             layout.BackgroundColor = request.BackgroundColor;
             layout.FloorImageUrl = request.FloorImageUrl;
 

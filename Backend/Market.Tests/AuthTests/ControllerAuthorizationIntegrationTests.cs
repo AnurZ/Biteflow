@@ -872,7 +872,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var foreignLayout = new TableLayout
         {
             TenantId = tenantId,
-            RestaurantId = otherRestaurantId,
             Name = $"Tracked Foreign Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -934,7 +933,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
         Assert.True(layout.IsDeleted);
         Assert.Equal(SeedConstants.DefaultTenantId, layout.TenantId);
-        Assert.Equal(SeedConstants.DefaultRestaurantId, layout.RestaurantId);
+        //Assert.Equal(SeedConstants.DefaultRestaurantId, layout.RestaurantId);
     }
 
     public static IEnumerable<object[]> CustomerForbiddenRequests()
@@ -1119,7 +1118,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
-            RestaurantId = restaurantId,
             Name = $"Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1174,7 +1172,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
-            RestaurantId = restaurantId,
             Name = $"Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1206,7 +1203,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = SeedConstants.DefaultTenantId,
-            RestaurantId = restaurantId,
             Name = $"Same Tenant Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1248,7 +1244,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
-            RestaurantId = restaurantId,
             Name = $"Mutable Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty

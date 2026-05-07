@@ -12,8 +12,6 @@ namespace Market.Infrastructure.Persistence.Configurations
 
             builder.HasKey(t => t.Id);
 
-            builder.Property(t => t.RestaurantId)
-                .IsRequired();
 
             builder.Property(t => t.Name)
                 .IsRequired()
@@ -28,7 +26,6 @@ namespace Market.Infrastructure.Persistence.Configurations
                 .IsRequired(false);
 
             builder.HasIndex(t => t.TenantId);
-            builder.HasIndex(t => t.RestaurantId);
         }
     }
 }
