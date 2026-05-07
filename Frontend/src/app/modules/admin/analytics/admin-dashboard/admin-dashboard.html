@@ -1,0 +1,57 @@
+<div class="dashboard">
+
+  <div class="controls">
+    <div class="field">
+      <label>From</label>
+      <input type="date" [(ngModel)]="fromDate" />
+    </div>
+
+    <div class="field">
+      <label>To</label>
+      <input type="date" [(ngModel)]="toDate" />
+    </div>
+
+    <button (click)="applyFilter()">Apply</button>
+  </div>
+
+  <div class="kpi-section">
+
+    <div class="kpi-card">
+      <div class="kpi-title">Orders</div>
+      <div class="kpi-value">{{kpi?.totalOrders}}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Revenue</div>
+      <div class="kpi-value">{{kpi?.revenue | number:'1.2-2'}} $</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Avg Order</div>
+      <div class="kpi-value">{{kpi?.avgOrderValue | number:'1.2-2'}} $</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-title">Top Item</div>
+      <div class="kpi-value">{{kpi?.topItem}}</div>
+    </div>
+
+  </div>
+
+  <div class="charts-grid">
+
+    <div class="chart-card">
+      <app-revenue-chart [from]="from" [to]="to"></app-revenue-chart>
+    </div>
+
+    <div class="chart-card">
+      <app-orders-chart [from]="from" [to]="to"></app-orders-chart>
+    </div>
+
+    <div class="chart-card">
+      <app-top-selling-chart [from]="from" [to]="to"></app-top-selling-chart>
+    </div>
+
+  </div>
+
+</div>

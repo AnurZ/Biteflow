@@ -7,10 +7,7 @@
   margin-bottom: 1rem;
 }
 
-.button-group input[type="radio"] {
-  display: none;
-}
-.button-group label {
+.button-group a {
   background: #ffceff;
   color: white;
   padding: 15px 40px;
@@ -18,12 +15,14 @@
   cursor: pointer;
   transition: background 0.2s;
   box-shadow: 1px 1px 1px rgb(223, 223, 223);
+  text-decoration: none;
 }
-.button-group label:hover {
+
+.button-group a:hover {
   background: #f5bfff;
 }
 
-.button-group input[type="radio"]:checked + label {
+.button-group a.active {
   background: #e584ff;
 }
 
