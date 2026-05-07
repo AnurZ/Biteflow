@@ -20,7 +20,7 @@ export class AuthService {
     private readonly http: HttpClient
   ) {
     this.oauthService.configure(authConfig);
-    this.oauthService.setStorage(localStorage);
+    this.oauthService.setStorage(sessionStorage);
 
     this.discoveryDocumentPromise = this.oauthService
       .loadDiscoveryDocument()
@@ -28,12 +28,6 @@ export class AuthService {
       .then(async () => {
         const profile = await this.fetchUserInfo();
         this.zone.run(() => this.updateAuthInfoFromToken(profile));
-
-        // **DEBUG:** pogledaj payload tokena
-        const token = this.oauthService.getAccessToken();
-        if (token) {
-          console.log('Decoded JWT payload:', JSON.parse(atob(token.split('.')[1])));
-        }
       })
       .catch((error) => {
         console.warn('Failed to initialize OAuth code flow.', error);
@@ -160,8 +154,6 @@ export class AuthService {
         isLocked: payload['is_locked'] === true,
         isLoggedIn: true
       };
-
-      console.log('Restaurant id:',info.restaurantId);
 
       info.displayName = String(
         userInfo?.['display_name'] ??

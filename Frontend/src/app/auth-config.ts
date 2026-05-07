@@ -8,8 +8,8 @@ export const authConfig: AuthConfig = {
   clientId: 'biteflow-angular',
   scope: 'openid profile email roles biteflow.api offline_access',
   responseType: 'code',
-  requireHttps: false,
-  showDebugInformation: true,
+  requireHttps: MyConfig.oauth_require_https,
+  showDebugInformation: MyConfig.oauth_show_debug_information,
   useSilentRefresh: false,
   oidc: true
 };

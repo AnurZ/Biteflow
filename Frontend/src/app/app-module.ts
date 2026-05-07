@@ -42,7 +42,7 @@ import { MyConfig } from './my-config';
     ReactiveFormsModule,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: [MyConfig.api_address],
+        allowedUrls: MyConfig.oauth_allowed_urls,
         sendAccessToken: true
       }
     }),
