@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Market.Domain.Common.Enums;
 
 namespace Market.Application.Modules.TableReservation.Commands.CreateTableReservation
 {
@@ -61,12 +62,11 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
             // Check overlapping reservations
             var overlappingReservation = await _db.TableReservations
                 .AnyAsync(r =>
-                    r.DiningTableId == request.DiningTableId &&
-                    (
-                        (r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationEnd && request.ReservationEnd > r.ReservationStart) ||
-                        (!r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationStart)
-                    ),
-                    cancellationToken);
+                     r.DiningTableId == request.DiningTableId &&
+                     r.Status != ReservationStatus.Cancelled &&
+                     request.ReservationStart < (r.ReservationEnd ?? DateTime.MaxValue) &&
+                     r.ReservationStart < (request.ReservationEnd ?? DateTime.MaxValue),
+                     cancellationToken);
 
             if (overlappingReservation)
                 throw new InvalidOperationException("The table is already reserved during the requested time.");
