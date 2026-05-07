@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Stores;
 using Market.Application.Abstractions;
 using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
 using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
@@ -134,6 +136,116 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
         Assert.NotNull(profile);
         Assert.Equal(SeedConstants.DefaultTenantId, profile!.TenantId);
+    }
+
+    [Fact]
+    public async Task RestaurantAdmin_ShouldSecurelyDeleteStaffIdentityAndProfile()
+    {
+        var email = $"delete-staff-{Guid.NewGuid():N}@example.test";
+        const string password = "StaffPass123!";
+        var adminClient = await _factory.GetAuthenticatedClientAsync();
+
+        var createResponse = await adminClient.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, RoleNames.Waiter));
+        createResponse.EnsureSuccessStatusCode();
+        var staffId = await ReadCreatedIdAsync(createResponse);
+
+        Guid userId;
+        using (var setupScope = _factory.Services.CreateScope())
+        {
+            var userManager = setupScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var persistedGrantStore = setupScope.ServiceProvider.GetRequiredService<IPersistedGrantStore>();
+            var user = await userManager.FindByEmailAsync(email);
+
+            Assert.NotNull(user);
+            userId = user!.Id;
+
+            await userManager.AddToRolesAsync(user, new[] { RoleNames.Admin, RoleNames.Customer, RoleNames.SuperAdmin });
+
+            await persistedGrantStore.StoreAsync(new PersistedGrant
+            {
+                Key = $"refresh-{Guid.NewGuid():N}",
+                Type = "refresh_token",
+                SubjectId = user.Id.ToString(),
+                ClientId = "biteflow-angular",
+                CreationTime = DateTime.UtcNow,
+                Expiration = DateTime.UtcNow.AddDays(30),
+                Data = "{}"
+            });
+
+            await persistedGrantStore.StoreAsync(new PersistedGrant
+            {
+                Key = $"consent-{Guid.NewGuid():N}",
+                Type = "user_consent",
+                SubjectId = user.Id.ToString(),
+                ClientId = "biteflow-angular",
+                CreationTime = DateTime.UtcNow,
+                Expiration = DateTime.UtcNow.AddDays(30),
+                Data = "{}"
+            });
+        }
+
+        var deleteResponse = await adminClient.DeleteAsync($"/api/Staff/{staffId}");
+
+        deleteResponse.EnsureSuccessStatusCode();
+
+        using (var assertScope = _factory.Services.CreateScope())
+        {
+            var userManager = assertScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var db = assertScope.ServiceProvider.GetRequiredService<DatabaseContext>();
+            var persistedGrantStore = assertScope.ServiceProvider.GetRequiredService<IPersistedGrantStore>();
+            var user = await userManager.FindByIdAsync(userId.ToString());
+
+            Assert.NotNull(user);
+            Assert.False(user!.IsEnabled);
+            Assert.True(user.LockoutEnabled);
+            Assert.NotNull(user.LockoutEnd);
+            Assert.True(user.LockoutEnd > DateTimeOffset.UtcNow.AddYears(100));
+
+            Assert.False(await userManager.IsInRoleAsync(user, RoleNames.Admin));
+            Assert.False(await userManager.IsInRoleAsync(user, RoleNames.Staff));
+            Assert.False(await userManager.IsInRoleAsync(user, RoleNames.Waiter));
+            Assert.False(await userManager.IsInRoleAsync(user, RoleNames.Kitchen));
+            Assert.True(await userManager.IsInRoleAsync(user, RoleNames.Customer));
+            Assert.True(await userManager.IsInRoleAsync(user, RoleNames.SuperAdmin));
+
+            var profile = await db.EmployeeProfiles
+                .IgnoreQueryFilters()
+                .SingleAsync(x => x.Id == staffId);
+            Assert.True(profile.IsDeleted);
+
+            var refreshGrants = await persistedGrantStore.GetAllAsync(new PersistedGrantFilter
+            {
+                SubjectId = user.Id.ToString(),
+                Type = "refresh_token"
+            });
+            Assert.Empty(refreshGrants);
+
+            var consentGrants = await persistedGrantStore.GetAllAsync(new PersistedGrantFilter
+            {
+                SubjectId = user.Id.ToString(),
+                Type = "user_consent"
+            });
+            Assert.NotEmpty(consentGrants);
+        }
+
+        var getDeletedResponse = await adminClient.GetAsync($"/api/Staff/{staffId}");
+        Assert.False(getDeletedResponse.IsSuccessStatusCode);
+
+        var secondDeleteResponse = await adminClient.DeleteAsync($"/api/Staff/{staffId}");
+        secondDeleteResponse.EnsureSuccessStatusCode();
+
+        var loginResponse = await RequestPasswordTokenAsync(_factory.CreateClient(), email, password);
+        Assert.Equal(HttpStatusCode.BadRequest, loginResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task RestaurantAdmin_ShouldTreatDeleteStaffAsIdempotent()
+    {
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var missingResponse = await client.DeleteAsync($"/api/Staff/{int.MaxValue}");
+
+        missingResponse.EnsureSuccessStatusCode();
     }
 
     [Fact]
@@ -872,6 +984,29 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             IsActive = true,
             Notes = "Authorization integration test"
         };
+    }
+
+    private static async Task<int> ReadCreatedIdAsync(HttpResponseMessage response)
+    {
+        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        return payload.RootElement.GetProperty("id").GetInt32();
+    }
+
+    private static async Task<HttpResponseMessage> RequestPasswordTokenAsync(
+        HttpClient client,
+        string username,
+        string password)
+    {
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["grant_type"] = "password",
+            ["client_id"] = "biteflow-tests",
+            ["username"] = username,
+            ["password"] = password,
+            ["scope"] = "openid profile email roles biteflow.api"
+        });
+
+        return await client.PostAsync("connect/token", content);
     }
 
     private async Task<int> CreateDiningTableForOtherTenantAsync()

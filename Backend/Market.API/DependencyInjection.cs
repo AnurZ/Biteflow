@@ -126,6 +126,7 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
+        services.AddScoped<IStaffIdentityTerminationService, StaffIdentityTerminationService>();
         services.AddHttpClient();
         services.AddScoped<ICaptchaVerifier, HcaptchaVerifier>();
         return services;
