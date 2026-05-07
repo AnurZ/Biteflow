@@ -7,11 +7,14 @@ using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
 using Market.Application.Modules.TableLayout.Commands.DeleteTableLayout;
 using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
 using Market.Application.Modules.TableLayout.Queries.TableLayoutGetNameById;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Market.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public class TableLayoutController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -38,6 +41,7 @@ namespace Market.API.Controllers
 
         // POST: api/TableLayout
         [HttpPost]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<ActionResult<int>> Create([FromBody] CreateTableLayoutCommandDto command)
         {
             var id = await _mediator.Send(command);
@@ -46,6 +50,7 @@ namespace Market.API.Controllers
 
         // PUT: api/TableLayout/{id}
         [HttpPut("{id:int}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTableLayoutCommandDto cmd)
         {
             cmd.Id = id;  // overwrite DTO.Id with route value
@@ -55,6 +60,7 @@ namespace Market.API.Controllers
 
         // DELETE: api/TableLayout/{id}
         [HttpDelete("{id}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> Delete(int id)
         {
             await _mediator.Send(new DeleteTableLayoutCommandDto { Id = id });

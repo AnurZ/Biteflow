@@ -1,33 +1,12 @@
-using Market.Application.Modules.Auth.Commands.Login;
-using Market.Application.Modules.Auth.Commands.Logout;
-using Market.Application.Modules.Auth.Commands.Refresh;
 using Market.Application.Modules.Auth.Commands.RegisterCustomer;
-using Market.Infrastructure.Database;
+using Market.Domain.Entities.IdentityV2;
+using Microsoft.AspNetCore.Identity;
 
 [ApiController]
 [Route("api/auth")]
-public sealed class AuthController(IMediator mediator) : ControllerBase
+public sealed class AuthController(IMediator mediator, UserManager<ApplicationUser> userManager) : ControllerBase
 {
-    [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<ActionResult<LoginCommandDto>> Login([FromBody] LoginCommand command, CancellationToken ct)
-    {
-        return Ok(await mediator.Send(command, ct));
-    }
-
-    [HttpPost("refresh")]
-    [AllowAnonymous]
-    public async Task<ActionResult<LoginCommandDto>> Refresh([FromBody] RefreshTokenCommand command, CancellationToken ct)
-    {
-        return Ok(await mediator.Send(command, ct));
-    }
-
-    [Authorize]
-    [HttpPost("logout")]
-    public async Task Logout([FromBody] LogoutCommand command, CancellationToken ct)
-    {
-        await mediator.Send(command, ct);
-    }
+    public sealed record SetPasswordDto(Guid UserId, string Token, string Password);
 
     [HttpPost("register/customer")]
     [AllowAnonymous]
@@ -37,10 +16,32 @@ public sealed class AuthController(IMediator mediator) : ControllerBase
         return Ok();
     }
 
-    [HttpPost("test")]
+    [HttpPost("set-password")]
     [AllowAnonymous]
-    public IActionResult Test()
+    public async Task<IActionResult> SetPassword([FromBody] SetPasswordDto dto)
     {
-        return Ok();
+        if (dto.UserId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(dto.Token) ||
+            string.IsNullOrWhiteSpace(dto.Password))
+        {
+            return BadRequest("User id, token, and password are required.");
+        }
+
+        var user = await userManager.FindByIdAsync(dto.UserId.ToString());
+        if (user is null)
+        {
+            return BadRequest("Password setup link is invalid or expired.");
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, dto.Token, dto.Password);
+        if (result.Succeeded)
+        {
+            return Ok();
+        }
+
+        var errors = string.Join(", ", result.Errors.Select(x => x.Description));
+        return BadRequest(string.IsNullOrWhiteSpace(errors)
+            ? "Password setup link is invalid or expired."
+            : errors);
     }
 }

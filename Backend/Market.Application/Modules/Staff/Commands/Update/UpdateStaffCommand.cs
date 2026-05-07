@@ -10,7 +10,8 @@ namespace Market.Application.Modules.Staff.Commands.Update
     public sealed class UpdateStaffCommand : IRequest
     {
         public int Id { get; set; }
-        public string Position { get; init; } = string.Empty;
+        public string? Position { get; init; }
+        public string? Role { get; init; }
         public string FirstName { get; init; } = string.Empty;
         public string LastName { get; init; } = string.Empty;
         public string DisplayName { get; init; } = string.Empty;

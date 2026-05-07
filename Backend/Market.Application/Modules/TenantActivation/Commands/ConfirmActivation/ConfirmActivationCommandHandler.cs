@@ -1,6 +1,10 @@
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.Tenants;
 using Market.Shared.Constants;
+using Market.Shared.Options;
+using Microsoft.Extensions.Options;
+using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
@@ -8,17 +12,19 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
     public sealed class ConfirmActivationHandler(
         IAppDbContext db,
         IActivationLinkService links,
-        IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
-        IEmailService emailService)
+        IEmailService emailService,
+        IOptions<ActivationLinkOptions> activationLinkOptions)
         : IRequestHandler<ConfirmActivationCommand, ConfirmActivationResult>
     {
         public async Task<ConfirmActivationResult> Handle(ConfirmActivationCommand r, CancellationToken ct)
         {
             var requestId = await links.ValidateAndConsumeAsync(r.token, ct);
 
-            var e = await db.TenantActivationRequests.FindAsync(new object[] { requestId }, ct)
-                     ?? throw new MarketNotFoundException("Request not found");
+            var e = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == requestId, ct)
+                ?? throw new MarketNotFoundException("Request not found");
 
             if (await db.Tenants.AnyAsync(x => x.Domain == e.Domain, ct) ||
                 await db.Restaurants.AnyAsync(x => x.Domain == e.Domain, ct))
@@ -31,7 +37,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
 
             var restaurantSlug = BuildRestaurantSlug(e.RestaurantName);
             var adminEmail = await BuildUniqueAdminEmailAsync(restaurantSlug, e.Id, db, userManager, ct);
-            var adminPassword = $"{restaurantSlug}firstpassword";
+            var adminPassword = GenerateTemporaryPassword();
 
             var identityAdmin = new ApplicationUser
             {
@@ -84,22 +90,6 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
                     CreatedAtUtc = DateTime.UtcNow
                 });
 
-                var legacyAdmin = new AppUser
-                {
-                    TenantId = tenantId,
-                    RestaurantId = restaurantId,
-                    Email = adminEmail,
-                    DisplayName = $"{e.RestaurantName} Admin",
-                    IsEmailConfirmed = true,
-                    IsLocked = false,
-                    IsEnabled = true,
-                    TokenVersion = 0
-                };
-
-                legacyAdmin.PasswordHash = hasher.HashPassword(legacyAdmin, adminPassword);
-
-                db.Users.Add(legacyAdmin);
-
                 e.MarkActivated(tenantId);
                 await db.SaveChangesAsync(ct);
             }
@@ -108,20 +98,25 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
                 await userManager.DeleteAsync(identityAdmin);
                 throw;
             }
+
+            var passwordSetupToken = await userManager.GeneratePasswordResetTokenAsync(identityAdmin);
+            var passwordSetupLink = BuildPasswordSetupLink(
+                activationLinkOptions.Value.BaseUrl,
+                identityAdmin.Id,
+                passwordSetupToken);
+
             await SendOnboardingEmailSafeAsync(
                 emailService,
                 e.OwnerEmail,
                 e.OwnerFullName,
                 e.RestaurantName,
                 adminEmail,
-                adminPassword,
+                passwordSetupLink,
                 ct);
 
             return new ConfirmActivationResult(
                 TenantId: tenantId,
-                RestaurantName: e.RestaurantName,
-                AdminUsername: adminEmail,
-                AdminPassword: adminPassword);
+                AdminUsername: adminEmail);
         }
 
         private static async Task SendOnboardingEmailSafeAsync(
@@ -130,7 +125,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
             string ownerFullName,
             string restaurantName,
             string adminUsername,
-            string firstTimePassword,
+            string passwordSetupLink,
             CancellationToken ct)
         {
             var subject = "Biteflow - Your Restaurant Has Been Approved";
@@ -139,11 +134,9 @@ Hello {ownerFullName},
 
 Welcome to Biteflow. Your restaurant "{restaurantName}" has been approved and your tenant account is ready.
 
-You can now sign in with the credentials below:
+Use the link below to set your admin password. The link is short-lived and can only be used once.
 Username: {adminUsername}
-First-time password: {firstTimePassword}
-
-For security, it is recommended to change your password after the first login.
+Password setup link: {passwordSetupLink}
 
 Best regards,
 Biteflow Team
@@ -157,6 +150,21 @@ Biteflow Team
             {
                 // Email sending is best-effort and must not block activation.
             }
+        }
+
+        private static string GenerateTemporaryPassword()
+        {
+            var buffer = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(buffer)
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_') + "Aa1!";
+        }
+
+        private static string BuildPasswordSetupLink(string baseUrl, Guid userId, string token)
+        {
+            var root = (string.IsNullOrWhiteSpace(baseUrl) ? "https://localhost:4200" : baseUrl).TrimEnd('/');
+            return $"{root}/activate/set-password?userId={userId:D}&token={WebUtility.UrlEncode(token)}";
         }
 
         private static string BuildRestaurantSlug(string restaurantName)
@@ -189,11 +197,6 @@ Biteflow Team
             {
                 var localPart = attempt == 0 ? baseLocal : $"{baseLocal}{requestId + attempt}";
                 var email = $"{localPart}@biteflow.com";
-
-                var inLegacy = await db.Users
-                    .AnyAsync(x => x.Email.ToLower() == email.ToLower(), ct);
-
-                if (inLegacy) continue;
 
                 var inIdentity = await userManager.FindByEmailAsync(email);
                 if (inIdentity != null) continue;

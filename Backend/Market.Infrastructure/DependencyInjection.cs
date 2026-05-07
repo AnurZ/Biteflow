@@ -4,6 +4,7 @@ using Market.Infrastructure.Database;
 using Market.Infrastructure.Identity;
 using Market.Shared.Constants;
 using Market.Shared.Options;
+using Market.Shared.Security;
 using Duende.IdentityModel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 
 namespace Market.Infrastructure;
@@ -66,12 +68,12 @@ public static class DependencyInjection
 
         var identityBuilder = services.AddIdentityCore<ApplicationUser>(options =>
         {
-            options.Password.RequireDigit = false;
-            options.Password.RequireLowercase = true;
-            options.Password.RequireUppercase = false;
-            options.Password.RequireNonAlphanumeric = false;
-            options.Password.RequiredLength = 4;
-            options.Password.RequiredUniqueChars = 1;
+            options.Password.RequireDigit = PasswordPolicy.RequireDigit;
+            options.Password.RequireLowercase = PasswordPolicy.RequireLowercase;
+            options.Password.RequireUppercase = PasswordPolicy.RequireUppercase;
+            options.Password.RequireNonAlphanumeric = PasswordPolicy.RequireNonAlphanumeric;
+            options.Password.RequiredLength = PasswordPolicy.RequiredLength;
+            options.Password.RequiredUniqueChars = PasswordPolicy.RequiredUniqueChars;
 
             options.User.RequireUniqueEmail = true;
 
@@ -94,8 +96,6 @@ public static class DependencyInjection
         services.Configure<SecurityStampValidatorOptions>(opts =>
             opts.ValidationInterval = TimeSpan.FromMinutes(5));
 
-        // Identity hasher
-        services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
         services.Configure<SmtpEmailOptions>(configuration.GetSection(SmtpEmailOptions.SectionName));
         services.AddScoped<IEmailService, SmtpEmailService>();
 
@@ -143,8 +143,8 @@ public static class DependencyInjection
         })
         .AddJwtBearer(options =>
         {
-            options.Authority = authority;
-            options.RequireHttpsMetadata = !env.IsDevelopment();
+            options.Authority = env.IsTest() ? null : authority;
+            options.RequireHttpsMetadata = !env.IsDevelopment() && !env.IsTest();
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = true,
@@ -159,6 +159,12 @@ public static class DependencyInjection
                 RoleClaimType = JwtClaimTypes.Role,
                 ClockSkew = TimeSpan.Zero
             };
+            if (env.IsTest())
+            {
+                options.TokenValidationParameters.ValidateIssuer = false;
+                options.TokenValidationParameters.SignatureValidator = (token, _) => new JsonWebToken(token);
+                options.TokenValidationParameters.ValidateIssuerSigningKey = false;
+            }
             options.MapInboundClaims = false;
             options.Events = new JwtBearerEvents
             {
@@ -201,13 +207,11 @@ public static class DependencyInjection
             };
         });
 
-        // Token service (reads JwtOptions via IOptions<JwtOptions>)
-        services.AddTransient<IJwtTokenService, JwtTokenService>();
-
         // HttpContext accessor + current user
         services.AddHttpContextAccessor();
         services.AddScoped<IAppCurrentUser, AppCurrentUser>();
         services.AddScoped<ITenantContext, AppTenantContext>();
+        services.AddScoped<IPublicTenantResolver, PublicTenantResolver>();
 
         // TimeProvider (if used in handlers/services)
         services.AddSingleton<TimeProvider>(TimeProvider.System);

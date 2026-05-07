@@ -4,7 +4,7 @@ import {
   ActivationDraftDto,
   ConfirmActivationResult,
   CreateDraftCommand, PageResult,
-  UpdateDraftCommand
+  SetActivationPasswordRequest
 } from '../../modules/public/models/activation.models';
 import { MyConfig } from '../../my-config';
 
@@ -17,24 +17,16 @@ export class ActivationRequests {
 
 
 
-  createDraft(body: CreateDraftCommand) {
-    return this.http.post<number>(this.base, body);
-  }
-
-  updateDraft(body: UpdateDraftCommand) {
-    return this.http.put<void>(`${this.base}/${body.id}`, body);
-  }
-
-  getDraft(id: number) {
-    return this.http.get<ActivationDraftDto>(`${this.base}/${id}`);
-  }
-
-  submit(id: number) {
-    return this.http.post<void>(`${this.base}/${id}/submit`, {});
+  submitRequest(body: CreateDraftCommand) {
+    return this.http.post<void>(this.base, body);
   }
 
   confirm(token: string) {
     return this.http.post<ConfirmActivationResult>(`${this.base}/confirm`, { token }, { responseType: 'json' as const });
+  }
+
+  setPassword(body: SetActivationPasswordRequest) {
+    return this.http.post<void>(`${MyConfig.api_address}/auth/set-password`, body);
   }
 
   list(status?: number) {

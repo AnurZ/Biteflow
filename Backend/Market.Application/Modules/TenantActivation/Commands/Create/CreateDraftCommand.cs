@@ -14,5 +14,5 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
     string OwnerPhone,
     string Address,
     string City,
-    string State) : IRequest<int>;
+    string State) : IRequest;
 }

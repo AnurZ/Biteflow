@@ -39,12 +39,6 @@ public static class DependencyInjection
 
         services.AddSignalR();
 
-        // Typed options + validation on startup
-        services.AddOptions<JwtOptions>()
-            .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddOptions<CaptchaOptions>()
             .Bind(configuration.GetSection(CaptchaOptions.SectionName))
             .ValidateDataAnnotations()
@@ -58,26 +52,30 @@ public static class DependencyInjection
 
             opt.AddPolicy(PolicyNames.SuperAdminOnly, policy =>
             {
+                policy.RequireAuthenticatedUser();
                 policy.RequireRole(RoleNames.SuperAdmin);
             });
 
             opt.AddPolicy(PolicyNames.RestaurantAdmin, policy =>
             {
+                policy.RequireAuthenticatedUser();
                 policy.RequireAssertion(ctx =>
                     ctx.User.IsInRole(RoleNames.SuperAdmin) ||
-                    ctx.User.IsInRole(RoleNames.Admin)
-                    // TODO: implement tenant-specific check when tenant context is available
+                    (ctx.User.IsInRole(RoleNames.Admin) && HasTenantScope(ctx.User))
+                    // Resource tenant ownership is enforced by EF query filters and explicit handler checks.
                 );
             });
 
             opt.AddPolicy(PolicyNames.StaffMember, policy =>
             {
+                policy.RequireAuthenticatedUser();
                 policy.RequireAssertion(ctx =>
                     ctx.User.IsInRole(RoleNames.SuperAdmin) ||
-                    ctx.User.IsInRole(RoleNames.Admin) ||
-                    ctx.User.IsInRole(RoleNames.Staff) ||
-                    ctx.User.IsInRole(RoleNames.Waiter) ||
-                    ctx.User.IsInRole(RoleNames.Kitchen));
+                    (HasTenantScope(ctx.User) &&
+                     (ctx.User.IsInRole(RoleNames.Admin) ||
+                      ctx.User.IsInRole(RoleNames.Staff) ||
+                      ctx.User.IsInRole(RoleNames.Waiter) ||
+                      ctx.User.IsInRole(RoleNames.Kitchen))));
             });
         });
 
@@ -128,11 +126,17 @@ public static class DependencyInjection
 
         services.Configure<ActivationLinkOptions>(configuration.GetSection("ActivationLink"));
         services.AddScoped<IActivationLinkService, ActivationLinkService>();
+        services.AddScoped<IStaffIdentityTerminationService, StaffIdentityTerminationService>();
         services.AddHttpClient();
         services.AddScoped<ICaptchaVerifier, HcaptchaVerifier>();
         return services;
     }
 
+    private static bool HasTenantScope(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var raw = user.FindFirst("tenant_id")?.Value;
+        return Guid.TryParse(raw, out var tenantId) && tenantId != Guid.Empty;
+    }
 
 
 }

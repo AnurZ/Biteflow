@@ -14,7 +14,7 @@ public sealed class IdentitySeeder
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly StaffProfileService _staffProfiles;
-    private readonly DatabaseContext _legacyContext;
+    private readonly DatabaseContext _db;
     private readonly ILogger<IdentitySeeder> _logger;
     private readonly IConfiguration _configuration;
 
@@ -22,14 +22,14 @@ public sealed class IdentitySeeder
         RoleManager<ApplicationRole> roleManager,
         UserManager<ApplicationUser> userManager,
         StaffProfileService staffProfiles,
-        DatabaseContext legacyContext,
+        DatabaseContext db,
         ILogger<IdentitySeeder> logger,
         IConfiguration configuration)
     {
         _roleManager = roleManager;
         _userManager = userManager;
         _staffProfiles = staffProfiles;
-        _legacyContext = legacyContext;
+        _db = db;
         _logger = logger;
         _configuration = configuration;
     }
@@ -87,7 +87,8 @@ public sealed class IdentitySeeder
                 UserName = email,
                 Email = email,
                 DisplayName = seedSection["DisplayName"] ?? "Seed Administrator",
-                TenantId = Guid.Empty,
+                TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 IsEnabled = true,
                 EmailConfirmed = true,
             };
@@ -99,6 +100,10 @@ public sealed class IdentitySeeder
                     string.Join(", ", create.Errors.Select(e => e.Description)));
                 throw new InvalidOperationException("Seed admin seeding failed.");
             }
+        }
+        else
+        {
+            await EnsureDemoRestaurantContextAsync(user, ct);
         }
 
         await EnsureRoleAsync(user, RoleNames.Admin, ct);
@@ -119,7 +124,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "string",
-            password: "string",
+            password: "StringUser1!",
             primaryRole: RoleNames.Admin,
             position: "Manager",
             firstName: "Admin",
@@ -128,7 +133,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "waiter1",
-            password: "waiter1",
+            password: "WaiterUser1!",
             primaryRole: RoleNames.Waiter,
             position: "Waiter",
             firstName: "Waiter",
@@ -137,7 +142,7 @@ public sealed class IdentitySeeder
 
         await EnsureDemoUserAsync(
             username: "kitchen1",
-            password: "kitchen1",
+            password: "KitchenUser1!",
             primaryRole: RoleNames.Kitchen,
             position: "Kitchen",
             firstName: "Kitchen",
@@ -154,7 +159,7 @@ public sealed class IdentitySeeder
         string lastName,
         CancellationToken ct)
     {
-        var identityUser = await EnsureLegacyIdentityUserAsync(username, password, ct);
+        var identityUser = await EnsureDemoIdentityUserAsync(username, password);
         if (identityUser == null)
             return;
 
@@ -176,43 +181,28 @@ public sealed class IdentitySeeder
             await RemoveRoleIfPresentAsync(identityUser, role, ct);
         }
 
-        await EnsureLegacyEmployeeProfileAsync(identityUser, username, position, firstName, lastName, ct);
+        await EnsureEmployeeProfileAsync(identityUser, position, firstName, lastName, ct);
     }
 
-    private async Task EnsureLegacyEmployeeProfileAsync(
+    private async Task EnsureEmployeeProfileAsync(
         ApplicationUser identityUser,
-        string legacyEmailOrUsername,
         string position,
         string firstName,
         string lastName,
         CancellationToken ct)
     {
-        var normalized = legacyEmailOrUsername.Trim().ToLowerInvariant();
-
-        var legacyUser = await _legacyContext.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalized, ct);
-
-        if (legacyUser == null)
-        {
-            _logger.LogWarning("Legacy AppUser '{Email}' not found while seeding profile for identity user {UserId}.",
-                legacyEmailOrUsername, identityUser.Id);
-            return;
-        }
-
-        var effectiveTenantId = legacyUser.TenantId == Guid.Empty
+        var effectiveTenantId = identityUser.TenantId == Guid.Empty
             ? SeedConstants.DefaultTenantId
-            : legacyUser.TenantId;
+            : identityUser.TenantId;
 
-        var profile = await _legacyContext.EmployeeProfiles
+        var profile = await _db.EmployeeProfiles
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.AppUserId == legacyUser.Id || x.ApplicationUserId == identityUser.Id, ct);
+            .FirstOrDefaultAsync(x => x.ApplicationUserId == identityUser.Id, ct);
 
         if (profile == null)
         {
             profile = new EmployeeProfile
             {
-                AppUserId = legacyUser.Id,
                 ApplicationUserId = identityUser.Id,
                 TenantId = effectiveTenantId,
                 Position = position,
@@ -221,18 +211,12 @@ public sealed class IdentitySeeder
                 IsActive = true
             };
 
-            _legacyContext.EmployeeProfiles.Add(profile);
-            await _legacyContext.SaveChangesAsync(ct);
+            _db.EmployeeProfiles.Add(profile);
+            await _db.SaveChangesAsync(ct);
             return;
         }
 
         var changed = false;
-        if (profile.AppUserId != legacyUser.Id)
-        {
-            profile.AppUserId = legacyUser.Id;
-            changed = true;
-        }
-
         if (profile.ApplicationUserId != identityUser.Id)
         {
             profile.ApplicationUserId = identityUser.Id;
@@ -271,18 +255,18 @@ public sealed class IdentitySeeder
 
         if (changed)
         {
-            await _legacyContext.SaveChangesAsync(ct);
+            await _db.SaveChangesAsync(ct);
         }
     }
 
     // Dedicated demo platform owner account.
-    // Intended credentials: superadmin / superadmin.
+    // Intended credentials: superadmin / Superadmin1!
     // Intended role set: superadmin only (exclusive).
     private async Task EnsureExclusiveDemoSuperAdminAsync(CancellationToken ct)
     {
         const string username = "superadmin";
         const string email = "superadmin@demo.local";
-        const string password = "superadmin";
+        const string password = "Superadmin1!";
 
         var demoSuperAdmin = await _userManager.FindByNameAsync(username)
             ?? await _userManager.FindByEmailAsync(email);
@@ -358,41 +342,57 @@ public sealed class IdentitySeeder
         }
     }
 
-    private async Task<ApplicationUser?> EnsureLegacyIdentityUserAsync(string email, string defaultPassword, CancellationToken ct)
+    private async Task<ApplicationUser?> EnsureDemoIdentityUserAsync(string username, string defaultPassword)
     {
-        var identityUser = await _userManager.FindByNameAsync(email)
-            ?? await _userManager.FindByEmailAsync(email);
+        var identityUser = await _userManager.FindByNameAsync(username)
+            ?? await _userManager.FindByEmailAsync(username);
 
-        var normalizedEmail = email.Contains("@", StringComparison.Ordinal)
-            ? email
-            : $"{email}@legacy.local";
+        var normalizedEmail = username.Contains("@", StringComparison.Ordinal)
+            ? username
+            : $"{username}@legacy.local";
 
         if (identityUser != null)
         {
+            var changed = false;
+
             if (!string.Equals(identityUser.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
             {
                 identityUser.Email = normalizedEmail;
                 identityUser.NormalizedEmail = normalizedEmail.ToUpperInvariant();
+                changed = true;
+            }
+
+            if (identityUser.TenantId == Guid.Empty)
+            {
+                identityUser.TenantId = SeedConstants.DefaultTenantId;
+                changed = true;
+            }
+
+            if (identityUser.RestaurantId is null || identityUser.RestaurantId == Guid.Empty)
+            {
+                identityUser.RestaurantId = SeedConstants.DefaultRestaurantId;
+                changed = true;
+            }
+
+            if (changed)
+            {
                 var update = await _userManager.UpdateAsync(identityUser);
                 if (!update.Succeeded)
                 {
-                    _logger.LogWarning("Failed updating legacy identity user {Email}: {Errors}", email,
+                    _logger.LogWarning("Failed updating demo identity user {Username}: {Errors}", username,
                         string.Join(", ", update.Errors.Select(e => e.Description)));
                 }
             }
             return identityUser;
         }
 
-        var legacyUser = await _legacyContext.Users
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == email.ToLower(), ct);
-
         identityUser = new ApplicationUser
         {
-            UserName = email,
+            UserName = username,
             Email = normalizedEmail,
-            DisplayName = legacyUser?.DisplayName ?? email,
-            TenantId = legacyUser?.TenantId ?? Guid.Empty,
+            DisplayName = username,
+            TenantId = SeedConstants.DefaultTenantId,
+            RestaurantId = SeedConstants.DefaultRestaurantId,
             IsEnabled = true,
             EmailConfirmed = true
         };
@@ -400,12 +400,39 @@ public sealed class IdentitySeeder
         var create = await _userManager.CreateAsync(identityUser, defaultPassword);
         if (!create.Succeeded)
         {
-            _logger.LogWarning("Failed creating legacy identity user {Email}: {Errors}", email,
+            _logger.LogWarning("Failed creating demo identity user {Username}: {Errors}", username,
                 string.Join(", ", create.Errors.Select(e => e.Description)));
             return null;
         }
 
         return identityUser;
+    }
+
+    private async Task EnsureDemoRestaurantContextAsync(ApplicationUser user, CancellationToken ct)
+    {
+        var changed = false;
+
+        if (user.TenantId == Guid.Empty)
+        {
+            user.TenantId = SeedConstants.DefaultTenantId;
+            changed = true;
+        }
+
+        if (user.RestaurantId is null || user.RestaurantId == Guid.Empty)
+        {
+            user.RestaurantId = SeedConstants.DefaultRestaurantId;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        var update = await _userManager.UpdateAsync(user);
+        if (!update.Succeeded)
+        {
+            _logger.LogWarning("Failed updating restaurant context for user {UserId}: {Errors}",
+                user.Id, string.Join(", ", update.Errors.Select(e => e.Description)));
+        }
     }
 
     private async Task EnsureRoleAsync(ApplicationUser user, string role, CancellationToken ct)

@@ -19,7 +19,7 @@ namespace Market.Infrastructure.Database.Configurations.IdentityV2
             builder.HasOne(x => x.EmployeeProfile)
                    .WithOne(x => x.ApplicationUser)
                    .HasForeignKey<EmployeeProfile>(x => x.ApplicationUserId)
-                   .OnDelete(DeleteBehavior.SetNull);
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

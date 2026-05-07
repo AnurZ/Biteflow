@@ -33,6 +33,15 @@ namespace Market.Application.Modules.Meal.Commands.Create
             if (request.BasePrice < 0)
                 throw new ValidationException("BasePrice cannot be negative.");
 
+            if (request.CategoryId.HasValue)
+            {
+                var categoryExists = await db.MealCategories
+                    .WhereNullableRestaurantOwned(tenantContext)
+                    .AnyAsync(c => c.Id == request.CategoryId.Value, cancellationToken);
+
+                if (!categoryExists)
+                    throw new ValidationException($"MealCategoryId {request.CategoryId.Value} is invalid.");
+            }
 
             var newMeal = new Domain.Entities.Meal.Meal
             {
@@ -53,7 +62,9 @@ namespace Market.Application.Modules.Meal.Commands.Create
             foreach (var ingredientDto in request.Ingredients)
             {
                 // Optional: check if InventoryItem exists
-                var exists = await db.InventoryItems.AnyAsync(i => i.Id == ingredientDto.InventoryItemId, cancellationToken);
+                var exists = await db.InventoryItems
+                    .WhereNullableRestaurantOwned(tenantContext)
+                    .AnyAsync(i => i.Id == ingredientDto.InventoryItemId, cancellationToken);
                 if (!exists)
                     throw new ValidationException($"InventoryItemId {ingredientDto.InventoryItemId} is invalid.");
 

@@ -10,12 +10,18 @@ namespace Market.Application.Modules.TenantActivation.Commands.Update
     {
         public async Task Handle(UpdateDraftCommand r, CancellationToken ct)
         {
-            var e = await db.TenantActivationRequests.FindAsync([r.Id], ct)
-                 ?? throw new MarketNotFoundException("Request not found");
+            var e = await db.TenantActivationRequests
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
+                ?? throw new MarketNotFoundException("Request not found");
+
             // check for domain uniqueness
             if (!string.Equals(e.Domain, r.Domain, StringComparison.OrdinalIgnoreCase))
             {
-                var exists = await db.TenantActivationRequests.AnyAsync(x => x.Domain == r.Domain, ct);
+                var domain = r.Domain.Trim().ToLowerInvariant();
+                var exists = await db.TenantActivationRequests
+                    .IgnoreQueryFilters()
+                    .AnyAsync(x => x.Id != r.Id && x.Domain.ToLower() == domain, ct);
                 if (exists) throw new ValidationException("Domain already in use.");
             }
             e.EditDraft(r.RestaurantName, r.Domain, r.OwnerFullName, r.OwnerEmail, r.OwnerPhone,

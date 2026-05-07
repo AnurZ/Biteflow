@@ -1,5 +1,10 @@
+import { environment } from '../environments/environment';
+
 export class MyConfig {
-  static api_address = "https://localhost:7260/api"
-  static api_base = MyConfig.api_address.replace(/\/api\/?$/, '');
-  static orders_hub = `${MyConfig.api_base}/hubs/orders`;
+  static api_address = environment.apiAddress;
+  static api_base = environment.apiBase;
+  static orders_hub = environment.ordersHub;
+  static oauth_allowed_urls = environment.oauthAllowedUrls;
+  static oauth_show_debug_information = environment.oauthShowDebugInformation;
+  static oauth_require_https = environment.oauthRequireHttps;
 }

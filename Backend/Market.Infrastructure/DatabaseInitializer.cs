@@ -15,7 +15,9 @@ public static class DatabaseInitializer
     public static async Task InitializeDatabaseAsync(this IServiceProvider services, IHostEnvironment env)
     {
         await using var scope = services.CreateAsyncScope();
-        var ctx = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var dbOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<DatabaseContext>>();
+        var clock = scope.ServiceProvider.GetRequiredService<TimeProvider>();
+        await using var ctx = new DatabaseContext(dbOptions, clock);
         var identityCtx = scope.ServiceProvider.GetRequiredService<IdentityDatabaseContext>();
         var identitySeeder = scope.ServiceProvider.GetRequiredService<IdentitySeeder>();
 
@@ -28,9 +30,10 @@ public static class DatabaseInitializer
             return;
         }
 
-        // SQL Server or similar
-        await ctx.Database.MigrateAsync();
+        // SQL Server or similar. Identity tables must exist before app migrations
+        // that add foreign keys to AspNetUsers.
         await identityCtx.Database.MigrateAsync();
+        await ctx.Database.MigrateAsync();
 
         if (env.IsDevelopment())
         {

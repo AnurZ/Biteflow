@@ -1,5 +1,5 @@
 import { Injectable, NgZone } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { from, lastValueFrom, map, Observable } from 'rxjs';
 import { jwtDecode } from 'jwt-decode';
@@ -20,7 +20,7 @@ export class AuthService {
     private readonly http: HttpClient
   ) {
     this.oauthService.configure(authConfig);
-    this.oauthService.setStorage(localStorage);
+    this.oauthService.setStorage(sessionStorage);
 
     this.discoveryDocumentPromise = this.oauthService
       .loadDiscoveryDocument()
@@ -28,12 +28,6 @@ export class AuthService {
       .then(async () => {
         const profile = await this.fetchUserInfo();
         this.zone.run(() => this.updateAuthInfoFromToken(profile));
-
-        // **DEBUG:** pogledaj payload tokena
-        const token = this.oauthService.getAccessToken();
-        if (token) {
-          console.log('Decoded JWT payload:', JSON.parse(atob(token.split('.')[1])));
-        }
       })
       .catch((error) => {
         console.warn('Failed to initialize OAuth code flow.', error);
@@ -50,9 +44,18 @@ export class AuthService {
     this.oauthService.initLoginFlow(target);
   }
 
-  startGoogleLogin(returnUrl?: string): void {
-    const target = returnUrl ?? window.location.pathname;
-    this.oauthService.initLoginFlow(target, { idp: 'Google' });
+  startGoogleLogin(
+    returnUrl?: string,
+    tenantContext?: { tenantId: string; restaurantId: string }
+  ): void {
+    const tenantId = tenantContext?.tenantId?.trim();
+    const restaurantId = tenantContext?.restaurantId?.trim();
+    if (!tenantId || !restaurantId) {
+      throw new Error('Tenant and restaurant context are required for Google login.');
+    }
+
+    const target = this.withTenantContext(returnUrl ?? window.location.pathname, tenantId, restaurantId);
+    this.oauthService.initLoginFlow(target, { idp: 'Google', tenantId, restaurantId });
   }
 
   async handleLoginCallback(): Promise<MyAuthInfo | null> {
@@ -125,13 +128,11 @@ export class AuthService {
   }
 
   hasWaiterAccess(): boolean {
-    const position = this.getPosition().trim().toLowerCase();
-    return this.hasRole('waiter') || position.includes('waiter') || position.includes('konobar') || position.includes('server');
+    return this.hasRole('waiter');
   }
 
   hasKitchenAccess(): boolean {
-    const position = this.getPosition().trim().toLowerCase();
-    return this.hasRole('kitchen') || position.includes('kitchen') || position.includes('cook') || position.includes('chef') || position.includes('kuhar');
+    return this.hasRole('kitchen');
   }
 
   private updateAuthInfoFromToken(userInfo?: Record<string, any>): void {
@@ -160,8 +161,6 @@ export class AuthService {
         isLocked: payload['is_locked'] === true,
         isLoggedIn: true
       };
-
-      console.log('Restaurant id:',info.restaurantId);
 
       info.displayName = String(
         userInfo?.['display_name'] ??
@@ -232,6 +231,13 @@ export class AuthService {
       );
       return result;
     } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 401) {
+        console.warn('Stored access token was rejected by the identity server. Clearing local auth state.');
+        this.oauthService.logOut(true);
+        this.authInfo = null;
+        return undefined;
+      }
+
       console.warn('error loading user info', error);
       return undefined;
     }
@@ -240,6 +246,13 @@ export class AuthService {
   registerCustomer(payload: { email: string; password: string; displayName?: string; captchaToken: string }): Promise<void> {
     const url = `${MyConfig.api_address}/auth/register/customer`;
     return lastValueFrom(this.http.post<void>(url, payload));
+  }
+
+  private withTenantContext(returnUrl: string, tenantId: string, restaurantId: string): string {
+    const url = new URL(returnUrl, window.location.origin);
+    url.searchParams.set('tenantId', tenantId);
+    url.searchParams.set('restaurantId', restaurantId);
+    return `${url.pathname}${url.search}${url.hash}`;
   }
 
 }

@@ -9,11 +9,14 @@ using Market.Domain.Common.Enums;
 using Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle;
 using Market.Application.Modules.DiningTable.Querries.GetDiningTableTLIDbyTableID;
 using Market.Application.Modules.DiningTable.Querries.GetDiningTableStatus;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Market.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public class DiningTableController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -27,6 +30,7 @@ namespace Market.API.Controllers
         /// Create a new dining table
         /// </summary>
         [HttpPost]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> CreateDiningTable([FromBody] CreateDiningTableCommandDto command)
         {
             var result = await _mediator.Send(command);
@@ -37,6 +41,7 @@ namespace Market.API.Controllers
         /// Update an existing dining table
         /// </summary>
         [HttpPut("{id:int}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> UpdateDiningTable(int id, [FromBody] UpdateDiningTableCommandDto command)
         {
             command.Id = id;
@@ -48,6 +53,7 @@ namespace Market.API.Controllers
         /// Delete a dining table
         /// </summary>
         [HttpDelete("{id:int}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> DeleteDiningTable(int id)
         {
             var command = new DeleteDiningTableCommandDto { Id = id };

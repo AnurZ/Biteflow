@@ -12,23 +12,20 @@ public sealed class AppCurrentUser(IHttpContextAccessor httpContextAccessor)
 {
     private readonly ClaimsPrincipal? _user = httpContextAccessor.HttpContext?.User;
 
-    public int? UserId =>
-        int.TryParse(_user?.FindFirstValue(ClaimTypes.NameIdentifier), out var id)
-            ? id
-            : null;
+    public Guid? UserId =>
+        TryParseGuidClaim(ClaimTypes.NameIdentifier)
+        ?? TryParseGuidClaim("sub");
 
     public string? Email =>
-        _user?.FindFirstValue(ClaimTypes.Email);
+        _user?.FindFirstValue(ClaimTypes.Email)
+        ?? _user?.FindFirstValue("email");
 
     public bool IsAuthenticated =>
         _user?.Identity?.IsAuthenticated ?? false;
 
-    public bool IsAdmin =>
-        _user?.FindFirstValue("is_admin")?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-
-    public bool IsManager =>
-        _user?.FindFirstValue("is_manager")?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
-
-    public bool IsEmployee =>
-        _user?.FindFirstValue("is_employee")?.Equals("true", StringComparison.OrdinalIgnoreCase) ?? false;
+    private Guid? TryParseGuidClaim(string claimType)
+    {
+        var raw = _user?.FindFirstValue(claimType);
+        return Guid.TryParse(raw, out var parsed) ? parsed : null;
+    }
 }

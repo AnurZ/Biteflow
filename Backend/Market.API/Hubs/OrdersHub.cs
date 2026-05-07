@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using Market.Application.Abstractions;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Market.API.Hubs
 {
@@ -90,8 +88,7 @@ namespace Market.API.Hubs
                 return "kitchen";
             }
 
-            if (Guid.TryParse(tenantId, out var parsed) &&
-                (parsed == Guid.Empty || parsed == SeedConstants.DefaultTenantId))
+            if (Guid.TryParse(tenantId, out var parsed) && parsed == Guid.Empty)
             {
                 return "kitchen";
             }
@@ -106,8 +103,7 @@ namespace Market.API.Hubs
                 return "waiter";
             }
 
-            if (Guid.TryParse(tenantId, out var parsed) &&
-                (parsed == Guid.Empty || parsed == SeedConstants.DefaultTenantId))
+            if (Guid.TryParse(tenantId, out var parsed) && parsed == Guid.Empty)
             {
                 return "waiter";
             }
@@ -117,7 +113,7 @@ namespace Market.API.Hubs
 
         public static string Kitchen(Guid tenantId)
         {
-            if (tenantId == Guid.Empty || tenantId == SeedConstants.DefaultTenantId)
+            if (tenantId == Guid.Empty)
             {
                 return "kitchen";
             }
@@ -127,7 +123,7 @@ namespace Market.API.Hubs
 
         public static string Waiter(Guid tenantId)
         {
-            if (tenantId == Guid.Empty || tenantId == SeedConstants.DefaultTenantId)
+            if (tenantId == Guid.Empty)
             {
                 return "waiter";
             }
@@ -143,25 +139,22 @@ namespace Market.API.Hubs
             }
 
             return Guid.TryParse(tenantId, out var parsed) &&
-                parsed != Guid.Empty &&
-                parsed != SeedConstants.DefaultTenantId;
+                parsed != Guid.Empty;
         }
 
         private static bool IsTenantScoped(Guid tenantId)
         {
-            return tenantId != Guid.Empty && tenantId != SeedConstants.DefaultTenantId;
+            return tenantId != Guid.Empty;
         }
     }
 
     [Authorize(Policy = PolicyNames.StaffMember)]
     public sealed class OrdersHub : Hub
     {
-        private readonly IAppDbContext _db;
         private readonly ILogger<OrdersHub> _logger;
 
-        public OrdersHub(IAppDbContext db, ILogger<OrdersHub> logger)
+        public OrdersHub(ILogger<OrdersHub> logger)
         {
-            _db = db;
             _logger = logger;
         }
 
@@ -172,31 +165,6 @@ namespace Market.API.Hubs
 
             if (Context.User != null)
             {
-                var position = await GetPositionAsync(Context.User, Context.ConnectionAborted);
-                var normalized = (position ?? string.Empty).Trim().ToLowerInvariant();
-
-                var isKitchen = LooksLikeKitchen(normalized);
-                var isWaiter = LooksLikeWaiter(normalized);
-
-                if (!isKitchen && !isWaiter)
-                {
-                    // Fallback: if position isn't set, join both so demo stays functional.
-                    isKitchen = true;
-                    isWaiter = true;
-                }
-
-                if (isKitchen)
-                {
-                    groups.Add(OrdersHubGroups.Kitchen(tenantId));
-                    groups.Add(OrdersHubGroups.Role("Kitchen", tenantId));
-                }
-
-                if (isWaiter)
-                {
-                    groups.Add(OrdersHubGroups.Waiter(tenantId));
-                    groups.Add(OrdersHubGroups.Role("Waiter", tenantId));
-                }
-
                 var userId = ResolveUserId(Context.User);
                 if (!string.IsNullOrWhiteSpace(userId))
                 {
@@ -209,6 +177,16 @@ namespace Market.API.Hubs
 
                 foreach (var role in ResolveRoleClaims(Context.User))
                 {
+                    if (string.Equals(role, RoleNames.Kitchen, StringComparison.OrdinalIgnoreCase))
+                    {
+                        groups.Add(OrdersHubGroups.Kitchen(tenantId));
+                    }
+
+                    if (string.Equals(role, RoleNames.Waiter, StringComparison.OrdinalIgnoreCase))
+                    {
+                        groups.Add(OrdersHubGroups.Waiter(tenantId));
+                    }
+
                     var roleGroup = OrdersHubGroups.Role(role, tenantId);
                     if (!string.IsNullOrWhiteSpace(roleGroup))
                     {
@@ -224,32 +202,6 @@ namespace Market.API.Hubs
 
             _logger.LogInformation("OrdersHub connected {ConnectionId}. Groups={Groups}", Context.ConnectionId, string.Join(",", groups));
             await base.OnConnectedAsync();
-        }
-
-        private async Task<string?> GetPositionAsync(ClaimsPrincipal user, CancellationToken ct)
-        {
-            var subject =
-                user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-                user.FindFirst("sub")?.Value ??
-                user.FindFirst("subject")?.Value;
-
-            if (Guid.TryParse(subject, out var userId))
-            {
-                var profile = await _db.EmployeeProfiles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.ApplicationUserId == userId, ct);
-                return profile?.Position;
-            }
-
-            if (int.TryParse(subject, out var legacyId))
-            {
-                var profile = await _db.EmployeeProfiles
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(p => p.AppUserId == legacyId, ct);
-                return profile?.Position;
-            }
-
-            return null;
         }
 
         private static string? ResolveUserId(ClaimsPrincipal? user)
@@ -278,22 +230,6 @@ namespace Market.API.Hubs
                     yield return claim.Value;
                 }
             }
-        }
-
-        private static bool LooksLikeKitchen(string position)
-        {
-            return position.Contains("kitchen") ||
-                position.Contains("chef") ||
-                position.Contains("cook") ||
-                position.Contains("kuhar") ||
-                position.Contains("kuhinja");
-        }
-
-        private static bool LooksLikeWaiter(string position)
-        {
-            return position.Contains("waiter") ||
-                position.Contains("server") ||
-                position.Contains("konobar");
         }
     }
 }

@@ -1,19 +1,20 @@
 ﻿namespace Market.Application.Modules.Catalog.ProductCategories.Commands.Delete;
 
 public class DeleteProductCategory
-    (IAppDbContext context, IAppCurrentUser appCurrentUser)
+    (IAppDbContext context, IAppCurrentUser appCurrentUser, ITenantContext tenantContext)
       : IRequestHandler<DeleteProductCategoryCommand, Unit>
 {
     public async Task<Unit> Handle(DeleteProductCategoryCommand request, CancellationToken cancellationToken)
     {
-        if (appCurrentUser.UserId is null)
-            throw new MarketBusinessRuleException("123", "Korisnik nije autentifikovan.");
-
         var category = await context.ProductCategories
+            .WhereTenantOwned(tenantContext)
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
         if (category is null)
             throw new MarketNotFoundException("Kategorija nije pronađena.");
+
+        if (appCurrentUser.UserId is null)
+            throw new MarketBusinessRuleException("123", "Korisnik nije autentifikovan.");
 
         category.IsDeleted = true; // Soft delete
         await context.SaveChangesAsync(cancellationToken);

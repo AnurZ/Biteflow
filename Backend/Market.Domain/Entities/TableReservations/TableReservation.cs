@@ -1,7 +1,6 @@
 ﻿using Market.Domain.Common;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.DiningTables;
-using Market.Domain.Entities.Identity;
 using Market.Domain.Entities.IdentityV2;
 using System;
 

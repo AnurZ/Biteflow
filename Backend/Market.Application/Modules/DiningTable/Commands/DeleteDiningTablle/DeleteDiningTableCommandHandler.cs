@@ -6,18 +6,25 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle
 {
-    public sealed class DeleteDiningTableCommandHandler(IAppDbContext _db) : IRequestHandler<DeleteDiningTableCommandDto>
+    public sealed class DeleteDiningTableCommandHandler(IAppDbContext _db, ITenantContext _tenantContext) : IRequestHandler<DeleteDiningTableCommandDto>
     {
 
         public async Task Handle(DeleteDiningTableCommandDto request, CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.IsSuperAdmin
+                ? (Guid?)null
+                : _tenantContext.RequireRestaurantId();
 
-            var conn = (_db as DbContext)?.Database.GetDbConnection();
-            Console.WriteLine($"EF is connected to: {conn?.ConnectionString}");
+            var query = _db.DiningTables
+                .Include(x => x.TableLayout)
+                .WhereTenantOwned(_tenantContext);
 
-            // Load table with related collections to make sure cascade works
-            var table = await _db.DiningTables.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+            if (restaurantId.HasValue)
+            {
+                query = query.Where(x => x.TableLayout.RestaurantId == restaurantId.Value);
+            }
 
+            var table = await query.FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (table == null)
                 throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");

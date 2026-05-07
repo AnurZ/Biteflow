@@ -1,4 +1,3 @@
-using Market.Domain.Entities.Identity;
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.Staff;
 using Market.Shared.Constants;
@@ -11,30 +10,33 @@ namespace Market.Application.Modules.Staff.Commands.Create;
 
 public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffCommand, int>
 {
-    private static readonly string[] AllowedRoles =
+    private static readonly string[] AllAssignableRoles =
     {
         RoleNames.SuperAdmin,
         RoleNames.Admin,
-        RoleNames.Staff,
+        RoleNames.Waiter,
+        RoleNames.Kitchen
+    };
+
+    private static readonly string[] RestaurantAdminAssignableRoles =
+    {
+        RoleNames.Admin,
         RoleNames.Waiter,
         RoleNames.Kitchen
     };
 
     private readonly IAppDbContext _db;
-    private readonly IPasswordHasher<AppUser> _hasher;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<CreateStaffCommandHandler> _logger;
     private readonly ITenantContext _tenantContext;
 
     public CreateStaffCommandHandler(
         IAppDbContext db,
-        IPasswordHasher<AppUser> hasher,
         UserManager<ApplicationUser> userManager,
         ILogger<CreateStaffCommandHandler> logger,
         ITenantContext tenantContext)
     {
         _db = db;
-        _hasher = hasher;
         _userManager = userManager;
         _logger = logger;
         _tenantContext = tenantContext;
@@ -42,16 +44,17 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
 
     public async Task<int> Handle(CreateStaffCommand r, CancellationToken ct)
     {
-        var tenantId = _tenantContext.TenantId ?? SeedConstants.DefaultTenantId;
-        var restaurantId = _tenantContext.RestaurantId ?? Guid.Empty;
+        var tenantId = _tenantContext.RequireTenantId();
+        var restaurantId = _tenantContext.RequireRestaurantId();
 
         if (string.IsNullOrWhiteSpace(r.FirstName) || string.IsNullOrWhiteSpace(r.LastName))
             throw new ValidationException("FirstName and LastName are required.");
 
         var targetRole = NormalizeRole(r.Role);
+        EnsureRoleAllowedForCaller(targetRole);
 
         var email = r.Email?.Trim();
-        if (r.AppUserId == 0 && string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(email))
             throw new ValidationException("Email is required when creating a new user.");
 
         var displayName = string.IsNullOrWhiteSpace(r.DisplayName)
@@ -62,15 +65,14 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             ? Guid.NewGuid().ToString("N")
             : r.PlainPassword!;
 
-        var appUserId = await EnsureLegacyUserAsync(r.AppUserId, email!, displayName, plainPassword, tenantId, restaurantId, ct);
-        var identityUser = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
+        var identityResult = await EnsureIdentityUserAsync(email!, displayName, plainPassword, tenantId, restaurantId, targetRole, ct);
+        var identityUser = identityResult.User;
 
         var profile = new EmployeeProfile
         {
             TenantId = tenantId,
-            AppUserId = appUserId,
             ApplicationUserId = identityUser.Id,
-            Position = r.Position.Trim(),
+            Position = ResolvePosition(targetRole),
             FirstName = r.FirstName.Trim(),
             LastName = r.LastName.Trim(),
             PhoneNumber = r.PhoneNumber,
@@ -85,52 +87,20 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
         };
 
         _db.EmployeeProfiles.Add(profile);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            await CleanupIdentitySideEffectsAsync(identityResult, targetRole);
+            throw;
+        }
 
         return profile.Id;
     }
 
-    private async Task<int> EnsureLegacyUserAsync(
-        int existingAppUserId,
-        string email,
-        string displayName,
-        string plainPassword,
-        Guid tenantId,
-        Guid restaurantId,
-        CancellationToken ct)
-    {
-        if (existingAppUserId > 0)
-        {
-            var exists = await _db.Users.AnyAsync(u => u.Id == existingAppUserId, ct);
-            if (!exists) throw new ValidationException("AppUserId is invalid.");
-            return existingAppUserId;
-        }
-
-        var normalizedEmail = email.Trim();
-        var emailTaken = await _db.Users.AnyAsync(u => u.Email == normalizedEmail, ct);
-        if (emailTaken) throw new MarketConflictException("Email already in use.");
-
-        var user = new AppUser
-        {
-            TenantId = tenantId,
-            RestaurantId = restaurantId,
-            Email = normalizedEmail,
-            DisplayName = displayName,
-            IsEmailConfirmed = false,
-            IsLocked = false,
-            IsEnabled = true,
-            TokenVersion = 0
-        };
-
-        user.PasswordHash = _hasher.HashPassword(user, plainPassword);
-
-        _db.Users.Add(user);
-        await _db.SaveChangesAsync(ct);
-
-        return user.Id;
-    }
-
-    private async Task<ApplicationUser> EnsureIdentityUserAsync(
+    private async Task<IdentityUserProvisionResult> EnsureIdentityUserAsync(
         string email,
         string displayName,
         string plainPassword,
@@ -141,6 +111,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     {
         var normalizedEmail = email.Trim();
         var user = await _userManager.FindByEmailAsync(normalizedEmail);
+        var createdUser = false;
 
         if (user == null)
         {
@@ -162,8 +133,11 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
                 _logger.LogWarning("Failed to create identity user {Email}: {Message}", normalizedEmail, message);
                 throw new ValidationException($"Failed to create identity user: {message}");
             }
+
+            createdUser = true;
         }
 
+        var addedRole = false;
         if (!await _userManager.IsInRoleAsync(user, role))
         {
             var roleResult = await _userManager.AddToRoleAsync(user, role);
@@ -172,17 +146,47 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
                 var message = string.Join(", ", roleResult.Errors.Select(e => e.Description));
                 throw new ValidationException($"Failed to assign role '{role}' to user: {message}");
             }
+
+            addedRole = true;
         }
 
-        return user;
+        return new IdentityUserProvisionResult(user, createdUser, addedRole);
+    }
+
+    private async Task CleanupIdentitySideEffectsAsync(IdentityUserProvisionResult result, string role)
+    {
+        if (result.CreatedUser)
+        {
+            var delete = await _userManager.DeleteAsync(result.User);
+            if (!delete.Succeeded)
+            {
+                _logger.LogWarning("Failed to delete identity user {UserId} after staff profile creation failed: {Errors}",
+                    result.User.Id,
+                    string.Join(", ", delete.Errors.Select(e => e.Description)));
+            }
+
+            return;
+        }
+
+        if (result.AddedRole)
+        {
+            var removeRole = await _userManager.RemoveFromRoleAsync(result.User, role);
+            if (!removeRole.Succeeded)
+            {
+                _logger.LogWarning("Failed to remove role {Role} from identity user {UserId} after staff profile creation failed: {Errors}",
+                    role,
+                    result.User.Id,
+                    string.Join(", ", removeRole.Errors.Select(e => e.Description)));
+            }
+        }
     }
 
     private static string NormalizeRole(string? requestedRole)
     {
         if (string.IsNullOrWhiteSpace(requestedRole))
-            return RoleNames.Staff;
+            return RoleNames.Admin;
 
-        var match = AllowedRoles.FirstOrDefault(r =>
+        var match = AllAssignableRoles.FirstOrDefault(r =>
             string.Equals(r, requestedRole, StringComparison.OrdinalIgnoreCase));
 
         if (match is null)
@@ -190,4 +194,33 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
 
         return match;
     }
+
+    private void EnsureRoleAllowedForCaller(string role)
+    {
+        if (_tenantContext.IsSuperAdmin)
+        {
+            return;
+        }
+
+        if (!RestaurantAdminAssignableRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ValidationException("Role is not allowed for the current user.");
+        }
+    }
+
+    private static string ResolvePosition(string role)
+    {
+        return role.ToLowerInvariant() switch
+        {
+            RoleNames.Admin => "Manager",
+            RoleNames.Waiter => "Waiter",
+            RoleNames.Kitchen => "Cook",
+            _ => "Manager"
+        };
+    }
+
+    private sealed record IdentityUserProvisionResult(
+        ApplicationUser User,
+        bool CreatedUser,
+        bool AddedRole);
 }

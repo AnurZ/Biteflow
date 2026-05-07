@@ -1,14 +1,19 @@
+using Market.Shared.Constants;
+
 namespace Market.Application.Modules.Staff.Commands.Update;
 
 public sealed class UpdateStaffCommandValidator : AbstractValidator<UpdateStaffCommand>
 {
+    private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        RoleNames.Admin,
+        RoleNames.Waiter,
+        RoleNames.Kitchen
+    };
+
     public UpdateStaffCommandValidator()
     {
         RuleFor(x => x.Id).GreaterThan(0);
-
-        RuleFor(x => x.Position)
-            .NotEmpty().WithMessage("Position is required.")
-            .MaximumLength(50);
 
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("FirstName is required.")
@@ -21,6 +26,10 @@ public sealed class UpdateStaffCommandValidator : AbstractValidator<UpdateStaffC
         RuleFor(x => x.DisplayName)
             .MaximumLength(100)
             .When(x => !string.IsNullOrWhiteSpace(x.DisplayName));
+
+        RuleFor(x => x.Role)
+            .Must(role => string.IsNullOrWhiteSpace(role) || AllowedRoles.Contains(role.Trim()))
+            .WithMessage("Role is invalid.");
 
         RuleFor(x => x.PhoneNumber)
             .MaximumLength(50)

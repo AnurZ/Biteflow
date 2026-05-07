@@ -42,6 +42,10 @@ const routes: Routes = [
     component: ActivationConfirmComponent
   },
   {
+    path: 'activate/set-password',
+    loadComponent: () => import('./modules/public/set-activation-password/set-activation-password.component').then(m => m.SetActivationPasswordComponent)
+  },
+  {
     path: 'settings',
     canActivate: [LoggedInGuard],
     loadComponent: () => import('./modules/settings/settings.component').then(m => m.SettingsComponent)

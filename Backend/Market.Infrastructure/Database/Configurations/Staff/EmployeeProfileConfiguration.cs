@@ -18,18 +18,10 @@ namespace Market.Infrastructure.Database.Configurations.Staff
             b.Property(x => x.LastName).HasMaxLength(100);
             b.Property(x => x.Position).HasMaxLength(50);
             b.Property(x => x.PhoneNumber).HasMaxLength(50);
-            b.Property(x => x.ApplicationUserId).IsRequired(false);
-            b.Ignore(x => x.ApplicationUser);
+            b.Property(x => x.ApplicationUserId).IsRequired();
 
-            b.HasOne(x => x.AppUser)
-                .WithOne()
-                .HasForeignKey<EmployeeProfile>(x => x.AppUserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            b.HasIndex(x => new { x.TenantId, x.AppUserId }).IsUnique();
             b.HasIndex(x => x.ApplicationUserId)
-                .IsUnique()
-                .HasFilter("[ApplicationUserId] IS NOT NULL");
+                .IsUnique();
         }
     }
 }

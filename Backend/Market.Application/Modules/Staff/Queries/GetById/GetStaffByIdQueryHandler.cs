@@ -1,20 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using MediatR;
-using Microsoft.EntityFrameworkCore;
+using Market.Domain.Entities.IdentityV2;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Identity;
 
 namespace Market.Application.Modules.Staff.Queries.GetById
 {
-    public sealed class GetStaffByIdQueryHandler(IAppDbContext db)
+    public sealed class GetStaffByIdQueryHandler(
+        IAppDbContext db,
+        UserManager<ApplicationUser> userManager)
     : IRequestHandler<GetStaffByIdQuery, GetStaffByIdDto>
     {
+        private static readonly string[] DisplayRoles =
+        {
+            RoleNames.Admin,
+            RoleNames.Kitchen,
+            RoleNames.Waiter
+        };
+
         public async Task<GetStaffByIdDto> Handle(GetStaffByIdQuery req, CancellationToken ct)
         {
             var e = await db.EmployeeProfiles
-                .Include(x => x.AppUser)
+                .AsNoTracking()
+                .Include(x => x.ApplicationUser)
                 .FirstOrDefaultAsync(x => x.Id == req.Id, ct);
 
             if (e is null) throw new KeyNotFoundException("EmployeeProfile");
@@ -22,9 +28,10 @@ namespace Market.Application.Modules.Staff.Queries.GetById
             return new GetStaffByIdDto
             {
                 Id = e.Id,
-                AppUserId = e.AppUserId,
-                DisplayName = e.AppUser.DisplayName,
-                Email = e.AppUser.Email,
+                ApplicationUserId = e.ApplicationUserId,
+                DisplayName = e.ApplicationUser?.DisplayName ?? string.Empty,
+                Email = e.ApplicationUser?.Email ?? string.Empty,
+                Role = await ResolveRoleAsync(e.ApplicationUser),
                 Position = e.Position,
                 FirstName = e.FirstName,
                 LastName = e.LastName,
@@ -43,6 +50,18 @@ namespace Market.Application.Modules.Staff.Queries.GetById
                 IsActive = e.IsActive,
                 Notes = e.Notes
             };
+        }
+
+        private async Task<string> ResolveRoleAsync(ApplicationUser? user)
+        {
+            if (user is null)
+            {
+                return string.Empty;
+            }
+
+            var roles = await userManager.GetRolesAsync(user);
+            return DisplayRoles.FirstOrDefault(role =>
+                roles.Contains(role, StringComparer.OrdinalIgnoreCase)) ?? string.Empty;
         }
     }
 }

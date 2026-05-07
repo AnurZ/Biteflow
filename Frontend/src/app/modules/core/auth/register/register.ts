@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, ElementRef, OnDestroy, ViewChild, NgZone } from '@angular/core';
 import { FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../../services/auth-services/auth.service';
 import { hcaptchaConfig } from '../../../../../environments/environment.hcaptcha';
 
@@ -24,6 +25,10 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   successMessage = '';
   private captchaWidgetId: string | number | null = null;
   private readonly hcaptchaSiteKey = hcaptchaConfig.siteKey || '10000000-ffff-ffff-ffff-000000000001'; // replace with real key in environment.hcaptcha.ts
+  private readonly demoTenantContext = {
+    tenantId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    restaurantId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+  };
   private renderAttempts = 0;
   private rendered = false;
 
@@ -32,6 +37,7 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   constructor(
     private readonly fb: FormBuilder,
     private readonly authService: AuthService,
+    private readonly route: ActivatedRoute,
     private readonly zone: NgZone
   ) {
     this.form = this.fb.group({
@@ -66,7 +72,15 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   }
 
   onGoogleLogin(): void {
-    this.authService.startGoogleLogin();
+    this.errorMessage = '';
+
+    const tenantContext = this.resolveTenantContext();
+    if (!tenantContext) {
+      this.errorMessage = 'Restaurant context is missing. Open registration from the restaurant page.';
+      return;
+    }
+
+    this.authService.startGoogleLogin('/public', tenantContext);
   }
 
   ngAfterViewInit(): void {
@@ -191,5 +205,21 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
 
   goToLogin(): void {
     this.authService.startLogin();
+  }
+
+  private resolveTenantContext(): { tenantId: string; restaurantId: string } | null {
+    const params = this.route.snapshot.queryParamMap;
+    const tenantId = (params.get('tenantId') ?? params.get('tenant_id') ?? '').trim();
+    const restaurantId = (params.get('restaurantId') ?? params.get('restaurant_id') ?? '').trim();
+
+    if (!tenantId || !restaurantId) {
+      return this.isLocalDemoHost() ? this.demoTenantContext : null;
+    }
+
+    return { tenantId, restaurantId };
+  }
+
+  private isLocalDemoHost(): boolean {
+    return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   }
 }

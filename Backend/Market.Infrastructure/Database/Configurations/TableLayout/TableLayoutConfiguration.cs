@@ -1,6 +1,4 @@
-﻿using Market.Domain.Entities.DiningTables;
 using Market.Domain.Entities.TableLayout;
-using Market.Domain.Entities.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -10,13 +8,13 @@ namespace Market.Infrastructure.Persistence.Configurations
     {
         public void Configure(EntityTypeBuilder<TableLayout> builder)
         {
-            // Table name
             builder.ToTable("TableLayouts");
 
-            // Key
             builder.HasKey(t => t.Id);
 
-            // Properties
+            builder.Property(t => t.RestaurantId)
+                .IsRequired();
+
             builder.Property(t => t.Name)
                 .IsRequired()
                 .HasMaxLength(100);
@@ -28,7 +26,9 @@ namespace Market.Infrastructure.Persistence.Configurations
             builder.Property(t => t.FloorImageUrl)
                 .HasColumnType("nvarchar(max)")
                 .IsRequired(false);
+
+            builder.HasIndex(t => t.TenantId);
+            builder.HasIndex(t => t.RestaurantId);
         }
-          
     }
 }

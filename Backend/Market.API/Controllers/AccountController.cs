@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using Duende.IdentityModel;
+using Market.Application.Abstractions;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authentication.Google;
 
@@ -14,20 +15,29 @@ using Microsoft.AspNetCore.Authentication.Google;
 [Route("account")]
 public sealed class AccountController : Controller
 {
+    private const string InvalidLoginMessage = "Neispravni podaci za prijavu.";
+    private const string TenantIdStateKey = "tenant_id";
+    private const string RestaurantIdStateKey = "restaurant_id";
+    private static readonly string DummyPasswordHash =
+        new PasswordHasher<ApplicationUser>().HashPassword(new ApplicationUser(), "DummyPasswordForTimingOnly");
+
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IIdentityServerInteractionService _interaction;
+    private readonly IPublicTenantResolver _publicTenantResolver;
     private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IIdentityServerInteractionService interaction,
+        IPublicTenantResolver publicTenantResolver,
         ILogger<AccountController> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _interaction = interaction;
+        _publicTenantResolver = publicTenantResolver;
         _logger = logger;
     }
 
@@ -57,7 +67,13 @@ public sealed class AccountController : Controller
             // Single external provider requested; short-circuit to Google flow
             if (string.Equals(idp, "Google", StringComparison.OrdinalIgnoreCase))
             {
-                return RedirectToAction(nameof(ExternalGoogle), new { returnUrl });
+                var tenantState = ResolveTenantState(returnUrl, Request.Query);
+                return RedirectToAction(nameof(ExternalGoogle), new
+                {
+                    returnUrl,
+                    tenantId = tenantState?.TenantId,
+                    restaurantId = tenantState?.RestaurantId
+                });
             }
         }
 
@@ -82,16 +98,23 @@ public sealed class AccountController : Controller
         var user = await _userManager.FindByEmailAsync(model.Email)
                    ?? await _userManager.FindByNameAsync(model.Email);
 
-        if (user is null || !user.IsEnabled)
+        if (user is null)
         {
-            ModelState.AddModelError(string.Empty, "Invalid credentials.");
-            return View("Login", model);
+            VerifyDummyPassword(model.Password);
+            _logger.LogWarning("Login UI rejected because user '{Email}' was not found.", model.Email);
+            return InvalidLoginView(model);
         }
 
-        var result = await _signInManager.PasswordSignInAsync(
-            user.UserName ?? user.Email ?? model.Email,
+        if (!user.IsEnabled)
+        {
+            VerifyDummyPassword(model.Password);
+            _logger.LogWarning("Login UI rejected because user {UserId} is disabled.", user.Id);
+            return InvalidLoginView(model);
+        }
+
+        var result = await _signInManager.CheckPasswordSignInAsync(
+            user,
             model.Password,
-            model.RememberLogin,
             lockoutOnFailure: true);
 
         if (result.Succeeded)
@@ -112,16 +135,14 @@ public sealed class AccountController : Controller
 
         if (result.IsLockedOut)
         {
-            ModelState.AddModelError(string.Empty, "Account locked. Try again later.");
             _logger.LogWarning("User {UserId} is locked out.", user.Id);
         }
         else
         {
-            ModelState.AddModelError(string.Empty, "Invalid credentials.");
             _logger.LogWarning("Invalid credentials for user {UserId}.", user.Id);
         }
 
-        return View("Login", model);
+        return InvalidLoginView(model);
     }
 
     [HttpGet("logout")]
@@ -152,13 +173,34 @@ public sealed class AccountController : Controller
         return Redirect("~/");
     }
 
+    private IActionResult InvalidLoginView(LoginInputModel model)
+    {
+        ModelState.AddModelError(string.Empty, InvalidLoginMessage);
+        return View("Login", model);
+    }
+
+    private static void VerifyDummyPassword(string? password)
+    {
+        var hasher = new PasswordHasher<ApplicationUser>();
+        hasher.VerifyHashedPassword(new ApplicationUser(), DummyPasswordHash, password ?? string.Empty);
+    }
+
     [HttpGet("external/google")]
-    public IActionResult ExternalGoogle([FromQuery] string? returnUrl)
+    public IActionResult ExternalGoogle(
+        [FromQuery] string? returnUrl,
+        [FromQuery] Guid? tenantId,
+        [FromQuery] Guid? restaurantId)
     {
         var callback = Url.Action(nameof(ExternalGoogleCallback), new { returnUrl });
         var props = _signInManager.ConfigureExternalAuthenticationProperties(
             GoogleDefaults.AuthenticationScheme,
             callback);
+
+        if (TryNormalizeTenantState(tenantId, restaurantId, out var normalizedTenantId, out var normalizedRestaurantId))
+        {
+            props.Items[TenantIdStateKey] = normalizedTenantId.ToString();
+            props.Items[RestaurantIdStateKey] = normalizedRestaurantId.ToString();
+        }
 
         return Challenge(props, GoogleDefaults.AuthenticationScheme);
     }
@@ -191,14 +233,33 @@ public sealed class AccountController : Controller
 
         if (user == null)
         {
+            if (!TryGetTenantState(info.AuthenticationProperties, out var tenantId, out var restaurantId))
+            {
+                _logger.LogWarning("Google login rejected because tenant state is missing or invalid for {Email}.", email);
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
+            PublicTenantContext publicTenant;
+            try
+            {
+                publicTenant = await _publicTenantResolver.ResolveRequiredAsync(tenantId, restaurantId, HttpContext.RequestAborted);
+            }
+            catch (FluentValidation.ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Google login rejected because tenant state could not be validated for {Email}.", email);
+                await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
+                return RedirectToAction(nameof(Login), new { returnUrl });
+            }
+
             user = new ApplicationUser
             {
                 UserName = email,
                 Email = email,
                 EmailConfirmed = true,
                 DisplayName = info.Principal?.Identity?.Name ?? email,
-                TenantId = Guid.Empty,
-                RestaurantId = null,
+                TenantId = publicTenant.TenantId,
+                RestaurantId = publicTenant.RestaurantId,
                 IsEnabled = true
             };
 
@@ -247,6 +308,130 @@ public sealed class AccountController : Controller
 
         return RedirectToLocal(returnUrl ?? string.Empty);
     }
+
+    private static GoogleTenantState? ResolveTenantState(string? returnUrl, IQueryCollection query)
+    {
+        if (TryReadTenantState(query, out var directTenantId, out var directRestaurantId))
+        {
+            return new GoogleTenantState(directTenantId, directRestaurantId);
+        }
+
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return null;
+        }
+
+        var idx = returnUrl.IndexOf('?', StringComparison.Ordinal);
+        if (idx < 0)
+        {
+            return null;
+        }
+
+        var returnQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(returnUrl[idx..]);
+        if (TryReadTenantState(returnQuery, out var tenantId, out var restaurantId))
+        {
+            return new GoogleTenantState(tenantId, restaurantId);
+        }
+
+        return TryReadTenantStateFromOAuthState(returnQuery, out tenantId, out restaurantId)
+            ? new GoogleTenantState(tenantId, restaurantId)
+            : null;
+    }
+
+    private static bool TryReadTenantState(
+        IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> values,
+        out Guid tenantId,
+        out Guid restaurantId)
+    {
+        tenantId = Guid.Empty;
+        restaurantId = Guid.Empty;
+
+        var tenantRaw = ReadFirst(values, "tenantId") ?? ReadFirst(values, TenantIdStateKey);
+        var restaurantRaw = ReadFirst(values, "restaurantId") ?? ReadFirst(values, RestaurantIdStateKey);
+
+        return Guid.TryParse(tenantRaw, out tenantId) &&
+               Guid.TryParse(restaurantRaw, out restaurantId) &&
+               tenantId != Guid.Empty &&
+               restaurantId != Guid.Empty;
+    }
+
+    private static bool TryReadTenantStateFromOAuthState(
+        IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> values,
+        out Guid tenantId,
+        out Guid restaurantId)
+    {
+        tenantId = Guid.Empty;
+        restaurantId = Guid.Empty;
+
+        var state = ReadFirst(values, "state");
+        if (string.IsNullOrWhiteSpace(state))
+        {
+            return false;
+        }
+
+        var separatorIndex = state.IndexOf(';');
+        if (separatorIndex < 0 || separatorIndex == state.Length - 1)
+        {
+            return false;
+        }
+
+        var additionalState = Uri.UnescapeDataString(state[(separatorIndex + 1)..]);
+        var queryIndex = additionalState.IndexOf('?', StringComparison.Ordinal);
+        if (queryIndex < 0)
+        {
+            return false;
+        }
+
+        var stateQuery = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(additionalState[queryIndex..]);
+        return TryReadTenantState(stateQuery, out tenantId, out restaurantId);
+    }
+
+    private static string? ReadFirst(
+        IEnumerable<KeyValuePair<string, Microsoft.Extensions.Primitives.StringValues>> values,
+        string key)
+    {
+        foreach (var pair in values)
+        {
+            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return pair.Value.FirstOrDefault();
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryNormalizeTenantState(
+        Guid? tenantId,
+        Guid? restaurantId,
+        out Guid normalizedTenantId,
+        out Guid normalizedRestaurantId)
+    {
+        normalizedTenantId = tenantId ?? Guid.Empty;
+        normalizedRestaurantId = restaurantId ?? Guid.Empty;
+
+        return normalizedTenantId != Guid.Empty && normalizedRestaurantId != Guid.Empty;
+    }
+
+    private static bool TryGetTenantState(AuthenticationProperties? properties, out Guid tenantId, out Guid restaurantId)
+    {
+        tenantId = Guid.Empty;
+        restaurantId = Guid.Empty;
+
+        if (properties is null)
+        {
+            return false;
+        }
+
+        return properties.Items.TryGetValue(TenantIdStateKey, out var tenantRaw) &&
+               properties.Items.TryGetValue(RestaurantIdStateKey, out var restaurantRaw) &&
+               Guid.TryParse(tenantRaw, out tenantId) &&
+               Guid.TryParse(restaurantRaw, out restaurantId) &&
+               tenantId != Guid.Empty &&
+               restaurantId != Guid.Empty;
+    }
+
+    private sealed record GoogleTenantState(Guid TenantId, Guid RestaurantId);
 }
 
 public sealed class LoginInputModel

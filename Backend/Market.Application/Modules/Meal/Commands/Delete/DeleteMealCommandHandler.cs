@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.Meal.Commands.Delete
 {
-    public sealed class DeleteMealCommandHandler(IAppDbContext db)
+    public sealed class DeleteMealCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         : IRequestHandler<DeleteMealCommand>
     {
         public async Task Handle(DeleteMealCommand request, CancellationToken cancellationToken)
         {
             var meal = await db.Meals
+                .WhereNullableRestaurantOwned(tenantContext)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
             if (meal is null)

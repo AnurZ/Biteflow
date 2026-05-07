@@ -3,13 +3,16 @@ using Market.Application.Modules.MealCategory.Commands.DeleteMealCategoryCommand
 using Market.Application.Modules.MealCategory.Commands.UpdateMealCategoryCommand;
 using Market.Application.Modules.MealCategory.Querries.GetByIdMealCategory;
 using Market.Application.Modules.MealCategory.Querries.GetMealCategories;
+using Market.Shared.Constants;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Market.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = PolicyNames.StaffMember)]
     public class MealCategoryController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -30,6 +33,7 @@ namespace Market.API.Controllers
 
         // POST: api/MealCategory
         [HttpPost]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<ActionResult<int>> Create([FromBody] CreateMealCategoryCommand command)
         {
             var categoryId = await _mediator.Send(command);
@@ -51,6 +55,7 @@ namespace Market.API.Controllers
 
         // DELETE: api/MealCategory/{id}
         [HttpDelete("{id}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> Delete(int id)
         {
             var command = new DeleteMealCategoryCommandDto { Id = id };
@@ -59,6 +64,7 @@ namespace Market.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateMealCategoryCommandDto command)
         {
             command.Id = id; // enforce URL ID

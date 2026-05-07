@@ -7,19 +7,21 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.MealCategory.Commands.UpdateMealCategoryCommand
 {
-    public sealed class UpdateMealCategoryCommandHandler(IAppDbContext db)
+    public sealed class UpdateMealCategoryCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         : IRequestHandler<UpdateMealCategoryCommandDto>
     {
         public async Task Handle(UpdateMealCategoryCommandDto request, CancellationToken cancellationToken)
         {
             var mealCategory = await db.MealCategories
+                .WhereNullableRestaurantOwned(tenantContext)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
             if (mealCategory is null)
                 throw new KeyNotFoundException($"Meal category with ID {request.Id} not found.");
 
             var nameExists = await db.MealCategories
-             .AnyAsync(m => m.Id != request.Id && m.Name == request.Name, cancellationToken);
+                .WhereNullableRestaurantOwned(tenantContext)
+                .AnyAsync(m => m.Id != request.Id && m.Name == request.Name, cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal category with the name '{request.Name.Trim()}' already exists.");

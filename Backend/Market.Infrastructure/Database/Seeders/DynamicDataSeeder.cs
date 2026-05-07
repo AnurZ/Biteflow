@@ -1,7 +1,6 @@
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Catalog;
 using Market.Domain.Entities.DiningTables;
-using Market.Domain.Entities.Identity;
 using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.Orders;
@@ -9,7 +8,6 @@ using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.Tenants;
 using Market.Shared.Constants;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Infrastructure.Database.Seeders;
@@ -25,9 +23,8 @@ public static class DynamicDataSeeder
     {
         await context.Database.EnsureCreatedAsync();
 
+        await SeedDefaultTenantAndRestaurantAsync(context);
         await SeedProductCategoriesAsync(context);
-        await SeedUsersAsync(context);
-        await SeedUserProfilesAsync(context);
         await SeedTenantActivationRequestAsync(context);
         await SeedTableLayoutsAndTablesAsync(context);
         await SeedMealCategoriesAsync(context);
@@ -35,18 +32,47 @@ public static class DynamicDataSeeder
         await SeedOrdersAsync(context);
     }
 
-    private static async Task SeedUserProfilesAsync(DatabaseContext context)
+    private static async Task SeedDefaultTenantAndRestaurantAsync(DatabaseContext context)
     {
-        var entityType = context.Model.FindEntityType(typeof(EmployeeProfile));
-        if (entityType?.FindProperty(nameof(EmployeeProfile.AppUserId)) is null)
+        var now = DateTime.UtcNow;
+
+        var tenant = await context.Tenants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultTenantId);
+
+        if (tenant == null)
         {
-            Console.WriteLine("Seed skipped: EmployeeProfile.AppUserId not mapped in current context.");
-            return;
+            context.Tenants.Add(new Tenant
+            {
+                Id = SeedConstants.DefaultTenantId,
+                Name = "Demo Tenant",
+                Domain = "demo-tenant",
+                IsActive = true,
+                CreatedAtUtc = now
+            });
         }
 
-        await EnsureEmployeeProfileAsync(context, "string", "Manager", "Admin", "User");
-        await EnsureEmployeeProfileAsync(context, "waiter1", "Waiter", "Waiter", "One");
-        await EnsureEmployeeProfileAsync(context, "kitchen1", "Kitchen", "Kitchen", "One");
+        var restaurant = await context.Restaurants
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultRestaurantId);
+
+        if (restaurant == null)
+        {
+            context.Restaurants.Add(new Restaurant
+            {
+                Id = SeedConstants.DefaultRestaurantId,
+                TenantId = SeedConstants.DefaultTenantId,
+                Name = "Demo Bistro",
+                Domain = "demo-bistro-restaurant",
+                Address = "Ulica 1",
+                City = "Mostar",
+                State = "FBIH",
+                IsActive = true,
+                CreatedAtUtc = now
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedProductCategoriesAsync(DatabaseContext context)
@@ -58,162 +84,20 @@ public static class DynamicDataSeeder
                 {
                     Name = "Racunari (demo)",
                     IsEnabled = true,
+                    TenantId = SeedConstants.DefaultTenantId,
                     CreatedAtUtc = DateTime.UtcNow
                 },
                 new ProductCategoryEntity
                 {
                     Name = "Mobilni uredaji (demo)",
                     IsEnabled = true,
+                    TenantId = SeedConstants.DefaultTenantId,
                     CreatedAtUtc = DateTime.UtcNow
                 }
             );
 
             await context.SaveChangesAsync();
             Console.WriteLine("Dynamic seed: product categories added.");
-        }
-    }
-
-    private static async Task SeedUsersAsync(DatabaseContext context)
-    {
-        var hasher = new PasswordHasher<AppUser>();
-
-        await EnsureLegacyUserAsync(context, hasher, "admin@market.local", "Admin123!", "ADMIN1");
-        await EnsureLegacyUserAsync(context, hasher, "manager@market.local", "User123!", "MANAGER1");
-        await EnsureLegacyUserAsync(context, hasher, "string", "string", "Admin1");
-        await EnsureLegacyUserAsync(context, hasher, "waiter1", "waiter1", "Waiter1");
-        await EnsureLegacyUserAsync(context, hasher, "kitchen1", "kitchen1", "Kitchen1");
-        await EnsureLegacyUserAsync(context, hasher, "test", "test123", "TEST1");
-
-        Console.WriteLine("Dynamic seed: demo users added.");
-    }
-
-    private static async Task EnsureLegacyUserAsync(
-        DatabaseContext context,
-        PasswordHasher<AppUser> hasher,
-        string email,
-        string plainPassword,
-        string displayName)
-    {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        var existing = await context.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);
-
-        if (existing == null)
-        {
-            var created = new AppUser
-            {
-                Email = email,
-                DisplayName = displayName,
-                PasswordHash = hasher.HashPassword(null!, plainPassword),
-                IsEnabled = true
-            };
-
-            context.Users.Add(created);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        var changed = false;
-
-        if (!string.Equals(existing.DisplayName, displayName, StringComparison.Ordinal))
-        {
-            existing.DisplayName = displayName;
-            changed = true;
-        }
-
-        if (!existing.IsEnabled)
-        {
-            existing.IsEnabled = true;
-            changed = true;
-        }
-
-        var passwordCheck = hasher.VerifyHashedPassword(existing, existing.PasswordHash, plainPassword);
-        if (passwordCheck == PasswordVerificationResult.Failed)
-        {
-            existing.PasswordHash = hasher.HashPassword(existing, plainPassword);
-            changed = true;
-        }
-
-        if (changed)
-        {
-            await context.SaveChangesAsync();
-        }
-    }
-
-    private static async Task EnsureEmployeeProfileAsync(
-        DatabaseContext context,
-        string email,
-        string position,
-        string firstName,
-        string lastName)
-    {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        var user = await context.Users
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.Email.ToLower() == normalizedEmail);
-
-        if (user == null)
-        {
-            Console.WriteLine($"Seed skipped: no user found for '{email}'.");
-            return;
-        }
-
-        var profile = await context.EmployeeProfiles
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(ep => ep.AppUserId == user.Id);
-
-        if (profile == null)
-        {
-            profile = new EmployeeProfile
-            {
-                AppUserId = user.Id,
-                TenantId = user.TenantId,
-                Position = position,
-                FirstName = firstName,
-                LastName = lastName,
-                IsActive = true
-            };
-
-            context.EmployeeProfiles.Add(profile);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        var changed = false;
-        if (!string.Equals(profile.Position, position, StringComparison.Ordinal))
-        {
-            profile.Position = position;
-            changed = true;
-        }
-
-        if (!string.Equals(profile.FirstName, firstName, StringComparison.Ordinal))
-        {
-            profile.FirstName = firstName;
-            changed = true;
-        }
-
-        if (!string.Equals(profile.LastName, lastName, StringComparison.Ordinal))
-        {
-            profile.LastName = lastName;
-            changed = true;
-        }
-
-        if (!profile.IsActive)
-        {
-            profile.IsActive = true;
-            changed = true;
-        }
-
-        if (profile.TenantId != user.TenantId)
-        {
-            profile.TenantId = user.TenantId;
-            changed = true;
-        }
-
-        if (changed)
-        {
-            await context.SaveChangesAsync();
         }
     }
 
@@ -232,6 +116,7 @@ public static class DynamicDataSeeder
         }
 
         var req = new TenantActivationRequest();
+        req.TenantId = SeedConstants.DefaultTenantId;
         req.EditDraft(
             restaurantName: "Demo Bistro",
             domain: seedDomain,
@@ -261,7 +146,9 @@ public static class DynamicDataSeeder
         {
             Name = "Main Floor",
             BackgroundColor = "#f5f5f5",
-            FloorImageUrl = string.Empty
+            FloorImageUrl = string.Empty,
+            RestaurantId = SeedConstants.DefaultRestaurantId,
+            TenantId = SeedConstants.DefaultTenantId
         };
 
         var tables = new List<DiningTable>

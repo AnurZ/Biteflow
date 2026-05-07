@@ -29,6 +29,7 @@ import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/m
 import {MatMenu, MatMenuTrigger} from '@angular/material/menu';
 import { WaiterModule } from './modules/waiter/waiter-module';
 import { KitchenModule } from './modules/kitchen/kitchen-module';
+import { MyConfig } from './my-config';
 
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
@@ -41,7 +42,7 @@ import { KitchenModule } from './modules/kitchen/kitchen-module';
     ReactiveFormsModule,
     OAuthModule.forRoot({
       resourceServer: {
-        allowedUrls: ['https://localhost:7260/api', 'http://localhost:7260/api'],
+        allowedUrls: MyConfig.oauth_allowed_urls,
         sendAccessToken: true
       }
     }),
