@@ -30,8 +30,9 @@ namespace Market.Domain.Entities.TableReservations
 
         public ReservationStatus Status { get; set; } = ReservationStatus.Pending;
 
-        public bool IsActive => Status == ReservationStatus.Confirmed &&
-                                ReservationEnd is null || ReservationEnd > DateTime.UtcNow;
+        public bool IsActiveAt(DateTime now) =>
+            Status == ReservationStatus.Confirmed &&
+            (ReservationEnd == null || ReservationEnd > now);
 
         public TimeSpan? Duration => ReservationEnd.HasValue
                                      ? ReservationEnd - ReservationStart

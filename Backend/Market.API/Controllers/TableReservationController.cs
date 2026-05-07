@@ -23,6 +23,7 @@ namespace Market.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<ActionResult<int>> CreateReservation([FromBody] CreateTableReservationCommandDto request)
         {
             try
@@ -73,6 +74,7 @@ namespace Market.API.Controllers
         }
 
         [HttpPatch("update-status")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<IActionResult> UpdateStatus([FromBody] UpdateTableReservationStatusDto dto)
         {
             await _mediator.Send(dto);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Market.Domain.Common.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,23 +25,33 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
                 ? (Guid?)null
                 : _tenantContext.RequireRestaurantId();
 
-            var query = _db.TableReservations
+            var reservation = await _db.TableReservations
                 .Include(r => r.DiningTable)
                 .ThenInclude(t => t!.TableLayout)
-                .WhereTenantOwned(_tenantContext);
-
-            if (restaurantId.HasValue)
-            {
-                query = query.Where(r => r.DiningTable != null &&
-                                         r.DiningTable.TableLayout.RestaurantId == restaurantId.Value);
-            }
-
-            var reservation = await query.FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
+                .WhereTenantOwned(_tenantContext)
+                .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
 
             if (reservation == null)
                 throw new KeyNotFoundException($"Reservation with ID {request.Id} not found.");
 
-            reservation.Status = (Domain.Common.Enums.ReservationStatus)request.Status;
+            if (reservation.Status == ReservationStatus.Cancelled)
+                throw new ValidationException("Cancelled reservation cannot be modified.");
+
+            if (reservation.DiningTable?.TableLayout?.RestaurantId != restaurantId)
+                throw new UnauthorizedAccessException();
+
+            var allowedTransitions = new Dictionary<ReservationStatus, ReservationStatus[]>
+            {
+                [ReservationStatus.Pending] = new[] { ReservationStatus.Confirmed, ReservationStatus.Cancelled },
+                [ReservationStatus.Confirmed] = new[] { ReservationStatus.Cancelled },
+                [ReservationStatus.Cancelled] = Array.Empty<ReservationStatus>()
+            };
+
+            if (!allowedTransitions[reservation.Status].Contains(request.Status))
+                throw new ValidationException($"Cannot change status from {reservation.Status} to {request.Status}");
+
+            reservation.Status = request.Status;
+
             await _db.SaveChangesAsync(cancellationToken);
         }
     }
