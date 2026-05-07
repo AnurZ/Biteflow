@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { AdminRoutingModule } from './admin-routing-module';
 import {
   MatTable,
@@ -25,33 +25,58 @@ import { StaffList } from './staff/staff-list/staff-list';
 import { StaffFormDialogComponent } from './staff/staff-form-dialog/staff-form-dialog';
 import {MatDivider} from '@angular/material/divider';
 import {AdminLayout} from './admin-layout';
+import { OrdersChartComponent } from './analytics/admin-dashboard/analyticsdashboard/orders-chart/orders-chart';
+import { AdminDashboard } from './analytics/admin-dashboard/admin-dashboard';
+import { RevenueChart } from './analytics/admin-dashboard/analyticsdashboard/revenue-chart/revenue-chart';
+import {TopSellingChart} from './analytics/admin-dashboard/analyticsdashboard/top-selling-chart/top-selling-chart';
 
 @NgModule({
   declarations: [
     StaffList,
     StaffFormDialogComponent,
+    AdminDashboard,
+    TopSellingChart,
+    RevenueChart,
+    OrdersChartComponent
   ],
   imports: [
     CommonModule,
     ReactiveFormsModule,
     AdminRoutingModule,
+
     MatTable,
-    MatHeaderRow, MatRow,
-    MatColumnDef, MatHeaderCell, MatCell,
-    MatHeaderRowDef, MatRowDef,
-    MatHeaderCellDef, MatCellDef,
+    MatHeaderRow,
+    MatRow,
+    MatColumnDef,
+    MatHeaderCell,
+    MatCell,
+    MatHeaderRowDef,
+    MatRowDef,
+    MatHeaderCellDef,
+    MatCellDef,
+
     MatPaginator,
     MatDialogModule,
-    MatFormField, MatLabel,
+    MatFormField,
+    MatLabel,
     MatInput,
     MatDialogTitle,
-    MatButton, MatIconButton,
-    MatIcon, MatDialogActions, MatDialogContent,
-    MatSelect, MatOption,
+    MatButton,
+    MatIconButton,
+    MatIcon,
+    MatDialogActions,
+    MatDialogContent,
+    MatSelect,
+    MatOption,
     MatCheckbox,
     MatTooltip,
-    MatDatepicker, MatDatepickerToggle,
-    MatNativeDateModule, MatDatepickerInput, MatError, MatDivider,
+    MatDatepicker,
+    MatDatepickerToggle,
+    MatNativeDateModule,
+    MatDatepickerInput,
+    MatError,
+    MatDivider,
+    FormsModule
   ]
 })
 export class AdminModule {}

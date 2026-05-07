@@ -24,7 +24,7 @@
   "dependencies": {
     "@angular/cdk": "^20.2.10",
     "@angular/common": "^20.3.0",
-    "@angular/compiler": "^20.3.0",
+    "@angular/compiler": "^20.3.19",
     "@angular/core": "^20.3.0",
     "@angular/forms": "^20.3.0",
     "@angular/material": "^20.2.10",
@@ -32,6 +32,7 @@
     "@angular/router": "^20.3.0",
     "@microsoft/signalr": "^8.0.0",
     "angular-oauth2-oidc": "^17.0.2",
+    "chart.js": "^4.5.1",
     "jwt-decode": "^4.0.0",
     "ngx-color-picker": "^20.1.1",
     "rxjs": "~7.8.0",
