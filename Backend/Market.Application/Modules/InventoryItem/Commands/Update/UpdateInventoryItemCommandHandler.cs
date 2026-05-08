@@ -13,10 +13,8 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
             var restaurantId = tenantContext.RequireRestaurantId();
 
             var item = await db.InventoryItems
-                .FirstOrDefaultAsync(x =>
-                    x.Id == r.Id &&
-                    x.RestaurantId == restaurantId,
-                    ct);
+                .WhereCurrentRestaurant(tenantContext)
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
 
             if (item is null)
                 throw new KeyNotFoundException("Inventory item not found.");
@@ -28,9 +26,9 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
                 throw new ValidationException("SKU is required.");
 
             var nameExists = await db.InventoryItems
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(x =>
                     x.Id != r.Id &&
-                    x.RestaurantId == restaurantId &&
                     x.Name.ToLower() == r.Name.Trim().ToLower(),
                     ct);
 
@@ -38,9 +36,9 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
                 throw new ValidationException($"An item with the name '{r.Name}' already exists.");
 
             var skuExists = await db.InventoryItems
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(x =>
                     x.Id != r.Id &&
-                    x.RestaurantId == restaurantId &&
                     x.Sku == r.Sku,
                     ct);
 

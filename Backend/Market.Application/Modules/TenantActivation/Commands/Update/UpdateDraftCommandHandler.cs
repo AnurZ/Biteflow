@@ -11,6 +11,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.Update
         public async Task Handle(UpdateDraftCommand r, CancellationToken ct)
         {
             var e = await db.TenantActivationRequests
+                // Activation drafts are pre-tenant records managed outside tenant-scoped requests.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");
@@ -20,6 +21,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.Update
             {
                 var domain = r.Domain.Trim().ToLowerInvariant();
                 var exists = await db.TenantActivationRequests
+                    // Draft domain uniqueness is global across pre-tenant activation records.
                     .IgnoreQueryFilters()
                     .AnyAsync(x => x.Id != r.Id && x.Domain.ToLower() == domain, ct);
                 if (exists) throw new ValidationException("Domain already in use.");

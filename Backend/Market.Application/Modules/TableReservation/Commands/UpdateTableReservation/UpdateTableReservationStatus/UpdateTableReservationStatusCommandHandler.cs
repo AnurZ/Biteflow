@@ -25,9 +25,15 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
 
         public async Task Handle(UpdateTableReservationStatusDto request, CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var reservation = await _db.TableReservations
-                .WhereTenantOwned(_tenantContext)
-                .FirstOrDefaultAsync(r => r.Id == request.Id, cancellationToken);
+                .Include(x => x.DiningTable)
+                .ThenInclude(x => x!.TableLayout)
+                .FirstOrDefaultAsync(r =>
+                    r.Id == request.Id &&
+                    r.DiningTable!.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (reservation == null)
                 throw new KeyNotFoundException($"Reservation with ID {request.Id} not found.");

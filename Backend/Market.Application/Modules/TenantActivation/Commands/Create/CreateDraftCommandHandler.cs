@@ -15,9 +15,11 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
             var domain = r.Domain.Trim().ToLowerInvariant();
 
             var domainProvisioned = await db.Tenants
+                // Activation signup is a system flow that checks domains before tenant context exists.
                 .IgnoreQueryFilters()
                 .AnyAsync(x => x.Domain.ToLower() == domain, ct)
                 || await db.Restaurants
+                    // Activation signup must detect provisioned restaurant domains across tenants.
                     .IgnoreQueryFilters()
                     .AnyAsync(x => x.Domain.ToLower() == domain, ct);
 
@@ -25,6 +27,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.Create
                 throw new MarketConflictException("Domain already in use.");
 
             var requestAlreadySubmitted = await db.TenantActivationRequests
+                // Activation requests are pre-tenant records and must be deduplicated globally.
                 .IgnoreQueryFilters()
                 .AnyAsync(x => x.Domain.ToLower() == domain && x.Status != ActivationStatus.Activated, ct);
 

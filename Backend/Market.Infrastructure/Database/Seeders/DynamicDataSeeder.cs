@@ -37,6 +37,7 @@ public static class DynamicDataSeeder
         var now = DateTime.UtcNow;
 
         var tenant = await context.Tenants
+            // Seeders reconcile system data before a request tenant context exists.
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultTenantId);
 
@@ -53,6 +54,7 @@ public static class DynamicDataSeeder
         }
 
         var restaurant = await context.Restaurants
+            // Seeders reconcile system data before a request tenant context exists.
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == SeedConstants.DefaultRestaurantId);
 
@@ -106,6 +108,7 @@ public static class DynamicDataSeeder
         const string seedDomain = "demo-bistro";
 
         var alreadyExists = await context.TenantActivationRequests
+            // Seeders must detect pre-existing activation requests across tenant scopes.
             .IgnoreQueryFilters()
             .AnyAsync(x => x.Domain == seedDomain);
 
@@ -323,10 +326,10 @@ public static class DynamicDataSeeder
         var now = DateTime.UtcNow;
         var categories = new[]
         {
-            new MealCategory { Name = "Starters", Description = "Small bites", TenantId = SeedConstants.DefaultTenantId, CreatedAtUtc = now },
-            new MealCategory { Name = "Mains", Description = "Hearty dishes", TenantId = SeedConstants.DefaultTenantId, CreatedAtUtc = now },
-            new MealCategory { Name = "Desserts", Description = "Sweet picks", TenantId = SeedConstants.DefaultTenantId, CreatedAtUtc = now },
-            new MealCategory { Name = "Drinks", Description = "Beverages", TenantId = SeedConstants.DefaultTenantId, CreatedAtUtc = now }
+            new MealCategory { Name = "Starters", Description = "Small bites", TenantId = SeedConstants.DefaultTenantId, RestaurantId = SeedConstants.DefaultRestaurantId, CreatedAtUtc = now },
+            new MealCategory { Name = "Mains", Description = "Hearty dishes", TenantId = SeedConstants.DefaultTenantId, RestaurantId = SeedConstants.DefaultRestaurantId, CreatedAtUtc = now },
+            new MealCategory { Name = "Desserts", Description = "Sweet picks", TenantId = SeedConstants.DefaultTenantId, RestaurantId = SeedConstants.DefaultRestaurantId, CreatedAtUtc = now },
+            new MealCategory { Name = "Drinks", Description = "Beverages", TenantId = SeedConstants.DefaultTenantId, RestaurantId = SeedConstants.DefaultRestaurantId, CreatedAtUtc = now }
         };
 
         context.MealCategories.AddRange(categories);
@@ -363,6 +366,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Mains"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -375,6 +379,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Mains"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -387,6 +392,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Mains"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -399,6 +405,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Mains"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -411,6 +418,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Starters"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -423,6 +431,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Starters"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -435,6 +444,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Desserts"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -447,6 +457,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Desserts"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -459,6 +470,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Drinks"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             },
             new()
@@ -471,6 +483,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = Cat("Drinks"),
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = now
             }
         };
@@ -515,6 +528,7 @@ public static class DynamicDataSeeder
                 ImageField = string.Empty,
                 CategoryId = categoryId,
                 TenantId = SeedConstants.DefaultTenantId,
+                RestaurantId = SeedConstants.DefaultRestaurantId,
                 CreatedAtUtc = DateTime.UtcNow
             };
 

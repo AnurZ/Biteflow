@@ -10,12 +10,10 @@ namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
     : IRequestHandler<GetOrdersPerDayQuery, List<GetOrdersPerDayDto>>
     {
         private readonly IAppDbContext _context;
-        private readonly ITenantContext _tenantContext;
 
-        public GetOrdersPerDayHandler(IAppDbContext context, ITenantContext tenantContext)
+        public GetOrdersPerDayHandler(IAppDbContext context)
         {
             _context = context;
-            _tenantContext = tenantContext;
         }
 
         public async Task<List<GetOrdersPerDayDto>> Handle(
@@ -23,8 +21,7 @@ namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
         CancellationToken cancellationToken)
         {
             var query = _context.Orders
-                .AsNoTracking()
-                .Where(o => !o.IsDeleted && o.TenantId == _tenantContext.TenantId);
+                .AsNoTracking();
 
             if (request.From.HasValue)
                 query = query.Where(o => o.CreatedAtUtc >= request.From.Value);

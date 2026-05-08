@@ -17,6 +17,7 @@ namespace Market.Application.Modules.TenantActivation.Queries.GetById
         public async Task<ActivationDraftDto> Handle(GetTenantActivationByIdRequestQuery q, CancellationToken ct)
         {
             var dto = await _db.TenantActivationRequests
+                // Activation request lookup is a system/superadmin operation over pre-tenant records.
                 .IgnoreQueryFilters()
                 .AsNoTracking()
                 .Where(x => x.Id == q.Id)

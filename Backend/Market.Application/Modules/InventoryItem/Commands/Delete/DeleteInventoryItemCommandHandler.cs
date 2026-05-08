@@ -13,7 +13,7 @@ namespace Market.Application.Modules.InventoryItem.Commands.Delete
         public async Task Handle(DeleteInventoryItemCommand r, CancellationToken ct)
         {
             var ie = await db.InventoryItems
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
             if (ie is null)
                 throw new KeyNotFoundException("Inventory item not found.");

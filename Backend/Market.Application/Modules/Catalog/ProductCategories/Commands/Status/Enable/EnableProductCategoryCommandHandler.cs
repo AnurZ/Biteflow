@@ -1,12 +1,11 @@
 ﻿namespace Market.Application.Modules.Catalog.ProductCategories.Commands.Status.Enable;
 
-public sealed class EnableProductCategoryCommandHandler(IAppDbContext ctx, ITenantContext tenantContext)
+public sealed class EnableProductCategoryCommandHandler(IAppDbContext ctx)
     : IRequestHandler<EnableProductCategoryCommand, Unit>
 {
     public async Task<Unit> Handle(EnableProductCategoryCommand request, CancellationToken ct)
     {
         var entity = await ctx.ProductCategories
-            .WhereTenantOwned(tenantContext)
             .FirstOrDefaultAsync(x => x.Id == request.Id, ct);
 
         if (entity is null)

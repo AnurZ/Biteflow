@@ -21,7 +21,7 @@ namespace Market.Application.Modules.MealCategory.Querries.GetMealCategories
         public async Task<List<GetMealCategoriesDto>> Handle(GetMealCategoryQuery request, CancellationToken cancellationToken)
         {
             var categories = await _db.MealCategories
-                .Where(x=> x.RestaurantId == _tenantContext.RestaurantId)
+                .WhereCurrentRestaurant(_tenantContext)
                 .Select(c => new GetMealCategoriesDto
                 {
                     Id = c.Id,

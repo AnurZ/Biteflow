@@ -11,10 +11,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
     {
         public async Task<int> Handle(CreateMealCommand request, CancellationToken cancellationToken)
         {
-            var restaurantId = tenantContext.RestaurantId;
-
-            if (restaurantId == null || restaurantId == Guid.Empty)
-                throw new ValidationException("Restaurant context is missing.");
+            var restaurantId = tenantContext.RequireRestaurantId();
 
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ValidationException("Meal name is required.");
@@ -23,8 +20,8 @@ namespace Market.Application.Modules.Meal.Commands.Create
 
             // 1. Name uniqueness check (per restaurant)
             var nameExists = await db.Meals
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(m =>
-                    m.RestaurantId == restaurantId &&
                     m.Name.ToLower() == normalizedName,
                     cancellationToken);
 
@@ -38,7 +35,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
             if (request.CategoryId.HasValue)
             {
                 var categoryExists = await db.MealCategories
-                    .WhereNullableRestaurantOwned(tenantContext)
+                    .WhereCurrentRestaurant(tenantContext)
                     .AnyAsync(c =>
                         c.Id == request.CategoryId.Value,
                         cancellationToken);
@@ -53,7 +50,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
                 .ToList();
 
             var validIds = (await db.InventoryItems
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .Where(i => ingredientIds.Contains(i.Id))
                 .Select(i => i.Id)
                 .ToListAsync(cancellationToken))
@@ -76,7 +73,7 @@ namespace Market.Application.Modules.Meal.Commands.Create
                 ImageField = request.ImageField?.Trim() ?? string.Empty,
                 StockManaged = request.StockManaged,
                 CategoryId = request.CategoryId,
-                RestaurantId = restaurantId.Value,
+                RestaurantId = restaurantId,
             };
 
             db.Meals.Add(newMeal);

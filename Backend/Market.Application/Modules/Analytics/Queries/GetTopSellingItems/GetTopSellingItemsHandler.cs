@@ -8,14 +8,10 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
         : IRequestHandler<GetTopSellingItemsQuery, List<GetTopSellingItemsDto>>
     {
         private readonly IAppDbContext _context;
-        private readonly ITenantContext _tenantContext;
 
-        public GetTopSellingItemsHandler(
-            IAppDbContext context,
-            ITenantContext tenantContext)
+        public GetTopSellingItemsHandler(IAppDbContext context)
         {
             _context = context;
-            _tenantContext = tenantContext;
         }
 
         public async Task<List<GetTopSellingItemsDto>> Handle(
@@ -25,9 +21,7 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
             var query = _context.OrderItems
               .AsNoTracking()
               .Include(x => x.Meal)
-              .Where(oi => !oi.Order.IsDeleted
-              && oi.Order.Status != OrderStatus.Cancelled
-              && oi.Order.TenantId == _tenantContext.TenantId);
+              .Where(oi => oi.Order.Status != OrderStatus.Cancelled);
 
             if (request.From.HasValue)
                 query = query.Where(x => x.Order.CreatedAtUtc >= request.From.Value);

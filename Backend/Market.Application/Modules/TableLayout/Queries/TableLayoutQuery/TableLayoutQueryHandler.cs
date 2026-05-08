@@ -21,10 +21,8 @@ namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
 
         public async Task<List<TableLayoutDto>> Handle(GetTableLayoutsQuery request, CancellationToken cancellationToken)
         {
-            var tenantId = _tenantContext.RequireTenantId();
-            var restaurantId = _tenantContext.RequireRestaurantId();
             var query = _db.TableLayouts
-                .Where(x => x.TenantId == tenantId && x.RestaurantId == restaurantId)
+                .WhereCurrentRestaurant(_tenantContext)
                 .Include(l => l.Tables)
                 .AsQueryable();
 

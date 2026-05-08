@@ -31,6 +31,7 @@ public sealed class StaffProfileService
             return false;
         }
         var profile = await _db.EmployeeProfiles
+            // Identity repair must find an existing profile even if it is outside the current request tenant.
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id, ct);
 
