@@ -1,8 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { forkJoin } from 'rxjs';
-import { MealCategoryGetEndpoint } from '../../../endpoints/meal-category-crud-endpoint/meal-category-get-endpoint';
-import { MealsService } from '../../meals/meals-service';
-import { MealCategory, MealDto } from '../../meals/meals-model';
+import { Component } from '@angular/core';
 
 interface ShoppingMeal {
   name: string;
@@ -22,91 +18,10 @@ interface ShoppingCategory {
   templateUrl: './home.html',
   styleUrl: './home.css'
 })
-export class Home implements OnInit {
-  private readonly mealsService = inject(MealsService);
-  private readonly categoryEndpoint = inject(MealCategoryGetEndpoint);
-
-  private readonly currency = new Intl.NumberFormat('bs-BA', {
-    style: 'currency',
-    currency: 'BAM',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-
-  loadingShopping = true;
-  isFallback = false;
-  shoppingCategories: ShoppingCategory[] = [];
-
-  ngOnInit(): void {
-    this.loadShopping();
-  }
-
-  private loadShopping(): void {
-    this.loadingShopping = true;
-
-    forkJoin({
-      meals: this.mealsService.getMeals(1, 1000, '', ''),
-      categories: this.categoryEndpoint.handleAsync()
-    }).subscribe({
-      next: ({ meals, categories }) => {
-
-        const mealList = meals?.items ?? [];
-
-        const mapped = this.mapFromApi(mealList, categories);
-
-        if (mapped.length > 0) {
-          this.shoppingCategories = mapped;
-          this.isFallback = false;
-        } else {
-          this.shoppingCategories = this.buildFallback();
-          this.isFallback = true;
-        }
-
-        this.loadingShopping = false;
-      },
-      error: () => {
-        this.shoppingCategories = this.buildFallback();
-        this.isFallback = true;
-        this.loadingShopping = false;
-      }
-    });
-  }
-
-  private mapFromApi(meals: MealDto[] | null | undefined, categories: MealCategory[] | null | undefined): ShoppingCategory[] {
-    if (!meals || meals.length === 0) return [];
-
-    const categoryName = new Map<number, string>();
-    for (const category of categories ?? []) {
-      categoryName.set(category.id, category.name);
-    }
-
-    const preferredMeals = meals.filter(x => x.isAvailable);
-    const source = preferredMeals.length > 0 ? preferredMeals : meals;
-
-    const grouped = new Map<number, MealDto[]>();
-    for (const meal of source) {
-      const key = meal.categoryId ?? -1;
-      if (!grouped.has(key)) grouped.set(key, []);
-      grouped.get(key)!.push(meal);
-    }
-
-    return Array.from(grouped.entries())
-      .sort((a, b) => b[1].length - a[1].length)
-      .slice(0, 6)
-      .map(([categoryId, items]) => {
-        const title = categoryName.get(categoryId) ?? 'Popular picks';
-        return {
-          title,
-          subtitle: `${items.length} item${items.length === 1 ? '' : 's'}`,
-          meals: items.slice(0, 5).map(meal => ({
-            name: meal.name,
-            price: this.currency.format(meal.basePrice ?? 0),
-            badge: meal.isFeatured ? 'Featured' : undefined
-          }))
-        } satisfies ShoppingCategory;
-      })
-      .filter(x => x.meals.length > 0);
-  }
+export class Home {
+  loadingShopping = false;
+  isFallback = true;
+  shoppingCategories: ShoppingCategory[] = this.buildFallback();
 
   private buildFallback(): ShoppingCategory[] {
     return [
