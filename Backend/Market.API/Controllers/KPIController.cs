@@ -1,11 +1,14 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Market.Application.Modules.Analytics.Queries.KPI;
+using Market.Shared.Constants;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Market.API.Controllers.Analytics
 {
     [ApiController]
     [Route("api/analytics")]
+    [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public class AnalyticsController : ControllerBase
     {
         private readonly IMediator _mediator;
