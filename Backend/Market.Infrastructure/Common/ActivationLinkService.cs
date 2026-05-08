@@ -29,6 +29,7 @@ namespace Market.Infrastructure.Common
         public async Task<string> IssueLinkAsync(int requestId, CancellationToken ct)
         {
             var req = await _db.TenantActivationRequests
+                // Activation approval is a system flow over pre-tenant requests.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == requestId, ct)
                 ?? throw new MarketNotFoundException("Request not found");

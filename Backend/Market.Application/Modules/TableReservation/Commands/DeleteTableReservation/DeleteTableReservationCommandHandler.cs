@@ -10,9 +10,15 @@ namespace Market.Application.Modules.TableReservation.Commands.DeleteTableReserv
     {
         public async Task Handle(DeleteTableReservationCommandDto request, CancellationToken cancellationToken)
         {
+            var restaurantId = tenantContext.RequireRestaurantId();
+
             var reservation = await db.TableReservations
-                .WhereTenantOwned(tenantContext)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+                .Include(x => x.DiningTable)
+                .ThenInclude(x => x!.TableLayout)
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.Id &&
+                    x.DiningTable!.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (reservation is null)
                 throw new KeyNotFoundException($"Table reservation with ID {request.Id} not found.");

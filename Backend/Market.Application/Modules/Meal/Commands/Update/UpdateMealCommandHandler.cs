@@ -10,13 +10,10 @@ namespace Market.Application.Modules.Meal.Commands.Update
     {
         public async Task Handle(UpdateMealCommand request, CancellationToken cancellationToken)
         {
-            var restaurantId = tenantContext.RestaurantId;
-
-            if (restaurantId == null || restaurantId == Guid.Empty)
-                throw new ValidationException("Restaurant context is missing.");
+            var restaurantId = tenantContext.RequireRestaurantId();
 
             var meal = await db.Meals
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .Include(m => m.Ingredients)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
@@ -27,10 +24,9 @@ namespace Market.Application.Modules.Meal.Commands.Update
 
             // 1. NAME UNIQUENESS (FIXED + SCOPE SAFE)
             var nameExists = await db.Meals
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(m =>
                     m.Id != request.Id &&
-                    m.RestaurantId == restaurantId &&
                     m.Name.ToLower() == normalizedName,
                     cancellationToken);
 
@@ -44,10 +40,9 @@ namespace Market.Application.Modules.Meal.Commands.Update
             if (request.CategoryId.HasValue)
             {
                 var categoryExists = await db.MealCategories
-                    .WhereNullableRestaurantOwned(tenantContext)
+                    .WhereCurrentRestaurant(tenantContext)
                     .AnyAsync(c =>
-                        c.Id == request.CategoryId.Value &&
-                        c.RestaurantId == restaurantId,
+                        c.Id == request.CategoryId.Value,
                         cancellationToken);
 
                 if (!categoryExists)
@@ -60,8 +55,8 @@ namespace Market.Application.Modules.Meal.Commands.Update
                 .ToList();
 
             var validIds = (await db.InventoryItems
-                .WhereNullableRestaurantOwned(tenantContext)
-                .Where(i => ingredientIds.Contains(i.Id) && i.RestaurantId == restaurantId)
+                .WhereCurrentRestaurant(tenantContext)
+                .Where(i => ingredientIds.Contains(i.Id))
                 .Select(i => i.Id)
                 .ToListAsync(cancellationToken))
                 .ToHashSet();

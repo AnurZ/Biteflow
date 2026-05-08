@@ -196,6 +196,7 @@ public sealed class IdentitySeeder
             : identityUser.TenantId;
 
         var profile = await _db.EmployeeProfiles
+            // Identity seeding repairs demo profiles regardless of the current request tenant.
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.ApplicationUserId == identityUser.Id, ct);
 

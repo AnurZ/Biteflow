@@ -17,10 +17,14 @@ public sealed class PublicTenantResolver(IHttpContextAccessor accessor, IAppDbCo
 
         var context = await db.Restaurants
             .AsNoTracking()
+            // Public domain resolution runs before an authenticated tenant context exists.
             .IgnoreQueryFilters()
             .Where(r => r.IsActive && r.Domain.ToLower() == domain)
             .Join(
-                db.Tenants.AsNoTracking().IgnoreQueryFilters().Where(t => t.IsActive),
+                db.Tenants.AsNoTracking()
+                    // Public domain resolution must see active tenants across all tenant scopes.
+                    .IgnoreQueryFilters()
+                    .Where(t => t.IsActive),
                 r => r.TenantId,
                 t => t.Id,
                 (r, t) => new PublicTenantContext(t.Id, r.Id, r.Domain))
@@ -43,10 +47,14 @@ public sealed class PublicTenantResolver(IHttpContextAccessor accessor, IAppDbCo
 
         var context = await db.Restaurants
             .AsNoTracking()
+            // Explicit public resolution validates tenant/restaurant ids before authentication.
             .IgnoreQueryFilters()
             .Where(r => r.IsActive && r.Id == restaurantId && r.TenantId == tenantId)
             .Join(
-                db.Tenants.AsNoTracking().IgnoreQueryFilters().Where(t => t.IsActive && t.Id == tenantId),
+                db.Tenants.AsNoTracking()
+                    // Explicit public resolution must see active tenants across all tenant scopes.
+                    .IgnoreQueryFilters()
+                    .Where(t => t.IsActive && t.Id == tenantId),
                 r => r.TenantId,
                 t => t.Id,
                 (r, t) => new PublicTenantContext(t.Id, r.Id, r.Domain))

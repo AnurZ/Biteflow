@@ -12,7 +12,7 @@ namespace Market.Application.Modules.Meal.Commands.Delete
         public async Task Handle(DeleteMealCommand request, CancellationToken cancellationToken)
         {
             var meal = await db.Meals
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
             if (meal is null)

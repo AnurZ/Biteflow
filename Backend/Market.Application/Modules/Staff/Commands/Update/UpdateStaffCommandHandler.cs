@@ -28,7 +28,6 @@ namespace Market.Application.Modules.Staff.Commands.Update
         public async Task Handle(UpdateStaffCommand r, CancellationToken ct)
         {
             var e = await db.EmployeeProfiles
-                .WhereTenantOwned(tenantContext)
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct);
             if (e is null) throw new KeyNotFoundException("EmployeeProfile");
 

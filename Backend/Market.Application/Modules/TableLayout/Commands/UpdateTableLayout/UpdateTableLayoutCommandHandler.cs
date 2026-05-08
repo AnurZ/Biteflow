@@ -17,11 +17,8 @@ namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
 
         public async Task Handle(UpdateTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
-            var tenantId = _tenantContext.RequireTenantId();
-            var restaurantId = _tenantContext.RequireRestaurantId();
-
             var layout = await _db.TableLayouts
-                .Where(x => x.TenantId == tenantId && x.RestaurantId == restaurantId)
+                .WhereCurrentRestaurant(_tenantContext)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (layout == null)
@@ -30,9 +27,8 @@ namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
             var normalizedName = request.Name.Trim();
 
             var nameExists = await _db.TableLayouts
+                .WhereCurrentRestaurant(_tenantContext)
                 .AnyAsync(x =>
-                    x.TenantId == tenantId &&
-                    x.RestaurantId == restaurantId &&
                     x.Id != request.Id &&
                     x.Name == normalizedName,
                     cancellationToken);

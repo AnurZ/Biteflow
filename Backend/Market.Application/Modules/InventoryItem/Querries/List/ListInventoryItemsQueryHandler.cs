@@ -20,14 +20,11 @@ public sealed class ListInventoryItemsQueryHandler : IRequestHandler<ListInvento
 
     public async Task<PageResult<ListInventoryItemsDto>> Handle(ListInventoryItemsQuery req, CancellationToken ct)
     {
-        var restaurantId = _tenantContext.RestaurantId;
-
-        if (restaurantId == null || restaurantId == Guid.Empty)
-            throw new ValidationException("Restaurant context is missing.");
+        _tenantContext.RequireRestaurantId();
 
         var q = _db.InventoryItems
             .AsNoTracking()
-            .Where(x => x.RestaurantId == restaurantId)
+            .WhereCurrentRestaurant(_tenantContext)
             .Select(x => new ListInventoryItemsDto
             {
                 Id = x.Id,

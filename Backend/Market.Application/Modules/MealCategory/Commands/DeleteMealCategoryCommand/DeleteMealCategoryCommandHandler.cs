@@ -12,7 +12,7 @@ namespace Market.Application.Modules.MealCategory.Commands.DeleteMealCategoryCom
         public async Task Handle(DeleteMealCategoryCommandDto request, CancellationToken cancellationToken)
         {
             var mealCategory = await db.MealCategories
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
             if (mealCategory is null)

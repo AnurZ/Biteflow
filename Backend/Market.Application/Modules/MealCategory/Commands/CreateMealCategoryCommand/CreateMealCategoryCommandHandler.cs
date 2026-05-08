@@ -9,17 +9,14 @@ namespace Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCom
     {
         public async Task<int> Handle(CreateMealCategoryCommand request, CancellationToken cancellationToken)
         {
-            var restaurantId = tenantContext.RestaurantId;
-
-            if (restaurantId == null || restaurantId == Guid.Empty)
-                throw new ValidationException("Restaurant context is missing.");
+            var restaurantId = tenantContext.RequireRestaurantId();
 
             if (string.IsNullOrWhiteSpace(request.Name))
                 throw new ValidationException("MealCategory name is required.");
 
             var nameExists = await db.MealCategories
-                 .AnyAsync(m => m.Name.ToLower() == request.Name.Trim().ToLower()
-                 && m.RestaurantId == restaurantId, cancellationToken);
+                .WhereCurrentRestaurant(tenantContext)
+                .AnyAsync(m => m.Name.ToLower() == request.Name.Trim().ToLower(), cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A category with the name '{request.Name.Trim()}' already exists.");
@@ -29,7 +26,7 @@ namespace Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCom
             {
                 Name = request.Name,
                 Description = request.Description,
-                RestaurantId = restaurantId.Value,
+                RestaurantId = restaurantId,
             };
 
             db.MealCategories.Add(entity);

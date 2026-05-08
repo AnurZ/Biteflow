@@ -23,14 +23,12 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
             var tenantId = _tenantContext.RequireTenantId();
-            var restaurantId = _tenantContext.RequireRestaurantId();
 
             // 1. Validate layout belongs to the current restaurant
             var layoutExists = await _db.TableLayouts
+                .WhereCurrentRestaurant(_tenantContext)
                 .AnyAsync(l =>
-                    l.Id == request.TableLayoutId &&
-                    l.TenantId == tenantId &&
-                    l.RestaurantId == restaurantId,
+                    l.Id == request.TableLayoutId,
                     cancellationToken);
 
             if (!layoutExists)
@@ -40,9 +38,7 @@ namespace Market.Application.Modules.DiningTable.Commands.CreateDiningTable
             var exists = await _db.DiningTables
                 .AnyAsync(t =>
                     t.TableLayoutId == request.TableLayoutId &&
-                    t.Number == request.Number &&
-                    t.TableLayout.TenantId == tenantId &&
-                    !t.IsDeleted,
+                    t.Number == request.Number,
                     cancellationToken);
 
             if (exists)

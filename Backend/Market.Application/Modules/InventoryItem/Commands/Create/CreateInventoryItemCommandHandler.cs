@@ -19,8 +19,8 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
                 throw new ValidationException("SKU is required.");
 
             var skuExists = await db.InventoryItems
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(i =>
-                    i.RestaurantId == restaurantId &&
                     i.Sku == r.Sku,
                     ct);
 
@@ -28,8 +28,8 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
                 throw new ValidationException($"SKU '{r.Sku}' already exists in this restaurant.");
 
             var nameExists = await db.InventoryItems
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(i =>
-                    i.RestaurantId == restaurantId &&
                     i.Name.ToLower() == r.Name.Trim().ToLower(),
                     ct);
 

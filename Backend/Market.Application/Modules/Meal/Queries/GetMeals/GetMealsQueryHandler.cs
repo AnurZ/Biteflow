@@ -11,16 +11,11 @@ namespace Market.Application.Modules.Meal.Queries.GetList
     {
         public async Task<PageResult<MealDto>> Handle(GetMealsQuery request, CancellationToken cancellationToken)
         {
-            var restaurantId = tenantContext.RestaurantId;
-
-            if (restaurantId == null || restaurantId == Guid.Empty)
-                throw new ValidationException("Restaurant context is missing.");
-
-
+            var restaurantId = tenantContext.RequireRestaurantId();
 
             var q = db.Meals
                 .AsNoTracking()
-                .Where(x => x.RestaurantId == restaurantId)
+                .WhereCurrentRestaurant(tenantContext)
                 .Select(m => new MealDto
                 {
                     Id = m.Id,
@@ -33,7 +28,7 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                     StockManaged = m.StockManaged,
                     IngredientsCount = m.Ingredients.Count,
                     CategoryId = m.CategoryId,
-                    RestaurantId = restaurantId.Value
+                    RestaurantId = restaurantId
                 });
 
             // -------------------

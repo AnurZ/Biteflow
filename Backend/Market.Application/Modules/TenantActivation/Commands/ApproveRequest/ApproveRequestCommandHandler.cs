@@ -16,6 +16,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.ApproveRequest
         public async Task<string> Handle(ApproveRequestCommand r, CancellationToken ct)
         {
             var e = await db.TenantActivationRequests
+                // Approval is a system/superadmin flow over pre-tenant activation requests.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");
