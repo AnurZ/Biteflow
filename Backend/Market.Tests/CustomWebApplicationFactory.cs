@@ -9,7 +9,7 @@ namespace Market.Tests;
 
 public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<Program>
 {
-    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CachedTokens = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> CachedTokens = new();
     private static readonly System.Collections.Concurrent.ConcurrentQueue<SentEmail> SentEmails = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
