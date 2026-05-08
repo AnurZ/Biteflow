@@ -15,12 +15,13 @@ namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
         public async Task<int> Handle(CreateTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
+            var restaurantId = _tenantContext.RequireRestaurantId();
             var name = request.Name.Trim();
 
-            // Tenant-scoped uniqueness
             var nameExists = await _db.TableLayouts
                 .AnyAsync(x =>
                     x.TenantId == tenantId &&
+                    x.RestaurantId == restaurantId &&
                     x.Name.ToLower() == name.ToLower(),
                     cancellationToken);
 
@@ -32,7 +33,8 @@ namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
                 Name = name,
                 BackgroundColor = request.BackgroundColor,
                 FloorImageUrl = request.FloorImageUrl,
-                TenantId = tenantId
+                TenantId = tenantId,
+                RestaurantId = restaurantId
             };
 
             _db.TableLayouts.Add(layout);

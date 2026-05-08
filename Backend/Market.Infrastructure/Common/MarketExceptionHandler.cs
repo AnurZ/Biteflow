@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using DataAnnotationsValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace Market.Infrastructure.Common;
 
@@ -41,9 +42,10 @@ public sealed class MarketExceptionHandler(
         ctx.Response.StatusCode = ex switch
         {
             MarketNotFoundException or KeyNotFoundException => StatusCodes.Status404NotFound,
-            MarketConflictException or MarketBusinessRuleException => StatusCodes.Status409Conflict,
+            MarketConflictException or MarketBusinessRuleException or InvalidOperationException => StatusCodes.Status409Conflict,
             TenantContextMissingException => StatusCodes.Status403Forbidden,
-            ValidationException => StatusCodes.Status400BadRequest,
+            ValidationException or DataAnnotationsValidationException or ArgumentException => StatusCodes.Status400BadRequest,
+            UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
             _ => StatusCodes.Status500InternalServerError
         };
 
@@ -64,9 +66,21 @@ public sealed class MarketExceptionHandler(
             case KeyNotFoundException:
             case MarketConflictException:
             case MarketBusinessRuleException:
+            case InvalidOperationException:
             case TenantContextMissingException:
                 code = "entity.error";
                 message = ex.Message;
+                break;
+
+            case ArgumentException:
+            case DataAnnotationsValidationException:
+                code = "validation.error";
+                message = ex.Message;
+                break;
+
+            case UnauthorizedAccessException:
+                code = "unauthorized.error";
+                message = "Activation link is invalid or expired.";
                 break;
 
             case ValidationException vex:

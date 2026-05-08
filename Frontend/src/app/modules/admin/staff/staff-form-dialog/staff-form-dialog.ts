@@ -23,13 +23,31 @@ export class StaffFormDialogComponent implements OnInit {
   private getByIdEp = inject(StaffGetByIdEndpoint);
 
 
-  generateRandomPassword():string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let password = '';
-    for (let i = 0; i < 10; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+  generateRandomPassword(): string {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const digits = '0123456789';
+    const special = '!@#$%^&*';
+    const allChars = uppercase + lowercase + digits + special;
+
+    const passwordChars = [
+      this.randomChar(uppercase),
+      this.randomChar(lowercase),
+      this.randomChar(digits),
+      this.randomChar(special)
+    ];
+
+    while (passwordChars.length < 10) {
+      passwordChars.push(this.randomChar(allChars));
     }
-    return password;
+
+    return passwordChars
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  }
+
+  private randomChar(chars: string): string {
+    return chars.charAt(Math.floor(Math.random() * chars.length));
   }
 
   constructor(

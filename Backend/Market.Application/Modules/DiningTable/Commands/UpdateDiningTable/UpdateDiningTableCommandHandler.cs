@@ -29,10 +29,16 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            // Validate layout belongs to tenant
+            var tenantId = _tenantContext.RequireTenantId();
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
+            // Validate layout belongs to the current restaurant
             var layoutExists = await _db.TableLayouts
-                .WhereTenantOwned(_tenantContext)
-                .AnyAsync(l => l.Id == request.TableLayoutId, cancellationToken);
+                .AnyAsync(l =>
+                    l.Id == request.TableLayoutId &&
+                    l.TenantId == tenantId &&
+                    l.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (!layoutExists)
                 throw new KeyNotFoundException($"TableLayout with ID {request.TableLayoutId} not found.");

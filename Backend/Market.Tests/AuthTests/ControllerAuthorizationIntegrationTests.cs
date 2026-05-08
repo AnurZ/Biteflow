@@ -398,7 +398,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
             PhoneNumber = "123"
         });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
@@ -872,6 +872,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var foreignLayout = new TableLayout
         {
             TenantId = tenantId,
+            RestaurantId = otherRestaurantId,
             Name = $"Tracked Foreign Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1118,6 +1119,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
+            RestaurantId = restaurantId,
             Name = $"Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1172,6 +1174,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
+            RestaurantId = restaurantId,
             Name = $"Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1203,6 +1206,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = SeedConstants.DefaultTenantId,
+            RestaurantId = restaurantId,
             Name = $"Same Tenant Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty
@@ -1244,6 +1248,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         var layout = new TableLayout
         {
             TenantId = tenantId,
+            RestaurantId = restaurantId,
             Name = $"Mutable Other Layout {Guid.NewGuid():N}",
             BackgroundColor = "#ffffff",
             FloorImageUrl = string.Empty

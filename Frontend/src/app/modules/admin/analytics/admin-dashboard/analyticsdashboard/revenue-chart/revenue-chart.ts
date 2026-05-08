@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy } from '@angular/core';
 import { Chart } from 'chart.js/auto';
 import { ChartService, RevenuePerDayDto } from '../../../services/chart-services';
 
@@ -7,7 +7,7 @@ import { ChartService, RevenuePerDayDto } from '../../../services/chart-services
   selector: 'app-revenue-chart',
   templateUrl: './revenue-chart.html'
 })
-export class RevenueChart implements OnChanges {
+export class RevenueChart implements OnChanges, OnDestroy {
 
   @Input() from!: Date;
   @Input() to!: Date;
@@ -20,6 +20,11 @@ export class RevenueChart implements OnChanges {
     if (this.from && this.to) {
       this.load();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+    this.chart = null;
   }
 
   load() {
