@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { MyConfig } from '../../../../my-config';
 
 export interface OrdersPerDayDto {
   date: string;
@@ -22,7 +23,7 @@ export interface RevenuePerDayDto {
 })
 export class ChartService {
 
-  private baseUrl = 'https://localhost:7260/api/analytics';
+  private baseUrl = `${MyConfig.api_address}/analytics`;
 
   constructor(private http: HttpClient) {}
 

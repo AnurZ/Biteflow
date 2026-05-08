@@ -1,9 +1,9 @@
 export const environment = {
   production: true,
-  apiAddress: 'https://localhost:7260/api',
-  apiBase: 'https://localhost:7260',
-  ordersHub: 'https://localhost:7260/hubs/orders',
-  oauthAllowedUrls: ['https://localhost:7260/api'],
+  apiAddress: 'https://staging-api.biteflow.example/api',
+  apiBase: 'https://staging-api.biteflow.example',
+  ordersHub: 'https://staging-api.biteflow.example/hubs/orders',
+  oauthAllowedUrls: ['https://staging-api.biteflow.example/api'],
   oauthShowDebugInformation: false,
   oauthRequireHttps: true
 };
