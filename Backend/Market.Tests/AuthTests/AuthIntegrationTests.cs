@@ -4,6 +4,7 @@ using System.Text.Json;
 using Market.Domain.Entities.IdentityV2;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Market.Tests.AuthTests;
@@ -29,6 +30,35 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
         }));
 
         Assert.Contains(response.StatusCode, new[] { HttpStatusCode.NotFound, HttpStatusCode.Unauthorized });
+    }
+
+    [Fact]
+    public async Task DebugAuthTestEndpoint_ShouldNotExist()
+    {
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var response = await client.PostAsync("api/auth/test", content: null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public void MappedRoutes_ShouldNotExposeDebugStyleRouteSegments()
+    {
+        _factory.CreateClient();
+        var endpointDataSources = _factory.Services.GetServices<EndpointDataSource>();
+        var forbiddenRoutes = endpointDataSources
+            .SelectMany(x => x.Endpoints)
+            .OfType<RouteEndpoint>()
+            .Select(x => x.RoutePattern.RawText)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !IsAllowedHealthCheckRoute(x!))
+            .Where(x => ContainsForbiddenDebugSegment(x!))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Assert.Empty(forbiddenRoutes);
     }
 
     [Fact]
@@ -97,6 +127,27 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
         Assert.True(result.Succeeded, string.Join(", ", result.Errors.Select(x => x.Description)));
 
         return user;
+    }
+
+    private static bool ContainsForbiddenDebugSegment(string route)
+    {
+        var segments = route.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        return segments.Any(x =>
+            string.Equals(x, "test", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(x, "debug", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(x, "ping", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsAllowedHealthCheckRoute(string route)
+    {
+        var segments = route.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        return segments.Length > 0 &&
+            (string.Equals(segments[0], "health", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(segments[0], "healthz", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(segments[0], "live", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(segments[0], "ready", StringComparison.OrdinalIgnoreCase));
     }
 
     private static async Task<TokenErrorResponse> RequestPasswordTokenAsync(HttpClient client, string username, string password)
