@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Market.Domain.Entities.TableLayout;
 
-namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
+namespace Market.Application.Modules.TableLayout.Queries.GetTableLayouts
 {
     public sealed class GetTableLayoutsQueryHandler : IRequestHandler<GetTableLayoutsQuery, List<TableLayoutDto>>
     {

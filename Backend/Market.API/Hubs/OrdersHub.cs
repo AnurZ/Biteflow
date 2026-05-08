@@ -17,7 +17,7 @@ namespace Market.API.Hubs
 
     public static class OrdersHubGroups
     {
-        public static string User(string userId, string? tenantId)
+        public static string User(string userId, Guid? tenantId)
         {
             var trimmed = (userId ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
@@ -33,23 +33,7 @@ namespace Market.API.Hubs
             return $"tenant:{tenantId}:user:{trimmed}";
         }
 
-        public static string User(string userId, Guid tenantId)
-        {
-            var trimmed = (userId ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(trimmed))
-            {
-                return string.Empty;
-            }
-
-            if (!IsTenantScoped(tenantId))
-            {
-                return $"user:{trimmed}";
-            }
-
-            return $"tenant:{tenantId}:user:{trimmed}";
-        }
-
-        public static string Role(string role, string? tenantId)
+        public static string Role(string role, Guid? tenantId)
         {
             var trimmed = (role ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(trimmed))
@@ -65,45 +49,19 @@ namespace Market.API.Hubs
             return $"tenant:{tenantId}:role:{trimmed}";
         }
 
-        public static string Role(string role, Guid tenantId)
+        public static string Kitchen(Guid? tenantId)
         {
-            var trimmed = (role ?? string.Empty).Trim();
-            if (string.IsNullOrWhiteSpace(trimmed))
-            {
-                return string.Empty;
-            }
-
             if (!IsTenantScoped(tenantId))
             {
-                return $"role:{trimmed}";
-            }
-
-            return $"tenant:{tenantId}:role:{trimmed}";
-        }
-
-        public static string Kitchen(string? tenantId)
-        {
-            if (string.IsNullOrWhiteSpace(tenantId))
-            {
-                return "kitchen";
-            }
-
-            if (Guid.TryParse(tenantId, out var parsed) && parsed == Guid.Empty)
-            {
                 return "kitchen";
             }
 
             return $"tenant:{tenantId}:kitchen";
         }
 
-        public static string Waiter(string? tenantId)
+        public static string Waiter(Guid? tenantId)
         {
-            if (string.IsNullOrWhiteSpace(tenantId))
-            {
-                return "waiter";
-            }
-
-            if (Guid.TryParse(tenantId, out var parsed) && parsed == Guid.Empty)
+            if (!IsTenantScoped(tenantId))
             {
                 return "waiter";
             }
@@ -111,40 +69,9 @@ namespace Market.API.Hubs
             return $"tenant:{tenantId}:waiter";
         }
 
-        public static string Kitchen(Guid tenantId)
+        private static bool IsTenantScoped(Guid? tenantId)
         {
-            if (tenantId == Guid.Empty)
-            {
-                return "kitchen";
-            }
-
-            return $"tenant:{tenantId}:kitchen";
-        }
-
-        public static string Waiter(Guid tenantId)
-        {
-            if (tenantId == Guid.Empty)
-            {
-                return "waiter";
-            }
-
-            return $"tenant:{tenantId}:waiter";
-        }
-
-        private static bool IsTenantScoped(string? tenantId)
-        {
-            if (string.IsNullOrWhiteSpace(tenantId))
-            {
-                return false;
-            }
-
-            return Guid.TryParse(tenantId, out var parsed) &&
-                parsed != Guid.Empty;
-        }
-
-        private static bool IsTenantScoped(Guid tenantId)
-        {
-            return tenantId != Guid.Empty;
+            return tenantId.HasValue && tenantId.Value != Guid.Empty;
         }
     }
 
@@ -160,7 +87,7 @@ namespace Market.API.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var tenantId = Context.User?.FindFirst("tenant_id")?.Value;
+            var tenantId = ResolveTenantId(Context.User);
             var groups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (Context.User != null)
@@ -214,6 +141,17 @@ namespace Market.API.Hubs
             return user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
                 user.FindFirst("sub")?.Value ??
                 user.FindFirst("subject")?.Value;
+        }
+
+        private static Guid? ResolveTenantId(ClaimsPrincipal? user)
+        {
+            var tenantId = user?.FindFirst("tenant_id")?.Value;
+            if (!Guid.TryParse(tenantId, out var parsed) || parsed == Guid.Empty)
+            {
+                return null;
+            }
+
+            return parsed;
         }
 
         private static IEnumerable<string> ResolveRoleClaims(ClaimsPrincipal? user)

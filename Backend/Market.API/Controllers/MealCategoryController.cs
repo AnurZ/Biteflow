@@ -1,8 +1,8 @@
-﻿using Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCommand;
+using Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCommand;
 using Market.Application.Modules.MealCategory.Commands.DeleteMealCategoryCommand;
 using Market.Application.Modules.MealCategory.Commands.UpdateMealCategoryCommand;
-using Market.Application.Modules.MealCategory.Querries.GetByIdMealCategory;
-using Market.Application.Modules.MealCategory.Querries.GetMealCategories;
+using Market.Application.Modules.MealCategory.Queries.GetByIdMealCategory;
+using Market.Application.Modules.MealCategory.Queries.GetMealCategories;
 using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

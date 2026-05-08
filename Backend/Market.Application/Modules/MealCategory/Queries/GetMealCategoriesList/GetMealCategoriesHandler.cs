@@ -1,11 +1,11 @@
-﻿using Market.Application.Modules.Meal.Queries.GetList;
+using Market.Application.Modules.Meal.Queries.GetList;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.MealCategory.Querries.GetMealCategories
+namespace Market.Application.Modules.MealCategory.Queries.GetMealCategories
 {
     public sealed class GetMealCategoriesHandler : IRequestHandler<GetMealCategoryQuery, List<GetMealCategoriesDto>>
     {

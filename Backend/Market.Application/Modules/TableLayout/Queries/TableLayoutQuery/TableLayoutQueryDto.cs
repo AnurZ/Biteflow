@@ -1,8 +1,8 @@
-﻿using Market.Domain.Common.Enums;
+using Market.Domain.Common.Enums;
 using MediatR;
 using System.Collections.Generic;
 
-namespace Market.Application.Modules.TableLayout.Querries.GetTableLayouts
+namespace Market.Application.Modules.TableLayout.Queries.GetTableLayouts
 {
     public sealed class GetTableLayoutsQuery : IRequest<List<TableLayoutDto>>
     {

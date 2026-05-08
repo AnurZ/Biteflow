@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Market.Application.Modules.InventoryItem.Querries.List;
+using Market.Application.Modules.InventoryItem.Queries.List;
 using MediatR;
 
 namespace Market.Application.Modules.InventoryItem.Queries.List

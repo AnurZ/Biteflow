@@ -1,14 +1,14 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Market.Application.Modules.DiningTable.Commands.CreateDiningTable;
 using Market.Application.Modules.DiningTable.Commands.UpdateDiningTable;
-using Market.Application.Modules.DiningTable.Querries.GetDiningTableList;
+using Market.Application.Modules.DiningTable.Queries.GetDiningTableList;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Market.Domain.Common.Enums;
 using Market.Application.Modules.DiningTable.Commands.DeleteDiningTablle;
-using Market.Application.Modules.DiningTable.Querries.GetDiningTableTLIDbyTableID;
-using Market.Application.Modules.DiningTable.Querries.GetDiningTableStatus;
+using Market.Application.Modules.DiningTable.Queries.GetDiningTableTLIDbyTableID;
+using Market.Application.Modules.DiningTable.Queries.GetDiningTableStatus;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
 
