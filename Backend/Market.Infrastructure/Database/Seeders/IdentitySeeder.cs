@@ -122,7 +122,9 @@ public sealed class IdentitySeeder
             }
         }
 
-        await EnsureDemoUserAsync(
+        var employeeProfileChanged = false;
+
+        employeeProfileChanged |= await EnsureDemoUserAsync(
             username: "string",
             password: "StringUser1!",
             primaryRole: RoleNames.Admin,
@@ -131,7 +133,7 @@ public sealed class IdentitySeeder
             lastName: "User",
             ct: ct);
 
-        await EnsureDemoUserAsync(
+        employeeProfileChanged |= await EnsureDemoUserAsync(
             username: "waiter1",
             password: "WaiterUser1!",
             primaryRole: RoleNames.Waiter,
@@ -140,7 +142,7 @@ public sealed class IdentitySeeder
             lastName: "One",
             ct: ct);
 
-        await EnsureDemoUserAsync(
+        employeeProfileChanged |= await EnsureDemoUserAsync(
             username: "kitchen1",
             password: "KitchenUser1!",
             primaryRole: RoleNames.Kitchen,
@@ -148,9 +150,14 @@ public sealed class IdentitySeeder
             firstName: "Kitchen",
             lastName: "One",
             ct: ct);
+
+        if (employeeProfileChanged)
+        {
+            await _db.SaveChangesAsync(ct);
+        }
     }
 
-    private async Task EnsureDemoUserAsync(
+    private async Task<bool> EnsureDemoUserAsync(
         string username,
         string password,
         string primaryRole,
@@ -161,7 +168,7 @@ public sealed class IdentitySeeder
     {
         var identityUser = await EnsureDemoIdentityUserAsync(username, password);
         if (identityUser == null)
-            return;
+            return false;
 
         await EnsurePasswordAsync(identityUser, password, ct);
         await EnsureRoleAsync(identityUser, primaryRole, ct);
@@ -181,10 +188,10 @@ public sealed class IdentitySeeder
             await RemoveRoleIfPresentAsync(identityUser, role, ct);
         }
 
-        await EnsureEmployeeProfileAsync(identityUser, position, firstName, lastName, ct);
+        return await EnsureEmployeeProfileAsync(identityUser, position, firstName, lastName, ct);
     }
 
-    private async Task EnsureEmployeeProfileAsync(
+    private async Task<bool> EnsureEmployeeProfileAsync(
         ApplicationUser identityUser,
         string position,
         string firstName,
@@ -213,8 +220,7 @@ public sealed class IdentitySeeder
             };
 
             _db.EmployeeProfiles.Add(profile);
-            await _db.SaveChangesAsync(ct);
-            return;
+            return true;
         }
 
         var changed = false;
@@ -254,10 +260,7 @@ public sealed class IdentitySeeder
             changed = true;
         }
 
-        if (changed)
-        {
-            await _db.SaveChangesAsync(ct);
-        }
+        return changed;
     }
 
     // Dedicated demo platform owner account.
