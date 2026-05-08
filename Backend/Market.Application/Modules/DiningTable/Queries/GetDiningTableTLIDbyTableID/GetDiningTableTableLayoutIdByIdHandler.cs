@@ -1,7 +1,7 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableTLIDbyTableID
+namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableTLIDbyTableID
 {
     public class GetDiningTableTableLayoutIdByIdHandler
         : IRequestHandler<GetDiningTableTableLayoutIdByIdQuery, GetDiningTableTableLayoutIdByIdDto>

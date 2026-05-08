@@ -2,10 +2,6 @@
 using Market.Application.Modules.Meal.Commands.Create;
 using Market.Application.Modules.Meal.Commands.Delete;
 using Market.Application.Modules.Meal.Commands.Update;
-
-//using Market.Application.Modules.Meal.Commands.Delete;
-//using Market.Application.Modules.Meal.Commands.Update;
-//using Market.Application.Modules.Meal.Queries.GetById;
 using Market.Application.Modules.Meal.Queries.GetList;
 using Market.Application.Modules.Meal.Queries.GetMealIngredients;
 using Market.Application.Modules.Meal.Queries.GetMealsByName;
@@ -52,7 +48,7 @@ public class MealController(ISender sender) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id }, new { id });
     }
 
-    //// PUT: api/meal/{id}
+    // PUT: api/meal/{id}
     [HttpPut("{id:int}")]
     [Authorize(Policy = PolicyNames.RestaurantAdmin)]
     public async Task<IActionResult> Update(int id, UpdateMealCommand cmd, CancellationToken ct)

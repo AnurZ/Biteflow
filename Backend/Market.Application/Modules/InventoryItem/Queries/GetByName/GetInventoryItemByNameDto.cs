@@ -1,13 +1,13 @@
-﻿using Market.Domain.Common.Enums;
+using Market.Domain.Common.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.InventoryItem.Querries.List
+namespace Market.Application.Modules.InventoryItem.Queries.GetByName
 {
-    public sealed class ListInventoryItemsDto
+    public sealed class GetInventoryItemByNameDto
     {
         public int Id { get; init; }
         public Guid? RestaurantId { get; init; }

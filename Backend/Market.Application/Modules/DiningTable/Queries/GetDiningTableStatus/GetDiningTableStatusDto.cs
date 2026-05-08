@@ -1,11 +1,11 @@
-﻿using Market.Domain.Common.Enums;
+using Market.Domain.Common.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableStatus
+namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableStatus
 {
     public sealed class GetDiningTablesStatusQuery
     : IRequest<List<GetDiningTableStatusDto>>

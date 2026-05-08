@@ -6,7 +6,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
 using Market.Application.Abstractions;
 using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
-using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
+using Market.Application.Modules.TableLayout.Queries.GetTableLayouts;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Catalog;
 using Market.Domain.Entities.DiningTables;

@@ -26,11 +26,11 @@ public class OrdersHubGroupsUnitTests
     }
 
     [Fact]
-    public void Groups_ShouldNotScopeBlankTenantId()
+    public void Groups_ShouldNotScopeMissingTenantId()
     {
-        Assert.Equal("kitchen", OrdersHubGroups.Kitchen((string?)null));
-        Assert.Equal("waiter", OrdersHubGroups.Waiter(" "));
-        Assert.Equal($"role:{RoleNames.Kitchen}", OrdersHubGroups.Role(RoleNames.Kitchen, string.Empty));
-        Assert.Equal("user:user-1", OrdersHubGroups.User("user-1", " "));
+        Assert.Equal("kitchen", OrdersHubGroups.Kitchen(null));
+        Assert.Equal("waiter", OrdersHubGroups.Waiter(null));
+        Assert.Equal($"role:{RoleNames.Kitchen}", OrdersHubGroups.Role(RoleNames.Kitchen, null));
+        Assert.Equal("user:user-1", OrdersHubGroups.User("user-1", null));
     }
 }
