@@ -139,6 +139,35 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Fact]
+    public async Task RestaurantAdmin_ShouldRejectDuplicateStaffEmailWithoutAddingRoleOrProfile()
+    {
+        var email = $"restaurant-staff-duplicate-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var createWaiterResponse = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, RoleNames.Waiter));
+        createWaiterResponse.EnsureSuccessStatusCode();
+
+        var createKitchenResponse = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, RoleNames.Kitchen));
+
+        Assert.Equal(HttpStatusCode.BadRequest, createKitchenResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var user = await userManager.FindByEmailAsync(email);
+
+        Assert.NotNull(user);
+        Assert.True(await userManager.IsInRoleAsync(user!, RoleNames.Waiter));
+        Assert.False(await userManager.IsInRoleAsync(user!, RoleNames.Kitchen));
+
+        var profileCount = await db.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .CountAsync(x => x.ApplicationUserId == user.Id);
+
+        Assert.Equal(1, profileCount);
+    }
+
+    [Fact]
     public async Task RestaurantAdmin_ShouldUpdateRoleAndDerivedPosition()
     {
         var email = $"restaurant-staff-update-role-{Guid.NewGuid():N}@example.test";

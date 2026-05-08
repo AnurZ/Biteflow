@@ -111,30 +111,29 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     {
         var normalizedEmail = email.Trim();
         var user = await _userManager.FindByEmailAsync(normalizedEmail);
-        var createdUser = false;
 
-        if (user == null)
+        if (user is not null)
         {
-            user = new ApplicationUser
-            {
-                UserName = normalizedEmail,
-                Email = normalizedEmail,
-                DisplayName = displayName,
-                TenantId = tenantId,
-                RestaurantId = restaurantId,
-                EmailConfirmed = false,
-                IsEnabled = true
-            };
+            throw new ValidationException("Email is already assigned to an existing user.");
+        }
 
-            var create = await _userManager.CreateAsync(user, plainPassword);
-            if (!create.Succeeded)
-            {
-                var message = string.Join(", ", create.Errors.Select(e => e.Description));
-                _logger.LogWarning("Failed to create identity user {Email}: {Message}", normalizedEmail, message);
-                throw new ValidationException($"Failed to create identity user: {message}");
-            }
+        user = new ApplicationUser
+        {
+            UserName = normalizedEmail,
+            Email = normalizedEmail,
+            DisplayName = displayName,
+            TenantId = tenantId,
+            RestaurantId = restaurantId,
+            EmailConfirmed = false,
+            IsEnabled = true
+        };
 
-            createdUser = true;
+        var create = await _userManager.CreateAsync(user, plainPassword);
+        if (!create.Succeeded)
+        {
+            var message = string.Join(", ", create.Errors.Select(e => e.Description));
+            _logger.LogWarning("Failed to create identity user {Email}: {Message}", normalizedEmail, message);
+            throw new ValidationException($"Failed to create identity user: {message}");
         }
 
         var addedRole = false;
@@ -150,7 +149,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
             addedRole = true;
         }
 
-        return new IdentityUserProvisionResult(user, createdUser, addedRole);
+        return new IdentityUserProvisionResult(user, CreatedUser: true, addedRole);
     }
 
     private async Task CleanupIdentitySideEffectsAsync(IdentityUserProvisionResult result, string role)
