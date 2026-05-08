@@ -20,6 +20,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.RejectRequest
                 throw new ValidationException("Reason is required.");
 
             var e = await db.TenantActivationRequests
+                // Rejection is a system/superadmin flow over pre-tenant activation requests.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");

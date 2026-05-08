@@ -18,11 +18,8 @@ public sealed class TableLayoutGetNameByIdHandler
         TableLayoutGetNameByIdQuery request,
         CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.RequireTenantId();
-        var restaurantId = _tenantContext.RequireRestaurantId();
-
         var layout = await _context.TableLayouts
-            .Where(x => x.TenantId == tenantId && x.RestaurantId == restaurantId)
+            .WhereCurrentRestaurant(_tenantContext)
             .Select(x => new TableLayoutGetNameByIdDto
             {
                 Id = x.Id,

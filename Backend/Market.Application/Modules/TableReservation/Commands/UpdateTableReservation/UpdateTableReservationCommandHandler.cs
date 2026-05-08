@@ -22,9 +22,15 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
 
         public async Task Handle(UpdateTableReservationCommandDto request, CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var reservation = await _db.TableReservations
-                .WhereTenantOwned(_tenantContext)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+                .Include(x => x.DiningTable)
+                .ThenInclude(x => x!.TableLayout)
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.Id &&
+                    x.DiningTable!.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (reservation == null)
                 throw new KeyNotFoundException($"Reservation with ID {request.Id} not found.");
@@ -37,8 +43,11 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
                 throw new ValidationException("Reservation start must be before reservation end.");
 
             var table = await _db.DiningTables
-                .WhereTenantOwned(_tenantContext)
-                .FirstOrDefaultAsync(t => t.Id == request.DiningTableId, cancellationToken);
+                .Include(x => x.TableLayout)
+                .FirstOrDefaultAsync(t =>
+                    t.Id == request.DiningTableId &&
+                    t.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (table == null)
                 throw new KeyNotFoundException($"Dining table with ID {request.DiningTableId} not found.");
@@ -48,7 +57,6 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
 
             // Overlap check (clean version)
             var overlapping = await _db.TableReservations
-                .WhereTenantOwned(_tenantContext)
                 .Where(r =>
                     r.DiningTableId == request.DiningTableId &&
                     r.Id != request.Id &&

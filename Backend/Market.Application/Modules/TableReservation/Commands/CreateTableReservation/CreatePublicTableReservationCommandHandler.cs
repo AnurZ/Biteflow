@@ -19,10 +19,15 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
             if (request.ReservationEnd.HasValue && request.ReservationStart >= request.ReservationEnd)
                 throw new ArgumentException("Reservation start must be before reservation end.");
 
+            // Public reservations are created before an authenticated tenant context exists.
             var table = await db.DiningTables
+                // Public reservation lookup runs before an authenticated tenant context exists.
                 .IgnoreQueryFilters()
+                .Include(t => t.TableLayout)
                 .FirstOrDefaultAsync(
-                    t => t.Id == request.DiningTableId && t.TenantId == publicTenant.TenantId,
+                    t => t.Id == request.DiningTableId &&
+                         t.TenantId == publicTenant.TenantId &&
+                         t.TableLayout.RestaurantId == publicTenant.RestaurantId,
                     cancellationToken);
             if (table == null)
                 throw new InvalidOperationException("Dining table not found.");
@@ -31,6 +36,7 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
                 throw new ArgumentException("Too many guests for this table.");
 
             var overlappingReservation = await db.TableReservations
+                // Public reservations must check tenant rows without an authenticated global filter.
                 .IgnoreQueryFilters()
                 .AnyAsync(r =>
                     r.TenantId == publicTenant.TenantId &&

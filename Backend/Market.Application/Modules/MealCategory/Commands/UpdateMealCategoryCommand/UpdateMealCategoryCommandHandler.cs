@@ -13,14 +13,14 @@ namespace Market.Application.Modules.MealCategory.Commands.UpdateMealCategoryCom
         public async Task Handle(UpdateMealCategoryCommandDto request, CancellationToken cancellationToken)
         {
             var mealCategory = await db.MealCategories
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .FirstOrDefaultAsync(m => m.Id == request.Id, cancellationToken);
 
             if (mealCategory is null)
                 throw new KeyNotFoundException($"Meal category with ID {request.Id} not found.");
 
             var nameExists = await db.MealCategories
-                .WhereNullableRestaurantOwned(tenantContext)
+                .WhereCurrentRestaurant(tenantContext)
                 .AnyAsync(m => m.Id != request.Id && m.Name == request.Name, cancellationToken);
 
             if (nameExists)

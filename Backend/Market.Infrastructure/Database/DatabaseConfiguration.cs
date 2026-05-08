@@ -65,37 +65,43 @@ public partial class DatabaseContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(DatabaseContext).Assembly);
 
-        ApplyGlobalFielters(modelBuilder);
+        ApplyGlobalFilters(modelBuilder);
 
         StaticDataSeeder.Seed(modelBuilder); // static data
     }
 
-    private void ApplyGlobalFielters(ModelBuilder modelBuilder)
+    private void ApplyGlobalFilters(ModelBuilder modelBuilder)
     {
-        // Apply a global filter to all entities inheriting from BaseEntity
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
             {
-                var parameter = Expression.Parameter(entityType.ClrType, "e");
-                var isDeleted = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-                var notDeleted = Expression.Equal(isDeleted, Expression.Constant(false));
-
-                var context = Expression.Constant(this);
-                var isSuperAdmin = Expression.Property(context, nameof(IsSuperAdmin));
-                var currentTenantId = Expression.Property(context, nameof(CurrentTenantId));
-
-                var tenantProp = Expression.Property(parameter, nameof(BaseEntity.TenantId));
-                var tenantPropNullable = Expression.Convert(tenantProp, typeof(Guid?));
-                var tenantMatch = Expression.Equal(tenantPropNullable, currentTenantId);
-                var tenantScope = Expression.OrElse(isSuperAdmin, tenantMatch);
-
-                var body = Expression.AndAlso(notDeleted, tenantScope);
-                var lambda = Expression.Lambda(body, parameter);
-
                 modelBuilder.Entity(entityType.ClrType)
-                            .HasQueryFilter(lambda);
+                            .HasQueryFilter(CreateGlobalFilter(entityType.ClrType));
             }
+        }
+    }
+
+    private LambdaExpression CreateGlobalFilter(Type entityClrType)
+    {
+        Expression<Func<BaseEntity, bool>> baseFilter = e =>
+            !EF.Property<bool>(e, nameof(BaseEntity.IsDeleted)) &&
+            (IsSuperAdmin || EF.Property<Guid>(e, nameof(BaseEntity.TenantId)) == CurrentTenantId);
+
+        var parameter = Expression.Parameter(entityClrType, "e");
+        var body = new ReplaceParameterVisitor(baseFilter.Parameters[0], parameter)
+            .Visit(baseFilter.Body)!;
+
+        return Expression.Lambda(body, parameter);
+    }
+
+    private sealed class ReplaceParameterVisitor(
+        ParameterExpression source,
+        ParameterExpression target) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return node == source ? target : base.VisitParameter(node);
         }
     }
 

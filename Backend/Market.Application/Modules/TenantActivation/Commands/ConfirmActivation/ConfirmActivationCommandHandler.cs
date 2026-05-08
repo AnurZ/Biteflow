@@ -22,12 +22,19 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
             var requestId = await links.ValidateAndConsumeAsync(r.token, ct);
 
             var e = await db.TenantActivationRequests
+                // Activation confirmation consumes a pre-tenant request before tenant context exists.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == requestId, ct)
                 ?? throw new MarketNotFoundException("Request not found");
 
-            if (await db.Tenants.AnyAsync(x => x.Domain == e.Domain, ct) ||
-                await db.Restaurants.AnyAsync(x => x.Domain == e.Domain, ct))
+            if (await db.Tenants
+                    // Activation confirmation must validate domain uniqueness across all tenants.
+                    .IgnoreQueryFilters()
+                    .AnyAsync(x => x.Domain == e.Domain, ct) ||
+                await db.Restaurants
+                    // Activation confirmation must validate restaurant domains across all tenants.
+                    .IgnoreQueryFilters()
+                    .AnyAsync(x => x.Domain == e.Domain, ct))
             {
                 throw new MarketConflictException("Domain already provisioned for another tenant.");
             }

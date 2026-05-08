@@ -18,10 +18,14 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
 
         public async Task Handle(UpdateDiningTableCommandDto request, CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var table = await _db.DiningTables
                 .Include(x => x.TableLayout)
-                .WhereTenantOwned(_tenantContext)
-                .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.Id &&
+                    x.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (table == null)
                 throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");
@@ -29,15 +33,11 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
             if (request.NumberOfSeats <= 0)
                 throw new ArgumentException("Number of seats must be greater than zero.");
 
-            var tenantId = _tenantContext.RequireTenantId();
-            var restaurantId = _tenantContext.RequireRestaurantId();
-
             // Validate layout belongs to the current restaurant
             var layoutExists = await _db.TableLayouts
+                .WhereCurrentRestaurant(_tenantContext)
                 .AnyAsync(l =>
-                    l.Id == request.TableLayoutId &&
-                    l.TenantId == tenantId &&
-                    l.RestaurantId == restaurantId,
+                    l.Id == request.TableLayoutId,
                     cancellationToken);
 
             if (!layoutExists)
@@ -45,7 +45,6 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
 
             // Duplicate number check (same layout)
             var numberExists = await _db.DiningTables
-                .WhereTenantOwned(_tenantContext)
                 .AnyAsync(t =>
                     t.TableLayoutId == request.TableLayoutId &&
                     t.Number == request.Number &&

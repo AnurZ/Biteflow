@@ -31,6 +31,7 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
         public async Task<int> Handle(CreateTableReservationCommandDto request, CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
+            var restaurantId = _tenantContext.RequireRestaurantId();
 
             // Optional user lookup
             ApplicationUser? user = null;
@@ -52,7 +53,11 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
 
             // Find table
             var table = await _db.DiningTables
-                .FirstOrDefaultAsync(t => t.Id == request.DiningTableId && t.TenantId == tenantId, cancellationToken);
+                .Include(t => t.TableLayout)
+                .FirstOrDefaultAsync(t =>
+                    t.Id == request.DiningTableId &&
+                    t.TableLayout.RestaurantId == restaurantId,
+                    cancellationToken);
             if (table == null)
                 throw new InvalidOperationException("Dining table not found.");
 

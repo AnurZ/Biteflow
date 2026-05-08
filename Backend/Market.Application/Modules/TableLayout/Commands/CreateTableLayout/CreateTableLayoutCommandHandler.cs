@@ -19,9 +19,8 @@ namespace Market.Application.Modules.TableLayout.Commands.CreateTableLayout
             var name = request.Name.Trim();
 
             var nameExists = await _db.TableLayouts
+                .WhereCurrentRestaurant(_tenantContext)
                 .AnyAsync(x =>
-                    x.TenantId == tenantId &&
-                    x.RestaurantId == restaurantId &&
                     x.Name.ToLower() == name.ToLower(),
                     cancellationToken);
 

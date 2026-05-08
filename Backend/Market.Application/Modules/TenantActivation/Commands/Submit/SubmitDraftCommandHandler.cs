@@ -11,6 +11,7 @@ namespace Market.Application.Modules.TenantActivation.Commands.Submit
         public async Task Handle(SubmitDraftCommand r, CancellationToken ct)
         {
             var e = await db.TenantActivationRequests
+                // Activation drafts are pre-tenant records submitted outside tenant-scoped requests.
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");

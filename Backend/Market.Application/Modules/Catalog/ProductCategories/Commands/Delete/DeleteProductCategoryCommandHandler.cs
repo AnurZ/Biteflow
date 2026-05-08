@@ -1,13 +1,12 @@
 ﻿namespace Market.Application.Modules.Catalog.ProductCategories.Commands.Delete;
 
 public class DeleteProductCategory
-    (IAppDbContext context, IAppCurrentUser appCurrentUser, ITenantContext tenantContext)
+    (IAppDbContext context, IAppCurrentUser appCurrentUser)
       : IRequestHandler<DeleteProductCategoryCommand, Unit>
 {
     public async Task<Unit> Handle(DeleteProductCategoryCommand request, CancellationToken cancellationToken)
     {
         var category = await context.ProductCategories
-            .WhereTenantOwned(tenantContext)
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
         if (category is null)
