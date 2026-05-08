@@ -1,6 +1,5 @@
 ﻿using Market.Application.Abstractions;
 using Market.Application.Common;
-using Market.Application.Common.Exceptions;
 using Market.Application.Modules.TenantActivation.Commands.ApproveRequest;
 using Market.Application.Modules.TenantActivation.Commands.ConfirmActivation;
 using Market.Application.Modules.TenantActivation.Commands.Create;
@@ -57,21 +56,8 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<string>> Approve(int id)
     {
-        try
-        {
-
-            var link = await mediator.Send(new ApproveRequestCommand(id));
-            return Ok(link);
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-
-            return Conflict(ex.Message);
-        }
+        var link = await mediator.Send(new ApproveRequestCommand(id));
+        return Ok(link);
     }
 
     [Authorize(Policy = PolicyNames.SuperAdminOnly)]
@@ -80,20 +66,8 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Reject(int id, [FromBody] RejectDto body)
     {
-        try
-        {
-            await mediator.Send(new RejectRequestCommand(id, body.Reason));
-            return NoContent();
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound();
-        }
-        catch (InvalidOperationException ex)
-        {
-            //cannot reject after activation
-            return Conflict(ex.Message);
-        }
+        await mediator.Send(new RejectRequestCommand(id, body.Reason));
+        return NoContent();
     }
 
 
@@ -106,26 +80,7 @@ public sealed class ActivationRequestsController(IMediator mediator) : Controlle
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ConfirmActivationResult>> Confirm([FromBody] ConfirmDto dto, CancellationToken ct)
     {
-        try
-        {
-            var result = await mediator.Send(new ConfirmActivationCommand(dto.Token), ct);
-            return Ok(result);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // invalid token
-            return Unauthorized("Activation link is invalid or expired.");
-        }
-        catch (MarketNotFoundException)
-        {
-            return NotFound("Request not found.");
-        }
-        catch (InvalidOperationException ex)
-            when (ex.Message.Contains("Activation allowed only after approval", StringComparison.OrdinalIgnoreCase)
-               || ex.Message.Contains("Only submitted requests can be approved", StringComparison.OrdinalIgnoreCase))
-        {
-
-            return Conflict(ex.Message);
-        }
+        var result = await mediator.Send(new ConfirmActivationCommand(dto.Token), ct);
+        return Ok(result);
     }
 }

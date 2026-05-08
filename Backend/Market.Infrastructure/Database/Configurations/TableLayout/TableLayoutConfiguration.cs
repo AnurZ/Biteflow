@@ -25,7 +25,11 @@ namespace Market.Infrastructure.Persistence.Configurations
                 .HasColumnType("nvarchar(max)")
                 .IsRequired(false);
 
+            builder.Property(t => t.RestaurantId)
+                .IsRequired(false);
+
             builder.HasIndex(t => t.TenantId);
+            builder.HasIndex(t => t.RestaurantId);
         }
     }
 }

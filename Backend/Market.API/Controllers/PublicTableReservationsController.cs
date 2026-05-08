@@ -15,14 +15,7 @@ public sealed class PublicTableReservationsController(IMediator mediator) : Cont
         [FromBody] CreatePublicTableReservationCommandDto request,
         CancellationToken ct)
     {
-        try
-        {
-            var id = await mediator.Send(request, ct);
-            return Ok(id);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var id = await mediator.Send(request, ct);
+        return Ok(id);
     }
 }

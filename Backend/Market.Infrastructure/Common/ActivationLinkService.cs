@@ -17,26 +17,20 @@ namespace Market.Infrastructure.Common
     {
         private readonly IAppDbContext _db;
         private readonly ActivationLinkOptions _opts;
-        private readonly ITenantContext _tenantContext;
 
-        public ActivationLinkService(IAppDbContext db, IOptions<ActivationLinkOptions> opts, ITenantContext tenantContext)
+        public ActivationLinkService(IAppDbContext db, IOptions<ActivationLinkOptions> opts)
         {
             _db = db;
             _opts = opts.Value;
-            _tenantContext = tenantContext;
             if (string.IsNullOrWhiteSpace(_opts.TokenSecret))
                 throw new InvalidOperationException("ActivationLinkOptions.TokenSecret is not configured.");
         }
 
         public async Task<string> IssueLinkAsync(int requestId, CancellationToken ct)
         {
-            var tenantId = _tenantContext.RequireTenantId();
-
             var req = await _db.TenantActivationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.Id == requestId &&
-                    x.TenantId == tenantId,
-                    ct)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == requestId, ct)
                 ?? throw new MarketNotFoundException("Request not found");
 
             var rawToken = GenerateUrlSafeToken(32);

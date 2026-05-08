@@ -8,6 +8,7 @@ namespace Market.Domain.Entities.TableLayout
         public string Name { get; set; } = string.Empty;
         public string BackgroundColor { get; set; } = "#ffffff";
         public string? FloorImageUrl { get; set; }
+        public Guid? RestaurantId { get; set; }
 
         public ICollection<DiningTable> Tables { get; set; } = new List<DiningTable>();
     }

@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { Chart } from 'chart.js/auto';
 import { ChartService, TopSellingItemDto } from '../../../services/chart-services';
 
@@ -7,7 +7,7 @@ import { ChartService, TopSellingItemDto } from '../../../services/chart-service
   selector: 'app-top-selling-chart',
   templateUrl: './top-selling-chart.html'
 })
-export class TopSellingChart implements OnChanges {
+export class TopSellingChart implements OnChanges, OnDestroy {
 
   @Input() from!: Date;
   @Input() to!: Date;
@@ -20,6 +20,11 @@ export class TopSellingChart implements OnChanges {
     if (this.from && this.to) {
       this.loadData();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+    this.chart = null;
   }
 
   loadData(): void {

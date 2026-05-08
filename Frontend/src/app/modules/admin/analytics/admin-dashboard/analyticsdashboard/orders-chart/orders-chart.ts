@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { Chart } from 'chart.js/auto';
 import { ChartService, OrdersPerDayDto } from '../../../services/chart-services';
 
@@ -7,7 +7,7 @@ import { ChartService, OrdersPerDayDto } from '../../../services/chart-services'
   selector: 'app-orders-chart',
   templateUrl: './analytics-dashboard.component.html'
 })
-export class OrdersChartComponent implements OnChanges {
+export class OrdersChartComponent implements OnChanges, OnDestroy {
 
   @Input() from!: Date;
   @Input() to!: Date;
@@ -20,6 +20,11 @@ export class OrdersChartComponent implements OnChanges {
     if (this.from && this.to) {
       this.load();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+    this.chart = null;
   }
 
   load(): void {

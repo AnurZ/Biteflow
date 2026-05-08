@@ -25,6 +25,7 @@ interface KitchenColumn {
 })
 export class KitchenComponent implements OnInit, OnDestroy {
   orders: OrderDto[] = [];
+  board: KitchenColumn[] = [];
   loading = false;
   updatingId?: number;
   private realtimeSub = new Subscription();
@@ -49,6 +50,7 @@ export class KitchenComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.rebuildBoard();
     this.loadOrders();
     void this.realtime.start(MyConfig.orders_hub);
     this.realtimeSub.add(
@@ -67,8 +69,8 @@ export class KitchenComponent implements OnInit, OnDestroy {
     this.realtimeSub.unsubscribe();
   }
 
-  get board(): KitchenColumn[] {
-    return this.columnsMeta.map(meta => ({
+  private rebuildBoard(): void {
+    this.board = this.columnsMeta.map(meta => ({
       ...meta,
       orders: this.orders.filter(o => o.status === meta.key)
     }));
@@ -106,13 +108,14 @@ export class KitchenComponent implements OnInit, OnDestroy {
 
   loadOrders(): void {
     this.loading = true;
-    this.ordersService.list(['New', 'Cooking', 'ReadyForPickup']).subscribe({
+    this.realtimeSub.add(this.ordersService.list(['New', 'Cooking', 'ReadyForPickup']).subscribe({
       next: orders => {
         this.orders = orders;
+        this.rebuildBoard();
       },
       complete: () => (this.loading = false),
       error: () => (this.loading = false)
-    });
+    }));
   }
 
   advance(order: OrderDto): void {
@@ -120,14 +123,14 @@ export class KitchenComponent implements OnInit, OnDestroy {
     if (!next) return;
 
     this.updatingId = order.id;
-    this.ordersService.updateStatus(order.id, next).subscribe({
+    this.realtimeSub.add(this.ordersService.updateStatus(order.id, next).subscribe({
       next: () => {
         this.showSnack(`Order #${order.id} moved to ${this.statusLabel(next)}`, 'success');
         this.loadOrders();
       },
       complete: () => (this.updatingId = undefined),
       error: () => (this.updatingId = undefined)
-    });
+    }));
   }
 
   nextStatus(status: OrderStatus): OrderStatus | null {
@@ -139,5 +142,17 @@ export class KitchenComponent implements OnInit, OnDestroy {
       default:
         return null;
     }
+  }
+
+  trackColumn(_index: number, column: KitchenColumn): KitchenStage {
+    return column.key;
+  }
+
+  trackOrder(_index: number, order: OrderDto): number {
+    return order.id;
+  }
+
+  trackItem(_index: number, item: { id: number }): number {
+    return item.id;
   }
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Market.Application.Modules.TenantActivation.Commands.RejectRequest
 {
-    public sealed class RejectRequestCommandHandler(IAppDbContext db, ITenantContext tenantContext)
+    public sealed class RejectRequestCommandHandler(IAppDbContext db)
         : IRequestHandler<RejectRequestCommand>
     {
 
@@ -19,13 +19,9 @@ namespace Market.Application.Modules.TenantActivation.Commands.RejectRequest
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ValidationException("Reason is required.");
 
-            var tenantId = tenantContext.RequireTenantId();
-
             var e = await db.TenantActivationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.Id == r.Id &&
-                    x.TenantId == tenantId,
-                    ct)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");
 
             e.Reject(reason);

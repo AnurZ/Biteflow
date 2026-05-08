@@ -10,19 +10,14 @@ namespace Market.Application.Modules.TenantActivation.Commands.ApproveRequest
     public sealed class ApproveRequestCommandHandler(
         IAppDbContext db,
         IActivationLinkService links,
-        IEmailService emailService,
-        ITenantContext _tenantContext)
+        IEmailService emailService)
     : IRequestHandler<ApproveRequestCommand, string>
     {
         public async Task<string> Handle(ApproveRequestCommand r, CancellationToken ct)
         {
-            var tenantId = _tenantContext.RequireTenantId();
-
             var e = await db.TenantActivationRequests
-                .FirstOrDefaultAsync(x =>
-                    x.Id == r.Id &&
-                    x.TenantId == tenantId,
-                    ct)
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == r.Id, ct)
                 ?? throw new MarketNotFoundException("Request not found");
 
             var link = await links.IssueLinkAsync(e.Id, ct);
