@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Market.API.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/product-categories")]
 public class ProductCategoriesController(ISender sender) : ControllerBase
 {
     [HttpPost]

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Market.Domain.Entities.IdentityV2;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -46,11 +47,7 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
     public void MappedRoutes_ShouldNotExposeDebugStyleRouteSegments()
     {
         _factory.CreateClient();
-        var endpointDataSources = _factory.Services.GetServices<EndpointDataSource>();
-        var forbiddenRoutes = endpointDataSources
-            .SelectMany(x => x.Endpoints)
-            .OfType<RouteEndpoint>()
-            .Select(x => x.RoutePattern.RawText)
+        var forbiddenRoutes = GetMappedRoutes()
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Where(x => !IsAllowedHealthCheckRoute(x!))
             .Where(x => ContainsForbiddenDebugSegment(x!))
@@ -62,11 +59,26 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
     }
 
     [Fact]
+    public void MappedControllerRoutes_ShouldUseApiPrefixExceptAccountUi()
+    {
+        _factory.CreateClient();
+        var nonApiControllerRoutes = GetControllerRoutes()
+            .Where(x => !IsAllowedNonApiControllerRoute(x.ControllerName, x.Route))
+            .Where(x => !x.Route.Trim('/').StartsWith("api/", StringComparison.OrdinalIgnoreCase))
+            .Select(x => $"{x.ControllerName}: {x.Route}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        Assert.Empty(nonApiControllerRoutes);
+    }
+
+    [Fact]
     public async Task IdentityServerToken_ShouldAuthorizeProtectedEndpoint()
     {
         var client = await _factory.GetAuthenticatedClientAsync();
 
-        var response = await client.GetAsync("/ProductCategories");
+        var response = await client.GetAsync("/api/product-categories");
 
         response.EnsureSuccessStatusCode();
     }
@@ -148,6 +160,46 @@ public sealed class AuthIntegrationTests : IClassFixture<CustomWebApplicationFac
              string.Equals(segments[0], "healthz", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(segments[0], "live", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(segments[0], "ready", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private IEnumerable<(string ControllerName, string Route)> GetControllerRoutes()
+    {
+        return GetRouteEndpoints()
+            .OfType<RouteEndpoint>()
+            .Select(x => new
+            {
+                Route = x.RoutePattern.RawText,
+                Action = x.Metadata.GetMetadata<ControllerActionDescriptor>()
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Route) && x.Action is not null)
+            .Select(x => (x.Action!.ControllerName, x.Route!));
+    }
+
+    private IEnumerable<string> GetMappedRoutes()
+    {
+        return GetRouteEndpoints()
+            .Select(x => x.RoutePattern.RawText)
+            .Where(x => x is not null)
+            .Select(x => x!);
+    }
+
+    private IEnumerable<RouteEndpoint> GetRouteEndpoints()
+    {
+        var endpointDataSources = _factory.Services.GetServices<EndpointDataSource>();
+
+        return endpointDataSources
+            .SelectMany(x => x.Endpoints)
+            .OfType<RouteEndpoint>();
+    }
+
+    private static bool IsAllowedNonApiControllerRoute(string controllerName, string route)
+    {
+        if (!string.Equals(controllerName, "Account", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return route.Trim('/').StartsWith("account/", StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task<TokenErrorResponse> RequestPasswordTokenAsync(HttpClient client, string username, string password)

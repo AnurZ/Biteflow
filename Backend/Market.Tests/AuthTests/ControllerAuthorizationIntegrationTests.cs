@@ -691,12 +691,12 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
                 CurrentQty = 1
             }),
             await client.DeleteAsync($"/api/InventoryItem/{ids.InventoryItemId}"),
-            await client.PutAsJsonAsync($"/ProductCategories/{ids.ProductCategoryId}", new
+            await client.PutAsJsonAsync($"/api/product-categories/{ids.ProductCategoryId}", new
             {
                 Name = "Should Not Update"
             }),
-            await client.PutAsync($"/ProductCategories/{ids.ProductCategoryId}/disable", null),
-            await client.DeleteAsync($"/ProductCategories/{ids.ProductCategoryId}"),
+            await client.PutAsync($"/api/product-categories/{ids.ProductCategoryId}/disable", null),
+            await client.DeleteAsync($"/api/product-categories/{ids.ProductCategoryId}"),
             await client.PutAsJsonAsync($"/api/TableReservation/{ids.TableReservationId}", new
             {
                 ids.DiningTableId,
