@@ -10,6 +10,8 @@ namespace Market.Tests.ProductCategoryTests.IntegrationTests;
 
 public class ProductCategoryIntegrationTests : IClassFixture<CustomWebApplicationFactory<Program>>
 {
+    private const string ProductCategoriesRoute = "/api/product-categories";
+
     private readonly CustomWebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
 
@@ -22,7 +24,7 @@ public class ProductCategoryIntegrationTests : IClassFixture<CustomWebApplicatio
     [Fact]
     public async Task Post_CreateProductCategory_ShouldReturnCreated()
     {
-        var response = await _client.PostAsJsonAsync("/ProductCategories", new
+        var response = await _client.PostAsJsonAsync(ProductCategoriesRoute, new
         {
             Name = "Integration Test Category"
         });
@@ -42,7 +44,7 @@ public class ProductCategoryIntegrationTests : IClassFixture<CustomWebApplicatio
     {
         var categoryId = await CreateCategoryAsync("Delete Integration Test Category");
 
-        var response = await _client.DeleteAsync($"/ProductCategories/{categoryId}");
+        var response = await _client.DeleteAsync($"{ProductCategoriesRoute}/{categoryId}");
 
         response.EnsureSuccessStatusCode();
 
@@ -63,7 +65,7 @@ public class ProductCategoryIntegrationTests : IClassFixture<CustomWebApplicatio
         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", BuildUnsignedJwt("not-a-guid"));
 
-        var response = await client.DeleteAsync($"/ProductCategories/{categoryId}");
+        var response = await client.DeleteAsync($"{ProductCategoriesRoute}/{categoryId}");
         var body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -72,7 +74,7 @@ public class ProductCategoryIntegrationTests : IClassFixture<CustomWebApplicatio
 
     private async Task<int> CreateCategoryAsync(string name)
     {
-        var response = await _client.PostAsJsonAsync("/ProductCategories", new { Name = $"{name} {Guid.NewGuid():N}" });
+        var response = await _client.PostAsJsonAsync(ProductCategoriesRoute, new { Name = $"{name} {Guid.NewGuid():N}" });
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content.ReadFromJsonAsync<Dictionary<string, int>>();
