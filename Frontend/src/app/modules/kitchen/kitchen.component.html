@@ -10,7 +10,7 @@
   </div>
 
   <div class="board">
-    <div class="column" *ngFor="let column of board" [ngClass]="column.key.toLowerCase()">
+    <div class="column" *ngFor="let column of board; trackBy: trackColumn" [ngClass]="column.key.toLowerCase()">
       <div class="column-header">
         <div class="title-row">
           <span class="icon-circle muted">{{ column.icon }}</span>
@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <div class="order-card" *ngFor="let order of column.orders">
+      <div class="order-card" *ngFor="let order of column.orders; trackBy: trackOrder">
         <div class="order-top">
           <div>
             <div class="order-id">#{{ order.id }}</div>
@@ -30,7 +30,7 @@
         </div>
 
         <div class="items">
-          <div class="item-row" *ngFor="let item of order.items">
+          <div class="item-row" *ngFor="let item of order.items; trackBy: trackItem">
             <span>{{ item.name }}</span>
             <span class="qty">×{{ item.quantity }}</span>
           </div>

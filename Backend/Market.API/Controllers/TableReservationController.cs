@@ -26,15 +26,8 @@ namespace Market.API.Controllers
         [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<ActionResult<int>> CreateReservation([FromBody] CreateTableReservationCommandDto request)
         {
-            try
-            {
-                var id = await _mediator.Send(request);
-                return Ok(id);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message); // This will catch conflicts or invalid data
-            }
+            var id = await _mediator.Send(request);
+            return Ok(id);
         }
 
         [HttpGet]

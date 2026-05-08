@@ -147,7 +147,8 @@ public static class DynamicDataSeeder
             FloorImageUrl = string.Empty,
 
             // OPCIJA 1 RULE:
-            TenantId = SeedConstants.DefaultTenantId
+            TenantId = SeedConstants.DefaultTenantId,
+            RestaurantId = SeedConstants.DefaultRestaurantId
         };
 
         var tables = new List<DiningTable>

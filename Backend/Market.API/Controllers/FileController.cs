@@ -26,19 +26,9 @@ public class FileController : ControllerBase
         if (file.Length > 5 * 1024 * 1024)
             return BadRequest("Maximum file size is 5 MB.");
 
-        try
-        {
-            var result = await _blobService.UploadAsync(file);
+        var result = await _blobService.UploadAsync(file);
 
-            return Ok(result);
-        }
-        catch
-        {
-            return StatusCode(500, new
-            {
-                error = "An unexpected error occurred."
-            });
-        }
+        return Ok(result);
     }
 
     [HttpGet("{fileName}")]

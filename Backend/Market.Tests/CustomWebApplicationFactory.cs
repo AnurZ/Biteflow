@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Market.Application.Abstractions;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
@@ -26,6 +27,8 @@ public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<Progr
             }
 
             services.AddSingleton<IEmailService, CapturingEmailService>();
+            services.AddDataProtection()
+                .UseEphemeralDataProtectionProvider();
         });
     }
 

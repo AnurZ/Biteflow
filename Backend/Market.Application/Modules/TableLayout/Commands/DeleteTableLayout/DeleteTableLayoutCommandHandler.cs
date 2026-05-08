@@ -18,10 +18,11 @@ namespace Market.Application.Modules.TableLayout.Commands.DeleteTableLayout
         public async Task Handle(DeleteTableLayoutCommandDto request, CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
+            var restaurantId = _tenantContext.RequireRestaurantId();
 
             var layout = await _db.TableLayouts
                 .Include(t => t.Tables)
-                .Where(t => t.TenantId == tenantId)
+                .Where(t => t.TenantId == tenantId && t.RestaurantId == restaurantId)
                 .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
             if (layout == null)
