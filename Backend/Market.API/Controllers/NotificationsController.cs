@@ -40,7 +40,6 @@ namespace Market.API.Controllers
 
             if (tenantId.HasValue)
             {
-                // TODO: enforce tenant scoping when tenant context is mandatory.
                 baseQuery = baseQuery.Where(n => n.TenantId == tenantId.Value);
             }
 

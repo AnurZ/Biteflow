@@ -11,21 +11,21 @@ namespace Market.Domain.Entities.Tenants
     public sealed class TenantActivationRequest : BaseEntity
     {
 
-        
-        public string RestaurantName { get; private set; } = default!;
-        public string Domain { get; private set; } = default!; // custom domain or biteflow.restaurantName.com TODO
 
-        
+        public string RestaurantName { get; private set; } = default!;
+        public string Domain { get; private set; } = default!; // custom domain or biteflow.restaurantName.com
+
+
         public string OwnerFullName { get; private set; } = default!;
         public string OwnerEmail { get; private set; } = default!;
         public string OwnerPhone { get; private set; } = default!;
 
-        
+
         public string Address { get; private set; } = default!;
         public string City { get; private set; } = default!;
         public string State { get; private set; } = default!;
 
-        
+
         public string? ActivationLink { get; private set; }     // Admin issues link, tenant has to activate it, admin approves or rejects
         public ActivationStatus Status { get; private set; } = ActivationStatus.Draft;
 
