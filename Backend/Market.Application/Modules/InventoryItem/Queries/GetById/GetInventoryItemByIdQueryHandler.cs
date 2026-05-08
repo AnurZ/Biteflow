@@ -1,11 +1,11 @@
-﻿using Market.Application.Modules.Staff.Queries.GetById;
+using Market.Application.Modules.Staff.Queries.GetById;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.InventoryItem.Querries.GetById
+namespace Market.Application.Modules.InventoryItem.Queries.GetById
 {
     internal class GetInventoryItemByIdQueryHandler(IAppDbContext db)
         : IRequestHandler<GetInventoryItemByIdQuery, GetInventoryItemByIdDto>

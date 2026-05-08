@@ -1,6 +1,6 @@
-﻿using MediatR;
+using MediatR;
 
-namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableTLIDbyTableID
+namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableTLIDbyTableID
 
 {
     public class GetDiningTableTableLayoutIdByIdQuery

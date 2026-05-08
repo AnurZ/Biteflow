@@ -1,4 +1,4 @@
-﻿using Market.Application.Modules.MealCategory.Querries.GetMealCategories;
+using Market.Application.Modules.MealCategory.Queries.GetMealCategories;
 using Market.Domain.Common.Enums;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-    namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
+    namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableList
     {
         public sealed class GetDiningTableListQuery : IRequest<List<GetDiningTableListQueryDto>>
         {

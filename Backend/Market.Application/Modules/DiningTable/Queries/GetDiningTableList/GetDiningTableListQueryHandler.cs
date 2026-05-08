@@ -1,11 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.DiningTable.Querries.GetDiningTableList
+namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableList
 {
     public sealed class GetDiningTableListQueryHandler : IRequestHandler<GetDiningTableListQuery, List<GetDiningTableListQueryDto>>
     {

@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.MealCategory.Querries.GetByIdMealCategory
+namespace Market.Application.Modules.MealCategory.Queries.GetByIdMealCategory
 {
     public sealed class GetByIdMealCategoryQuery : IRequest<GetMealCategoryByIdDto>
     {

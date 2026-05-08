@@ -1,5 +1,5 @@
-﻿using Market.Application.Abstractions;
-using Market.Application.Modules.InventoryItem.Querries.GetByName;
+using Market.Application.Abstractions;
+using Market.Application.Modules.InventoryItem.Queries.GetByName;
 using Market.Domain.Common.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

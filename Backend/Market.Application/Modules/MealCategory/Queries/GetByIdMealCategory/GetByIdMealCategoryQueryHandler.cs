@@ -1,11 +1,11 @@
-﻿using Market.Application.Modules.Meal.Queries.GetMealIngredients;
+using Market.Application.Modules.Meal.Queries.GetMealIngredients;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Market.Application.Modules.MealCategory.Querries.GetByIdMealCategory
+namespace Market.Application.Modules.MealCategory.Queries.GetByIdMealCategory
 {
     internal class GetByIdMealCategoryQueryHandler(IAppDbContext db)
         : IRequestHandler<GetByIdMealCategoryQuery, GetMealCategoryByIdDto>

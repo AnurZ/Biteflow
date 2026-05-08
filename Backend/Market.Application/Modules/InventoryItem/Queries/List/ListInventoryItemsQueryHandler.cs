@@ -1,6 +1,5 @@
-﻿using Market.Application.Abstractions;
+using Market.Application.Abstractions;
 using Market.Application.Modules.InventoryItem.Queries.List;
-using Market.Application.Modules.InventoryItem.Querries.List;
 using Market.Domain.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;

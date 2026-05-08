@@ -1,11 +1,9 @@
-﻿using Market.Application.Modules.InventoryItem.Commands.Create;
+using Market.Application.Modules.InventoryItem.Commands.Create;
 using Market.Application.Modules.InventoryItem.Commands.Delete;
 using Market.Application.Modules.InventoryItem.Commands.Update;
 using Market.Application.Modules.InventoryItem.Queries.GetByName;
 using Market.Application.Modules.InventoryItem.Queries.List;
-using Market.Application.Modules.InventoryItem.Querries.GetById;
-using Market.Application.Modules.InventoryItem.Querries.GetByName;
-using Market.Application.Modules.InventoryItem.Querries.List;
+using Market.Application.Modules.InventoryItem.Queries.GetById;
 using MediatR;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;

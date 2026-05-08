@@ -15,7 +15,7 @@ public class DeleteProductCategory
         if (appCurrentUser.UserId is null)
             throw new MarketBusinessRuleException("123", "Korisnik nije autentifikovan.");
 
-        category.IsDeleted = true; // Soft delete
+        context.ProductCategories.Remove(category);
         await context.SaveChangesAsync(cancellationToken);
 
         return Unit.Value;

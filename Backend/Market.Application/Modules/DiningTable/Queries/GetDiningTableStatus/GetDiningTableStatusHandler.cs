@@ -1,4 +1,4 @@
-﻿using Market.Application.Modules.DiningTable.Querries.GetDiningTableStatus;
+using Market.Application.Modules.DiningTable.Queries.GetDiningTableStatus;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 

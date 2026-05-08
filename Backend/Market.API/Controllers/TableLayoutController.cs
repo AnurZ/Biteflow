@@ -1,11 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Market.Application.Modules.TableLayout.Commands.CreateTableLayout;
 using Market.Application.Modules.TableLayout.Commands.UpdateTableLayout;
 using Market.Application.Modules.TableLayout.Commands.DeleteTableLayout;
-using Market.Application.Modules.TableLayout.Querries.GetTableLayouts;
+using Market.Application.Modules.TableLayout.Queries.GetTableLayouts;
 using Market.Application.Modules.TableLayout.Queries.TableLayoutGetNameById;
 using Market.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
