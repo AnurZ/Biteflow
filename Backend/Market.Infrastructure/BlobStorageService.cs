@@ -4,9 +4,11 @@ using System.IO;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
+using Market.Domain.Entities.BlobStorageSettings;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Market.Infrastructure
 {
@@ -14,6 +16,7 @@ namespace Market.Infrastructure
     {
         private readonly BlobContainerClient _containerClient;
         private readonly ILogger<BlobStorageService> _logger;
+        private readonly BlobStorageSettings _settings;
 
         private static readonly Dictionary<string, string> AllowedTypes = new()
         {
@@ -23,21 +26,19 @@ namespace Market.Infrastructure
         };
 
         public BlobStorageService(
-            IConfiguration configuration,
+            IOptions<BlobStorageSettings> options,
             ILogger<BlobStorageService> logger)
         {
             _logger = logger;
+            _settings = options.Value;
 
-            var connectionString = configuration["AzureBlobStorage:ConnectionString"];
-            var containerName = configuration["AzureBlobStorage:ContainerName"];
-
-            if (string.IsNullOrWhiteSpace(connectionString) ||
-                string.IsNullOrWhiteSpace(containerName))
+            if (string.IsNullOrWhiteSpace(_settings.ConnectionString) ||
+                string.IsNullOrWhiteSpace(_settings.ContainerName))
             {
                 throw new Exception("Azure Blob configuration missing.");
             }
 
-            _containerClient = new BlobContainerClient(connectionString, containerName);
+            _containerClient = new BlobContainerClient(_settings.ConnectionString, _settings.ContainerName);
 
             _containerClient.CreateIfNotExists(PublicAccessType.None);
         }
@@ -73,8 +74,8 @@ namespace Market.Infrastructure
 
                 return new
                 {
-                    Url = blobClient.Uri.ToString(),
-                    FileName = fileName
+                    fileName,
+                    url = CreateReadSasUrl(blobClient)
                 };
             }
             catch (Exception ex)
@@ -89,7 +90,30 @@ namespace Market.Infrastructure
         {
             var blobClient = _containerClient.GetBlobClient(fileName);
 
-            return blobClient.Uri.ToString();
+            return CreateReadSasUrl(blobClient);
+        }
+
+        private string CreateReadSasUrl(BlobClient blobClient)
+        {
+            if (!blobClient.CanGenerateSasUri)
+            {
+                _logger.LogError("Blob SAS generation failed because the client is not authenticated with a shared key credential.");
+                throw new Exception("File access failed.");
+            }
+
+            var expiresOn = DateTimeOffset.UtcNow.AddMinutes(
+                _settings.SasReadMinutes > 0 ? _settings.SasReadMinutes : 15);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = _containerClient.Name,
+                BlobName = blobClient.Name,
+                Resource = "b",
+                ExpiresOn = expiresOn
+            };
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            return blobClient.GenerateSasUri(sasBuilder).ToString();
         }
 
         private bool IsValidImage(Stream stream, string contentType)

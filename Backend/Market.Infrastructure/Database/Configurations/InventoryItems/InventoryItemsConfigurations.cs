@@ -39,7 +39,7 @@ namespace Market.Infrastructure.Database.Configurations.InventoryItems
             builder.Property(x => x.CurrentQty)
                 .IsRequired();
 
-            builder.HasIndex(x => x.Sku).IsUnique();
+            builder.HasIndex(x => new { x.RestaurantId, x.Sku }).IsUnique();
 
         }
     }

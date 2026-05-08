@@ -41,10 +41,9 @@ namespace Market.Application.Modules.TableReservation.Commands.CreateTableReserv
                 .AnyAsync(r =>
                     r.TenantId == publicTenant.TenantId &&
                     r.DiningTableId == request.DiningTableId &&
-                    (
-                        (r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationEnd && request.ReservationEnd > r.ReservationStart) ||
-                        (!r.ReservationEnd.HasValue && request.ReservationStart < r.ReservationStart)
-                    ),
+                    r.Status != ReservationStatus.Cancelled &&
+                    request.ReservationStart < (r.ReservationEnd ?? DateTime.MaxValue) &&
+                    r.ReservationStart < (request.ReservationEnd ?? DateTime.MaxValue),
                     cancellationToken);
 
             if (overlappingReservation)

@@ -10,6 +10,7 @@ namespace Market.Domain.Entities.BlobStorageSettings
     {
         public string ConnectionString { get; set; } = "";
         public string ContainerName { get; set; } = "";
+        public int SasReadMinutes { get; set; } = 15;
     }
 
 }
