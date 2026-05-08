@@ -76,21 +76,18 @@ namespace Market.Application.Modules.Meal.Commands.Create
                 RestaurantId = restaurantId,
             };
 
-            db.Meals.Add(newMeal);
-            await db.SaveChangesAsync(cancellationToken);
-
-            // 5. Create ingredients
+            // 5. Create ingredients as part of the same EF graph so one save is atomic.
             foreach (var ingredientDto in request.Ingredients)
             {
-                db.MealIngredients.Add(new MealIngredient
+                newMeal.Ingredients.Add(new MealIngredient
                 {
-                    MealId = newMeal.Id,
                     InventoryItemId = ingredientDto.InventoryItemId,
                     Quantity = ingredientDto.Quantity,
                     UnitTypes = ingredientDto.UnitType
                 });
             }
 
+            db.Meals.Add(newMeal);
             await db.SaveChangesAsync(cancellationToken);
 
             return newMeal.Id;

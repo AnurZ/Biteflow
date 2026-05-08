@@ -27,9 +27,16 @@ public static class DynamicDataSeeder
         await SeedProductCategoriesAsync(context);
         await SeedTenantActivationRequestAsync(context);
         await SeedTableLayoutsAndTablesAsync(context);
+        await context.SaveChangesAsync();
+
         await SeedMealCategoriesAsync(context);
+        await context.SaveChangesAsync();
+
         await SeedMealsAsync(context);
+        await context.SaveChangesAsync();
+
         await SeedOrdersAsync(context);
+        await context.SaveChangesAsync();
     }
 
     private static async Task SeedDefaultTenantAndRestaurantAsync(DatabaseContext context)
@@ -74,7 +81,6 @@ public static class DynamicDataSeeder
             });
         }
 
-        await context.SaveChangesAsync();
     }
 
     private static async Task SeedProductCategoriesAsync(DatabaseContext context)
@@ -98,7 +104,6 @@ public static class DynamicDataSeeder
                 }
             );
 
-            await context.SaveChangesAsync();
             Console.WriteLine("Dynamic seed: product categories added.");
         }
     }
@@ -133,9 +138,8 @@ public static class DynamicDataSeeder
         req.Submit(); // status -> Submitted
 
         context.TenantActivationRequests.Add(req);
-        await context.SaveChangesAsync();
 
-        Console.WriteLine($"Seed: TenantActivationRequest created with Id = {req.Id}");
+        Console.WriteLine("Seed: TenantActivationRequest queued.");
     }
 
     private static async Task SeedTableLayoutsAndTablesAsync(DatabaseContext context)
@@ -311,8 +315,6 @@ public static class DynamicDataSeeder
         context.TableLayouts.Add(layout);
         context.DiningTables.AddRange(tables);
 
-        await context.SaveChangesAsync();
-
         Console.WriteLine("Seed: table layout and dining tables added.");
     }
 
@@ -333,7 +335,6 @@ public static class DynamicDataSeeder
         };
 
         context.MealCategories.AddRange(categories);
-        await context.SaveChangesAsync();
         Console.WriteLine("Seed: meal categories added.");
     }
 
@@ -348,6 +349,7 @@ public static class DynamicDataSeeder
         if (categories.Count == 0)
         {
             await SeedMealCategoriesAsync(context);
+            await context.SaveChangesAsync();
             categories = await context.MealCategories.AsNoTracking().ToListAsync();
         }
 
@@ -489,7 +491,6 @@ public static class DynamicDataSeeder
         };
 
         context.Meals.AddRange(meals);
-        await context.SaveChangesAsync();
         Console.WriteLine("Seed: meals added.");
     }
 
@@ -504,6 +505,7 @@ public static class DynamicDataSeeder
         if (categories.Count == 0)
         {
             await SeedMealCategoriesAsync(context);
+            await context.SaveChangesAsync();
             categories = await context.MealCategories.AsNoTracking().ToListAsync();
         }
 
@@ -595,7 +597,6 @@ public static class DynamicDataSeeder
         };
 
         context.Orders.AddRange(order1, order2, order3);
-        await context.SaveChangesAsync();
         Console.WriteLine("Seed: orders with items added.");
     }
 }
