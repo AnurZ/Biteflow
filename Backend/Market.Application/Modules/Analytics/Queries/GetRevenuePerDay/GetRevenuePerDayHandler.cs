@@ -26,7 +26,7 @@ namespace Market.Application.Modules.Analytics.Queries.GetRevenuePerDay
                 query = query.Where(x => x.Order.CreatedAtUtc >= request.From.Value);
 
             if (request.To.HasValue)
-                query = query.Where(x => x.Order.CreatedAtUtc <= request.To.Value);
+                query = query.Where(x => x.Order.CreatedAtUtc < request.To.Value);
 
             var data = await query
                 .GroupBy(x => x.Order.CreatedAtUtc.Date)

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { DateRange } from '../../admin-model';
 
 export interface OrdersPerDayDto {
   date: string;
@@ -22,20 +23,25 @@ export interface RevenuePerDayDto {
 })
 export class ChartService {
 
-  private baseUrl = 'https://localhost:7260/api/analytics';
+  private baseUrl = `${MyConfig.api_address}/analytics`;
 
   constructor(private http: HttpClient) {}
 
-  // Orders per day
-  getOrdersPerDay(from?: Date, to?: Date): Observable<OrdersPerDayDto[]> {
+  private formatDate(date: Date): string {
+    return date.toISOString();
+  }
+
+  // ---------------- ORDERS ----------------
+  getOrdersPerDay(range: DateRange): Observable<OrdersPerDayDto[]> {
+
     let params = new HttpParams();
 
-    if (from) {
-      params = params.set('from', from.toISOString());
+    if (range?.from) {
+      params = params.set('from', this.formatDate(range.from));
     }
 
-    if (to) {
-      params = params.set('to', to.toISOString());
+    if (range?.to) {
+      params = params.set('to', this.formatDate(range.to));
     }
 
     return this.http.get<OrdersPerDayDto[]>(
@@ -44,16 +50,17 @@ export class ChartService {
     );
   }
 
-  // Revenue per day
-  getRevenuePerDay(from?: Date, to?: Date): Observable<RevenuePerDayDto[]> {
+  // ---------------- REVENUE ----------------
+  getRevenuePerDay(range: DateRange): Observable<RevenuePerDayDto[]> {
+
     let params = new HttpParams();
 
-    if (from) {
-      params = params.set('from', from.toISOString());
+    if (range?.from) {
+      params = params.set('from', this.formatDate(range.from));
     }
 
-    if (to) {
-      params = params.set('to', to.toISOString());
+    if (range?.to) {
+      params = params.set('to', this.formatDate(range.to));
     }
 
     return this.http.get<RevenuePerDayDto[]>(
@@ -62,16 +69,17 @@ export class ChartService {
     );
   }
 
-  // Top selling items
-  getTopSellingItems(from?: Date, to?: Date): Observable<TopSellingItemDto[]> {
+  // ---------------- TOP SELLING ----------------
+  getTopSellingItems(range: DateRange): Observable<TopSellingItemDto[]> {
+
     let params = new HttpParams();
 
-    if (from) {
-      params = params.set('from', from.toISOString());
+    if (range?.from) {
+      params = params.set('from', this.formatDate(range.from));
     }
 
-    if (to) {
-      params = params.set('to', to.toISOString());
+    if (range?.to) {
+      params = params.set('to', this.formatDate(range.to));
     }
 
     return this.http.get<TopSellingItemDto[]>(

@@ -1,0 +1,77 @@
+<div class="live-orders-card">
+
+  <div class="header">
+    <div>
+      <h2>Live Orders</h2>
+      <p>Real-time incoming restaurant orders</p>
+    </div>
+
+    <div class="badge">
+      {{ liveOrders.length }} active
+    </div>
+  </div>
+
+  <div class="orders-scroll">
+    <div class="orders-list">
+
+    <div
+      class="order-card"
+      *ngFor="let order of liveOrders"
+      [class.removing]="removingOrders.has(order.orderId)">
+
+      <div class="top-row">
+
+        <div class="left">
+          <h3>Order #{{ order.orderId }}</h3>
+
+          <span class="table">
+            Table {{ order.tableNumber }}
+          </span>
+        </div>
+
+        <div class="status" [ngClass]="order.status">
+          {{ order.status }}
+        </div>
+
+      </div>
+
+      <div
+        class="items"
+        [class.expanded]="expandedOrders.has(order.orderId)">
+
+        <!-- visible items -->
+        <div
+          class="item"
+          *ngFor="let item of order.items">
+
+          <span>{{ item.name }}</span>
+
+          <strong>x{{ item.quantity }}</strong>
+
+        </div>
+
+
+      </div>
+
+      <div class="footer">
+
+        <span class="time">
+          {{ order.createdAt | date:'HH:mm:ss' }}
+        </span>
+
+      </div>
+
+    </div>
+
+    <div
+      class="empty"
+      *ngIf="liveOrders.length === 0">
+
+      No live orders.
+
+    </div>
+
+  </div>
+  </div>
+
+</div>

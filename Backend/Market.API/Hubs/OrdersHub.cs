@@ -13,6 +13,7 @@ namespace Market.API.Hubs
         public const string OrderStatusChanged = "OrderStatusChanged";
         public const string NotificationCreated = "NotificationCreated";
         public const string NotificationCleared = "NotificationCleared";
+        public const string DashboardUpdated = "DashboardUpdated";
     }
 
     public static class OrdersHubGroups
@@ -69,6 +70,16 @@ namespace Market.API.Hubs
             return $"tenant:{tenantId}:waiter";
         }
 
+        public static string Admin(Guid? tenantId)
+        {
+            if (!IsTenantScoped(tenantId))
+            {
+                return "admin";
+            }
+
+            return $"tenant:{tenantId}:admin";
+        }
+
         private static bool IsTenantScoped(Guid? tenantId)
         {
             return tenantId.HasValue && tenantId.Value != Guid.Empty;
@@ -112,6 +123,11 @@ namespace Market.API.Hubs
                     if (string.Equals(role, RoleNames.Waiter, StringComparison.OrdinalIgnoreCase))
                     {
                         groups.Add(OrdersHubGroups.Waiter(tenantId));
+                    }
+
+                    if (string.Equals(role, RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+                    {
+                        groups.Add(OrdersHubGroups.Admin(tenantId));
                     }
 
                     var roleGroup = OrdersHubGroups.Role(role, tenantId);

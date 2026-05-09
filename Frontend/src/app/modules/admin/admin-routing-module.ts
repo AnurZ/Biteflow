@@ -9,6 +9,7 @@ import {TableLayoutComponent} from '../table-layout/table-layout';
 import {TableReservation} from '../table-reservation/table-reservation';
 import {OrdersChartComponent} from './analytics/admin-dashboard/analyticsdashboard/orders-chart/orders-chart';
 import {AdminDashboard} from './analytics/admin-dashboard/admin-dashboard';
+import {Orders} from './orders/orders';
 const routes: Routes = [
   {
     path: '',
@@ -24,6 +25,7 @@ const routes: Routes = [
       { path: 'table-reservations', component: TableReservation },
       { path: 'tables-layout', component: TableLayoutComponent },
       { path: 'analytics', component: OrdersChartComponent },
+      { path: 'orders', component: Orders },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   }

@@ -83,12 +83,23 @@ export class MealsFormDialog implements OnInit {
   });
 
   ngOnInit(): void {
+
+    this.loadCategories();
+
     if (this.data.mode === 'edit') {
       this.loadMealForEdit();
     }
-
   }
 
+  private loadCategories(): void {
+
+    this.getMealCategoriesList
+      .handleAsync()
+      .subscribe(categories => {
+
+        this.mealCategories = categories;
+      });
+  }
 
 
   mealCategories: MealCategory[] = [];
@@ -297,8 +308,6 @@ export class MealsFormDialog implements OnInit {
 
   private loadMealForEdit() {
     this.loading = true;
-    this.getMealCategoriesList.handleAsync().subscribe(categories => {
-      this.mealCategories = categories;
       if (this.data.mode !== 'create') {
         this.getByIdEp.handleAsync(this.data.id).subscribe({
           next: (dto: GetMealByIdDto) => {
@@ -331,7 +340,7 @@ export class MealsFormDialog implements OnInit {
           error: () => (this.loading = false)
         });
       }
-    });
+
   }
 
 }

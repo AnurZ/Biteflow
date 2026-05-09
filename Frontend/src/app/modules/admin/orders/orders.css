@@ -1,0 +1,178 @@
+.card {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+/* --- Header --- */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-header .title {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: #212529;
+  margin-left: 0.75rem;
+}
+
+.card-header .actions {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.card-header .actions .search,
+.card-header .actions .filter {
+  min-width: 240px;
+}
+
+/* --- Table --- */
+.table-wrap {
+  margin-top: 0.5rem;
+  overflow: auto;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+table[mat-table] {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+}
+
+th[mat-header-cell],
+td[mat-cell] {
+  text-align: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #dee2e6;
+  vertical-align: middle;
+  color: #212529;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+tr[mat-header-row] {
+  background: #f8f9fa;
+}
+
+th[mat-header-cell] {
+  font-weight: 600;
+  color: #495057;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable::after {
+  content: "↕";
+  opacity: 0.35;
+  margin-left: 6px;
+  font-size: 0.75rem;
+}
+
+/* --- Row hover --- */
+table[mat-table] tr[mat-row]:nth-child(even) td {
+  background: #fcfcfd;
+}
+
+table[mat-table] tr[mat-row]:hover td {
+  background: #f5f7f9;
+}
+
+/* --- Price --- */
+.price {
+  font-weight: 600;
+  color: #198754;
+}
+
+/* --- Status badges --- */
+.status {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Status colors */
+.status.new {
+  background: #e7f1ff;
+  color: #0d6efd;
+}
+
+.status.preparing {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status.ready {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status.completed {
+  background: #e2e3e5;
+  color: #41464b;
+}
+
+/* Items preview */
+.items-preview {
+  font-size: 0.85rem;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Actions */
+.my-actions button mat-icon {
+  font-size: 20px;
+}
+
+.my-actions mat-icon {
+  color: #6c757d;
+}
+
+/* Paginator */
+mat-paginator {
+  border-top: 1px solid #e9ecef;
+  border-radius: 0 0 10px 10px;
+  padding: 6px 8px;
+  background: #fff;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .card-header .actions .search,
+  .card-header .actions .filter {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 640px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .card-header .actions {
+    width: 100%;
+  }
+
+  .card-header .actions .search,
+  .card-header .actions .filter {
+    width: 100%;
+    min-width: 0;
+  }
+}
