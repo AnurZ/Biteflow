@@ -23,7 +23,7 @@ export interface RevenuePerDayDto {
 })
 export class ChartService {
 
-  private baseUrl = 'https://localhost:7260/api/analytics';
+  private baseUrl = `${MyConfig.api_address}/analytics`;
 
   constructor(private http: HttpClient) {}
 

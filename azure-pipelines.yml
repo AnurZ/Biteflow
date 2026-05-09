@@ -10,10 +10,10 @@ steps:
   - checkout: self
 
   - script: |
-      matches="$(git grep -n "localhost:7260" -- ":(glob)Frontend/src/app/**/*.ts" ":(exclude)Frontend/src/app/my-config.ts" || true)"
+      matches="$(git grep -n "localhost:7260" -- ":(glob)Frontend/src/**/*.ts" ":(exclude)Frontend/src/environments/environment.ts" || true)"
 
       if [ -n "$matches" ]; then
-        echo "Hardcoded backend localhost URL found outside Frontend/src/app/my-config.ts:"
+        echo "Hardcoded backend localhost URL found outside the local development environment file:"
         echo "$matches"
         exit 1
       fi
