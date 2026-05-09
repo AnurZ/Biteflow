@@ -8,7 +8,7 @@ namespace Market.Shared.Options
 {
     public sealed class ActivationLinkOptions
     {
-        public string BaseUrl { get; set; } = "https://localhost:4200"; //For local dev; change to biteflow.com TODO
+        public string BaseUrl { get; set; } = "https://localhost:4200"; //For local dev; change to biteflow.com
 
         public string Route { get; set; } = "/activate";
 

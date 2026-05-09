@@ -382,7 +382,7 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Sku")
+                    b.HasIndex("RestaurantId", "Sku")
                         .IsUnique();
 
                     b.ToTable("InventoryItems", (string)null);
