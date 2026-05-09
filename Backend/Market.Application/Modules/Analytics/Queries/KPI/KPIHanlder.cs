@@ -1,5 +1,4 @@
-using Market.Application.Abstractions;
-using Market.Domain.Common.Enums;
+﻿using Market.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Analytics.Queries.KPI
@@ -13,38 +12,42 @@ namespace Market.Application.Modules.Analytics.Queries.KPI
             _context = context;
         }
 
-        public async Task<KpiDto> Handle(GetKpisQuery request, CancellationToken cancellationToken)
+        public async Task<KpiDto> Handle(
+            GetKpisQuery request,
+            CancellationToken cancellationToken)
         {
-            var fromDate = request.From;
-            var toDate = request.To;
+            var from = request.From;
+            var to = request.To;
 
             var ordersQuery = _context.Orders
-                .Where(o =>
-                    o.Status != OrderStatus.Cancelled &&
-                    o.CreatedAtUtc >= fromDate &&
-                    o.CreatedAtUtc <= toDate);
+                .AsNoTracking()
+                .Where(o => o.CreatedAtUtc >= from &&
+                            o.CreatedAtUtc < to);
 
-            var totalOrders = await ordersQuery.CountAsync(cancellationToken);
+            var totalOrders = await ordersQuery
+                .CountAsync(cancellationToken);
 
             var revenue = await _context.OrderItems
-                .Where(i =>
-                    i.Order.CreatedAtUtc >= fromDate &&
-                    i.Order.CreatedAtUtc <= toDate &&
-                    i.Order.Status != OrderStatus.Cancelled)
-                .SumAsync(i => (decimal?)i.UnitPrice * i.Quantity, cancellationToken) ?? 0;
+                .AsNoTracking()
+                .Where(i => i.Order.CreatedAtUtc >= from &&
+                            i.Order.CreatedAtUtc < to)
+                .SumAsync(
+                    i => (decimal?)i.UnitPrice * i.Quantity,
+                    cancellationToken
+                ) ?? 0;
 
-            var avgOrder = totalOrders > 0 ? revenue / totalOrders : 0;
+            var avgOrder = totalOrders > 0
+                ? Math.Round(revenue / totalOrders, 2, MidpointRounding.AwayFromZero)
+                : 0;
 
             var topItem = await _context.OrderItems
-                .Include(i => i.Meal)
-                .Where(i =>
-                    i.Order.CreatedAtUtc >= fromDate &&
-                    i.Order.CreatedAtUtc <= toDate &&
-                    i.Order.Status != OrderStatus.Cancelled)
-                .GroupBy(i => i.MealId)
+                .AsNoTracking()
+                .Where(i => i.Order.CreatedAtUtc >= from &&
+                            i.Order.CreatedAtUtc < to)
+                .GroupBy(i => i.Name)
                 .Select(g => new
                 {
-                    Name = g.First().Meal != null ? g.First().Meal!.Name : "Custom Item",
+                    Name = g.Key,
                     Quantity = g.Sum(x => x.Quantity)
                 })
                 .OrderByDescending(x => x.Quantity)

@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Market.Application.Abstractions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
 {
     public class GetOrdersPerDayHandler
-    : IRequestHandler<GetOrdersPerDayQuery, List<GetOrdersPerDayDto>>
+        : IRequestHandler<GetOrdersPerDayQuery, List<GetOrdersPerDayDto>>
     {
         private readonly IAppDbContext _context;
 
@@ -17,8 +14,8 @@ namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
         }
 
         public async Task<List<GetOrdersPerDayDto>> Handle(
-        GetOrdersPerDayQuery request,
-        CancellationToken cancellationToken)
+            GetOrdersPerDayQuery request,
+            CancellationToken cancellationToken)
         {
             var query = _context.Orders
                 .AsNoTracking();
@@ -27,7 +24,7 @@ namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
                 query = query.Where(o => o.CreatedAtUtc >= request.From.Value);
 
             if (request.To.HasValue)
-                query = query.Where(o => o.CreatedAtUtc <= request.To.Value);
+                query = query.Where(o => o.CreatedAtUtc < request.To.Value);
 
             var data = await query
                 .GroupBy(o => new
