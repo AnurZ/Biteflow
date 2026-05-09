@@ -36,6 +36,7 @@ interface MenuItem {
 }
 
 interface OrderItem {
+  mealId: number;
   name: string;
   price: number;
   qty: number;
@@ -181,7 +182,8 @@ export class WaiterComponent implements OnInit, OnDestroy {
       return latest.items.map(i => ({
         name: i.name,
         price: i.unitPrice,
-        qty: i.quantity
+        qty: i.quantity,
+        mealId: i.id
       }));
     }
 
@@ -269,7 +271,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
     if (existing) {
       existing.qty += 1;
     } else {
-      current.push({ name: item.name, price: item.basePrice, qty: 1 });
+      current.push({ name: item.name, price: item.basePrice, qty: 1, mealId: item.id });
     }
 
     this.tableOrders[this.selectedTableId] = [...current];
@@ -328,7 +330,8 @@ export class WaiterComponent implements OnInit, OnDestroy {
       items: this.currentOrder.map(item => ({
         name: item.name,
         quantity: item.qty,
-        unitPrice: item.price
+        unitPrice: item.price,
+        mealId: item.mealId
       }))
     };
 

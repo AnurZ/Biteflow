@@ -18,9 +18,9 @@ export class DashboardAnalyticsService {
 
   constructor(private http: HttpClient) {}
 
-  getKpis(from: Date, to: Date): Observable<KpiDto> {
+  getKpis(from: Date, to: Date) {
 
-    let params = new HttpParams()
+    const params = new HttpParams()
       .set('from', from.toISOString())
       .set('to', to.toISOString());
 

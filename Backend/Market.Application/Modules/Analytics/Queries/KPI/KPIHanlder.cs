@@ -12,26 +12,38 @@ namespace Market.Application.Modules.Analytics.Queries.KPI
             _context = context;
         }
 
-        public async Task<KpiDto> Handle(GetKpisQuery request, CancellationToken cancellationToken)
+        public async Task<KpiDto> Handle(
+            GetKpisQuery request,
+            CancellationToken cancellationToken)
         {
-            var fromDate = request.From;
-            var toDate = request.To;
+            var from = request.From;
+            var to = request.To;
 
             var ordersQuery = _context.Orders
-                .Where(o => o.CreatedAtUtc >= fromDate && o.CreatedAtUtc <= toDate);
+                .AsNoTracking()
+                .Where(o => o.CreatedAtUtc >= from &&
+                            o.CreatedAtUtc < to);
 
-            var totalOrders = await ordersQuery.CountAsync(cancellationToken);
+            var totalOrders = await ordersQuery
+                .CountAsync(cancellationToken);
 
             var revenue = await _context.OrderItems
-                .Where(i => i.Order.CreatedAtUtc >= fromDate &&
-                            i.Order.CreatedAtUtc <= toDate)
-                .SumAsync(i => (decimal?)i.UnitPrice * i.Quantity, cancellationToken) ?? 0;
+                .AsNoTracking()
+                .Where(i => i.Order.CreatedAtUtc >= from &&
+                            i.Order.CreatedAtUtc < to)
+                .SumAsync(
+                    i => (decimal?)i.UnitPrice * i.Quantity,
+                    cancellationToken
+                ) ?? 0;
 
-            var avgOrder = totalOrders > 0 ? revenue / totalOrders : 0;
+            var avgOrder = totalOrders > 0
+                ? Math.Round(revenue / totalOrders, 2, MidpointRounding.AwayFromZero)
+                : 0;
 
             var topItem = await _context.OrderItems
-                .Where(i => i.Order.CreatedAtUtc >= fromDate &&
-                            i.Order.CreatedAtUtc <= toDate)
+                .AsNoTracking()
+                .Where(i => i.Order.CreatedAtUtc >= from &&
+                            i.Order.CreatedAtUtc < to)
                 .GroupBy(i => i.Name)
                 .Select(g => new
                 {

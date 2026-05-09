@@ -19,21 +19,24 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
             CancellationToken cancellationToken)
         {
             var query = _context.OrderItems
-              .AsNoTracking()
-              .Include(x => x.Meal)
-              .Where(oi => oi.Order.Status != OrderStatus.Cancelled);
+                .AsNoTracking()
+                .Include(x => x.Meal)
+                .Where(oi => oi.Order.Status != OrderStatus.Cancelled);
 
             if (request.From.HasValue)
                 query = query.Where(x => x.Order.CreatedAtUtc >= request.From.Value);
 
             if (request.To.HasValue)
-                query = query.Where(x => x.Order.CreatedAtUtc <= request.To.Value);
+                query = query.Where(x => x.Order.CreatedAtUtc < request.To.Value);
 
             var data = await query
                 .GroupBy(x => x.MealId)
                 .Select(g => new GetTopSellingItemsDto
                 {
-                    ItemName = g.First().Meal != null ? g.First().Meal.Name : "Custom Item",
+                    ItemName = g.First().Meal != null
+                        ? g.First().Meal.Name
+                        : "Custom Item",
+
                     Quantity = g.Sum(x => x.Quantity)
                 })
                 .OrderByDescending(x => x.Quantity)

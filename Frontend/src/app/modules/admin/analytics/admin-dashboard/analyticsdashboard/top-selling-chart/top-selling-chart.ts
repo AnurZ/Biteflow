@@ -1,53 +1,74 @@
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
 import { Chart } from 'chart.js/auto';
 import { ChartService, TopSellingItemDto } from '../../../services/chart-services';
+import { DashboardRefreshService } from '../../../services/DashboardRefreshService';
+import { Subscription } from 'rxjs';
+import {DateRange} from '../../../../admin-model';
 
 @Component({
   standalone: false,
   selector: 'app-top-selling-chart',
-  templateUrl: './top-selling-chart.html'
+  templateUrl: './top-selling-chart.html',
+  styleUrls: ['./top-selling-chart.css'],
 })
-export class TopSellingChart implements OnChanges, OnDestroy {
+export class TopSellingChart implements OnChanges, OnInit, OnDestroy {
 
-  @Input() from!: Date;
-  @Input() to!: Date;
+  @Input() range!: DateRange;
+  @Input() refreshTick!: number;
 
   private chart: Chart | null = null;
+  private sub = new Subscription();
 
-  constructor(private analyticsService: ChartService) {}
+  constructor(
+    private service: ChartService,
+    private refresh: DashboardRefreshService
+  ) {}
+
+  ngOnInit(): void {
+
+
+    this.sub.add(
+      this.refresh.refresh$.subscribe(() => {
+        this.load();
+      })
+    );
+
+    this.load();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.from && this.to) {
-      this.loadData();
+    if (this.range?.from && this.range?.to &&
+      (changes['range'] || changes['refreshTick'])) {
+      this.load();
     }
   }
 
   ngOnDestroy(): void {
     this.chart?.destroy();
-    this.chart = null;
+    this.sub.unsubscribe();
   }
 
-  loadData(): void {
-    this.analyticsService.getTopSellingItems(this.from, this.to)
-      .subscribe(data => this.renderChart(data));
+  load(): void {
+    if (!this.range?.from || !this.range?.to) return;
+
+    this.service.getTopSellingItems(this.range)
+      .subscribe(data => {
+        this.render(data);
+        console.log('TopSellingChart data', data);
+      });
   }
 
-  renderChart(data: TopSellingItemDto[]): void {
+  render(data: TopSellingItemDto[]): void {
 
-    const labels = data.map(x => x.itemName);
-    const values = data.map(x => x.quantity);
-
-    if (this.chart) {
-      this.chart.destroy();
-    }
+    this.chart?.destroy();
 
     this.chart = new Chart('topSellingChart', {
       type: 'bar',
       data: {
-        labels,
+        labels: data.map(x => x.itemName),
         datasets: [{
           label: 'Top Selling Items',
-          data: values,
+          data: data.map(x => x.quantity),
           borderWidth: 2
         }]
       }

@@ -4,6 +4,7 @@
   gap: 18px;
   padding: 16px;
   background: #f6f7f9;
+  overflow: visible;
 }
 
 .chart-card {
@@ -57,31 +58,7 @@
   background: #eaeaea;
 }
 
-/* KPI */
-.kpi-section {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-}
 
-.kpi-card {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 10px;
-  padding: 14px;
-}
-
-.kpi-title {
-  font-size: 12px;
-  color: #777;
-  margin-bottom: 6px;
-}
-
-.kpi-value {
-  font-size: 20px;
-  font-weight: 600;
-  color: #222;
-}
 
 /* CHARTS */
 .charts-grid {
@@ -89,6 +66,8 @@
   grid-template-columns: 2fr 2fr 2fr;
   gap: 12px;
 }
+
+
 
 /* RESPONSIVE */
 @media (max-width: 1000px) {
@@ -104,3 +83,5 @@
     flex-wrap: wrap;
   }
 }
+
+

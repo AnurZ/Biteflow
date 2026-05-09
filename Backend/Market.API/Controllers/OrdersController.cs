@@ -25,7 +25,11 @@ namespace Market.API.Controllers
         private readonly ITenantContext _tenantContext;
         private readonly IHubContext<OrdersHub> _hub;
 
-        public OrdersController(ISender sender, IAppDbContext db, ITenantContext tenantContext, IHubContext<OrdersHub> hub)
+        public OrdersController(
+            ISender sender,
+            IAppDbContext db,
+            ITenantContext tenantContext,
+            IHubContext<OrdersHub> hub)
         {
             _sender = sender;
             _db = db;
@@ -51,7 +55,9 @@ namespace Market.API.Controllers
         {
             var id = await _sender.Send(command, ct);
             var tenantId = _tenantContext.RequireTenantId();
+
             var order = await _db.Orders
+                .Include(o => o.Items)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
 
@@ -70,7 +76,7 @@ namespace Market.API.Controllers
                 _db.Notifications.Add(notification);
                 await _db.SaveChangesAsync(ct);
 
-                var payload = new
+                var kitchenPayload = new
                 {
                     orderId = order.Id,
                     tableNumber = order.TableNumber,
@@ -81,7 +87,7 @@ namespace Market.API.Controllers
 
                 await _hub.Clients
                     .Group(OrdersHubGroups.Kitchen(order.TenantId))
-                    .SendAsync(OrdersHubEvents.OrderCreated, payload, ct);
+                    .SendAsync(OrdersHubEvents.OrderCreated, kitchenPayload, ct);
 
                 var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, order.TenantId);
                 if (!string.IsNullOrWhiteSpace(roleGroup))
@@ -99,7 +105,31 @@ namespace Market.API.Controllers
                             readAtUtc = notification.ReadAtUtc
                         }, ct);
                 }
+
+                await _hub.Clients
+                    .Group(OrdersHubGroups.Admin(order.TenantId))
+                    .SendAsync(OrdersHubEvents.OrderCreated, new
+                    {
+                        orderId = order.Id,
+                        tableNumber = order.TableNumber,
+                        status = order.Status.ToString(),
+                        createdAt = order.CreatedAtUtc,
+                        items = order.Items.Select(i => new
+                        {
+                            i.Name,
+                            i.Quantity
+                        })
+                    }, ct);
+
+                await _hub.Clients
+                    .Group(OrdersHubGroups.Admin(order.TenantId))
+                    .SendAsync(OrdersHubEvents.DashboardUpdated, new
+                    {
+                        type = "order_created",
+                        orderId = order.Id
+                    }, ct);
             }
+
             return Created(string.Empty, new { id });
         }
 
@@ -111,6 +141,7 @@ namespace Market.API.Controllers
             await _sender.Send(command, ct);
 
             var tenantId = _tenantContext.RequireTenantId();
+
             var order = await _db.Orders
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
@@ -125,10 +156,20 @@ namespace Market.API.Controllers
 
                 var waiterGroup = OrdersHubGroups.Waiter(order.TenantId);
                 var kitchenGroup = OrdersHubGroups.Kitchen(order.TenantId);
+                var adminGroup = OrdersHubGroups.Admin(order.TenantId);
 
                 await _hub.Clients
-                    .Groups(waiterGroup, kitchenGroup)
+                    .Groups(waiterGroup, kitchenGroup, adminGroup)
                     .SendAsync(OrdersHubEvents.OrderStatusChanged, payload, ct);
+
+                await _hub.Clients
+                    .Group(adminGroup)
+                    .SendAsync(OrdersHubEvents.DashboardUpdated, new
+                    {
+                        type = "order_status_changed",
+                        orderId = order.Id,
+                        status = order.Status.ToString()
+                    }, ct);
 
                 if (order.Status == OrderStatus.ReadyForPickup)
                 {
@@ -175,6 +216,7 @@ namespace Market.API.Controllers
                     if (notifications.Count > 0)
                     {
                         var now = DateTime.UtcNow;
+
                         foreach (var item in notifications)
                         {
                             item.ReadAtUtc ??= now;
@@ -185,6 +227,7 @@ namespace Market.API.Controllers
 
                     var waiterRole = OrdersHubGroups.Role(RoleNames.Waiter, order.TenantId);
                     var kitchenRole = OrdersHubGroups.Role(RoleNames.Kitchen, order.TenantId);
+
                     var groups = new[] { waiterRole, kitchenRole }
                         .Where(g => !string.IsNullOrWhiteSpace(g))
                         .ToArray();
@@ -201,6 +244,7 @@ namespace Market.API.Controllers
                     }
                 }
             }
+
             return NoContent();
         }
     }

@@ -29,6 +29,9 @@ import { OrdersChartComponent } from './analytics/admin-dashboard/analyticsdashb
 import { AdminDashboard } from './analytics/admin-dashboard/admin-dashboard';
 import { RevenueChart } from './analytics/admin-dashboard/analyticsdashboard/revenue-chart/revenue-chart';
 import {TopSellingChart} from './analytics/admin-dashboard/analyticsdashboard/top-selling-chart/top-selling-chart';
+import { Orders } from './orders/orders';
+import {KpiComponent} from './analytics/admin-dashboard/analyticsdashboard/KPI/KpiComponent';
+import { LiveOrders } from './analytics/admin-dashboard/analyticsdashboard/live-orders/live-orders';
 
 @NgModule({
   declarations: [
@@ -37,7 +40,10 @@ import {TopSellingChart} from './analytics/admin-dashboard/analyticsdashboard/to
     AdminDashboard,
     TopSellingChart,
     RevenueChart,
-    OrdersChartComponent
+    OrdersChartComponent,
+    Orders,
+    KpiComponent,
+    LiveOrders
   ],
   imports: [
     CommonModule,
@@ -76,7 +82,7 @@ import {TopSellingChart} from './analytics/admin-dashboard/analyticsdashboard/to
     MatDatepickerInput,
     MatError,
     MatDivider,
-    FormsModule
+    FormsModule,
   ]
 })
 export class AdminModule {}

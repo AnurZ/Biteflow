@@ -2,6 +2,7 @@ using Market.Application.Abstractions;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Orders;
 using MediatR;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
@@ -11,6 +12,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
     {
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
+        //private readonly IHubContext<>
 
         public CreateOrderCommandHandler(IAppDbContext db, ITenantContext tenantContext)
         {
@@ -76,6 +78,8 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
 
             _db.Orders.Add(order);
             await _db.SaveChangesAsync(cancellationToken);
+
+           
 
             return order.Id;
         }
