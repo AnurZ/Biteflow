@@ -1,38 +1,128 @@
-<div class="dashboard">
+<div
+  class="dashboard"
+  [class.edit-mode]="isEditMode"
+>
 
+  <!-- CONTROLS -->
   <div class="controls">
-    <div class="field">
-      <label>From</label>
-      <input type="date" [(ngModel)]="fromDate" [disabled]="isTodayMode" />
+
+    <div class="controls-date-today">
+      <div class="field">
+        <label>From</label>
+
+        <input
+          type="date"
+          [(ngModel)]="fromDate"
+          [disabled]="isTodayMode"
+        />
+      </div>
+
+      <div class="field">
+        <label>To</label>
+
+        <input
+          type="date"
+          [(ngModel)]="toDate"
+          [disabled]="isTodayMode"
+        />
+      </div>
+
+      <button
+        (click)="applyFilter()"
+        [disabled]="isTodayMode"
+      >
+        Apply
+      </button>
+
+      <button (click)="toggleTodayMode()">
+        {{ isTodayMode ? 'Disable Today' : 'Today' }}
+      </button>
     </div>
 
-    <div class="field">
-      <label>To</label>
-      <input type="date" [(ngModel)]="toDate" [disabled]="isTodayMode" />
-    </div>
+    <mat-icon
+      class="edit-button"
+      (click)="toggleEditMode()"
+    >
+      {{ isEditMode ? 'save' : 'edit' }}
+    </mat-icon>
 
-    <button (click)="applyFilter()" [disabled]="isTodayMode">Apply</button>
-
-    <button (click)="toggleTodayMode()">
-      {{ isTodayMode ? 'Disable Today' : 'Today' }}
-    </button>
   </div>
 
+  <!-- KPI -->
+  <app-kpi
+    [range]="range"
+    [refreshTick]="refreshTick"
+    [isEditMode]="isEditMode"
+  ></app-kpi>
 
+  <!-- MAIN DASHBOARD -->
+  <div
+    cdkDropList
+    class="widgets-column"
+    [cdkDropListData]="widgets"
+    (cdkDropListDropped)="dropWidgets($event)"
+  >
 
-  <app-kpi [range]="range" [refreshTick]="refreshTick"></app-kpi>
+    <div
+      class="widget-wrapper"
+      *ngFor="let widget of widgets"
+      cdkDrag
+      [cdkDragDisabled]="!isEditMode"
+    >
 
-  <app-live-orders></app-live-orders>
+      <ng-container [ngSwitch]="widget">
 
-  <div class="charts-grid">
+        <!-- LIVE ORDERS -->
+        <app-live-orders
+          *ngSwitchCase="'liveOrders'"
+        ></app-live-orders>
 
+        <!-- CHARTS SECTION -->
+        <div
+          *ngSwitchCase="'charts'"
+          cdkDropList
+          class="charts-grid"
+          [cdkDropListData]="charts"
+          cdkDropListOrientation="horizontal"
+          (cdkDropListDropped)="dropCharts($event)"
+        >
 
+          <div
+            class="chart-wrapper"
+            *ngFor="let chart of charts"
+            cdkDrag
+            [cdkDragDisabled]="!isEditMode"
+          >
 
-    <app-revenue-chart [range]="range" [refreshTick]="refreshTick"></app-revenue-chart>
+            <ng-container [ngSwitch]="chart">
 
-    <app-orders-chart [range]="range" [refreshTick]="refreshTick"></app-orders-chart>
+              <app-revenue-chart
+                *ngSwitchCase="'revenue'"
+                [range]="range"
+                [refreshTick]="refreshTick"
+              ></app-revenue-chart>
 
-    <app-top-selling-chart [range]="range" [refreshTick]="refreshTick"></app-top-selling-chart>
+              <app-orders-chart
+                *ngSwitchCase="'orders'"
+                [range]="range"
+                [refreshTick]="refreshTick"
+              ></app-orders-chart>
+
+              <app-top-selling-chart
+                *ngSwitchCase="'topSelling'"
+                [range]="range"
+                [refreshTick]="refreshTick"
+              ></app-top-selling-chart>
+
+            </ng-container>
+
+          </div>
+
+        </div>
+
+      </ng-container>
+
+    </div>
 
   </div>
 
