@@ -7,31 +7,28 @@
   overflow: visible;
 }
 
-.chart-card {
-  background: #fff;
-  border: 1px solid #e6e6e6;
-  border-radius: 10px;
-  padding: 12px;
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
+/* =========================
+   CONTROLS
+========================= */
 .controls {
   display: flex;
-  align-items: flex-end;
   gap: 12px;
   padding: 12px;
   background: #fff;
   border: 1px solid #e6e6e6;
   border-radius: 10px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.controls-date-today{
+  gap: 12px;
+  display: flex;
 }
 
 .field {
   display: flex;
   align-items: center;
-
   gap: 4px;
 }
 
@@ -58,22 +55,97 @@
   background: #eaeaea;
 }
 
+/* =========================
+   WIDGETS
+========================= */
+.widgets-column {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
 
+.widgets-column.cdk-drop-list-dragging .widget-wrapper:not(.cdk-drag-placeholder) {
+  transition: transform 250ms ease;
+}
 
-/* CHARTS */
+/* =========================
+   CHARTS GRID
+========================= */
 .charts-grid {
-  display: grid;
-  grid-template-columns: 2fr 2fr 2fr;
+  display: flex;
   gap: 12px;
 }
 
+.charts-grid.cdk-drop-list-dragging .chart-wrapper:not(.cdk-drag-placeholder) {
+  transition: transform 250ms ease;
+}
 
+/* =========================
+   DRAGGABLE ITEMS
+========================= */
+.widget-wrapper,
+.chart-wrapper
+{
+  cursor : default;
+}
 
-/* RESPONSIVE */
+.cdk-drag-disabled {
+  cursor: default !important;
+}
+
+.dashboard.edit-mode .chart-wrapper,
+.dashboard.edit-mode .widgets-column {
+  cursor: move;
+  outline: 2px dashed #cfcfcf;
+  outline-offset: 4px;
+}
+
+.dashboard.edit-mode .widget-wrapper {
+  cursor: move;
+}
+
+.chart-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+/* =========================
+   DRAG PREVIEW
+========================= */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0.95;
+}
+
+/* =========================
+   PLACEHOLDER
+========================= */
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+/* =========================
+   ANIMATION
+========================= */
+.cdk-drag-animating {
+  transition: transform 250ms ease;
+}
+
+.edit-button{
+  padding: 10px;
+  color: white;
+  background: green;
+  border-radius: 10px;
+  border: 1px solid black;
+  cursor: pointer;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
 @media (max-width: 1000px) {
-  .kpi-section {
-    grid-template-columns: repeat(2, 1fr);
-  }
 
   .charts-grid {
     grid-template-columns: 1fr;
@@ -83,5 +155,3 @@
     flex-wrap: wrap;
   }
 }
-
-

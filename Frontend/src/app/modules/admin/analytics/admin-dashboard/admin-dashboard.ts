@@ -1,6 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 
+import {
+  CdkDragDrop,
+  moveItemInArray
+} from '@angular/cdk/drag-drop';
+
 import { DashboardAnalyticsService } from '../services/DashboardAnalyticsService';
 import { RealtimeHubService } from '../../../../services/realtime/realtime-hub.service';
 import { DashboardRefreshService } from '../services/DashboardRefreshService';
@@ -11,14 +16,14 @@ import { DateRange } from '../../admin-model';
   standalone: false,
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.css'
+  styleUrl: './admin-dashboard.css',
 })
 export class AdminDashboard implements OnInit, OnDestroy {
 
   private sub = new Subscription();
 
-
   refreshTick = 0;
+
   range!: DateRange;
 
   fromDate!: string;
@@ -26,28 +31,132 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
   isTodayMode = false;
 
+  isEditMode = false;
+
+  // ================================
+  // DASHBOARD LAYOUT STATE
+  // ================================
+
+  widgets = [
+    'liveOrders',
+    'charts'
+  ];
+
+  charts = [
+    'revenue',
+    'orders',
+    'topSelling'
+  ];
+
   constructor(
     private analyticsService: DashboardAnalyticsService,
     private realtime: RealtimeHubService,
     private refresh: DashboardRefreshService
   ) {}
 
-  // ---------------- INIT ----------------
+  // ================================
+  // INIT
+  // ================================
   ngOnInit(): void {
 
     this.initDates();
+
+    this.loadLayout();
 
     this.logRange('INIT');
 
     this.sub.add(
       this.realtime.on('DashboardUpdated').subscribe(() => {
+
         console.log('📡 DASHBOARD EVENT RECEIVED');
+
         this.refreshTick++;
       })
     );
   }
 
-  // ---------------- TODAY TOGGLE ----------------
+  // ================================
+  // DRAG DROP
+  // ================================
+  dropWidgets(event: CdkDragDrop<string[]>): void {
+
+    moveItemInArray(
+      this.widgets,
+      event.previousIndex,
+      event.currentIndex
+    );
+
+    this.saveLayout();
+  }
+
+  dropCharts(event: CdkDragDrop<string[]>): void {
+
+    moveItemInArray(
+      this.charts,
+      event.previousIndex,
+      event.currentIndex
+    );
+
+    this.saveLayout();
+  }
+
+  // ================================
+  // SAVE / LOAD LAYOUT
+  // ================================
+
+  toggleEditMode(): void {
+
+    if (this.isEditMode) {
+
+      this.saveDashboardLayout();
+
+      this.isEditMode = false;
+
+      return;
+    }
+
+    this.isEditMode = true;
+  }
+
+  private saveDashboardLayout(): void {
+
+    localStorage.setItem(
+      'admin-dashboard-layout',
+      JSON.stringify({
+        widgets: this.widgets,
+        charts: this.charts
+      })
+    );
+  }
+  private saveLayout(): void {
+
+    localStorage.setItem(
+      'admin-dashboard-layout',
+      JSON.stringify({
+        widgets: this.widgets,
+        charts: this.charts
+      })
+    );
+  }
+
+  private loadLayout(): void {
+
+    const layout = localStorage.getItem(
+      'admin-dashboard-layout'
+    );
+
+    if (!layout) return;
+
+    const parsed = JSON.parse(layout);
+
+    this.widgets = parsed.widgets ?? this.widgets;
+
+    this.charts = parsed.charts ?? this.charts;
+  }
+
+  // ================================
+  // TODAY TOGGLE
+  // ================================
   toggleTodayMode(): void {
 
     if (this.isTodayMode) {
@@ -64,7 +173,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.logRange('TODAY MODE');
   }
 
-  // ---------------- TODAY ----------------
+  // ================================
+  // TODAY
+  // ================================
   private setToday(): void {
 
     const today = new Date();
@@ -81,7 +192,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.refreshTick++;
   }
 
-  // ---------------- LAST 7 DAYS ----------------
+  // ================================
+  // LAST 7 DAYS
+  // ================================
   private setLast7Days(): void {
 
     const today = new Date();
@@ -102,13 +215,20 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.refreshTick++;
   }
 
-  // ---------------- APPLY FILTER ----------------
+  // ================================
+  // APPLY FILTER
+  // ================================
   applyFilter(): void {
 
     this.isTodayMode = false;
 
-    const from = this.startOfDay(new Date(this.fromDate));
-    const to = this.startOfNextDay(new Date(this.toDate));
+    const from = this.startOfDay(
+      new Date(this.fromDate)
+    );
+
+    const to = this.startOfNextDay(
+      new Date(this.toDate)
+    );
 
     this.range = { from, to };
 
@@ -117,7 +237,9 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.refreshTick++;
   }
 
-  // ---------------- HELPERS ----------------
+  // ================================
+  // HELPERS
+  // ================================
   private startOfDay(date: Date): Date {
 
     return new Date(
@@ -141,8 +263,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private toInput(date: Date): string {
 
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+
+    const month = String(
+      date.getMonth() + 1
+    ).padStart(2, '0');
+
+    const day = String(
+      date.getDate()
+    ).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
   }
@@ -150,10 +278,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
   private syncInputs(): void {
 
     this.fromDate = this.toInput(this.range.from);
+
     this.toDate = this.toInput(this.range.to);
   }
 
-  // ---------------- RANGE LOGGER ----------------
+  // ================================
+  // RANGE LOGGER
+  // ================================
   private logRange(context: string): void {
 
     console.log(`========== ${context} ==========`);
@@ -162,20 +293,30 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
     console.log('TO LOCAL  :', this.range.to);
 
-    console.log('FROM ISO  :', this.range.from.toISOString());
+    console.log(
+      'FROM ISO  :',
+      this.range.from.toISOString()
+    );
 
-    console.log('TO ISO    :', this.range.to.toISOString());
+    console.log(
+      'TO ISO    :',
+      this.range.to.toISOString()
+    );
 
     console.log('================================');
   }
 
-  // ---------------- INIT DEFAULT ----------------
+  // ================================
+  // INIT DEFAULT
+  // ================================
   private initDates(): void {
 
     this.setLast7Days();
   }
 
-  // ---------------- CLEANUP ----------------
+  // ================================
+  // CLEANUP
+  // ================================
   ngOnDestroy(): void {
 
     this.sub.unsubscribe();
