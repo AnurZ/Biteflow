@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { DateRange } from '../../admin-model';
+import {MyConfig} from '../../../../my-config';
 
 export interface OrdersPerDayDto {
   date: string;

@@ -1,17 +1,72 @@
-﻿/* KPI */
+﻿
+/* =========================
+   KPI LAYOUT (MATCH DASHBOARD STYLE)
+========================= */
 .kpi-section {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   gap: 12px;
 }
 
+/* =========================
+   KPI CARD BASE (same vibe as widgets)
+========================= */
 .kpi-card {
+  flex: 1;
+  min-width: 0;
+
   background: #fff;
   border: 1px solid #e6e6e6;
   border-radius: 10px;
   padding: 14px;
+
+
 }
 
+/* hover ONLY when NOT editing (same as widgets feel) */
+.dashboard:not(.edit-mode) .kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* =========================
+   DRAG STATES (MATCH CHARTS/WIDGETS)
+========================= */
+
+.kpi-card.edit-mode,
+.kpi-section.edit-mode .kpi-card {
+  cursor: move;
+  outline: 2px dashed #cfcfcf;
+  outline-offset: 4px;
+}
+
+/* smooth reorder animation */
+.kpi-section.cdk-drop-list-dragging .kpi-card:not(.cdk-drag-placeholder) {
+  transition: transform 250ms ease;
+}
+
+/* preview (same style as dashboard items) */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0.95;
+
+  box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+}
+
+/* placeholder (same as widgets) */
+.cdk-drag-placeholder {
+  opacity: 0.3;
+}
+
+
+.cdk-drag-disabled {
+  cursor: default !important;
+}
+
+/* =========================
+   TYPOGRAPHY (unchanged)
+========================= */
 .kpi-title {
   font-size: 12px;
   color: #777;
@@ -24,10 +79,16 @@
   color: #111;
 }
 
-.kpi-card {
-  transition: 0.2s ease;
-}
+/* =========================
+   RESPONSIVE (same philosophy as widgets)
+========================= */
+@media (max-width: 1000px) {
 
-.kpi-card:hover {
-  transform: translateY(-2px);
+  .kpi-section {
+    flex-wrap: wrap;
+  }
+
+  .kpi-card {
+    min-width: calc(50% - 6px);
+  }
 }

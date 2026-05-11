@@ -32,6 +32,7 @@ import {TopSellingChart} from './analytics/admin-dashboard/analyticsdashboard/to
 import { Orders } from './orders/orders';
 import {KpiComponent} from './analytics/admin-dashboard/analyticsdashboard/KPI/KpiComponent';
 import { LiveOrders } from './analytics/admin-dashboard/analyticsdashboard/live-orders/live-orders';
+import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
 
 @NgModule({
   declarations: [
@@ -83,6 +84,8 @@ import { LiveOrders } from './analytics/admin-dashboard/analyticsdashboard/live-
     MatError,
     MatDivider,
     FormsModule,
+    CdkDrag,
+    CdkDropList,
   ]
 })
 export class AdminModule {}
