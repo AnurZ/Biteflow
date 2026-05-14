@@ -31,6 +31,7 @@ export class TableLayoutCreateDialog implements OnInit {
 
 
   selectedColor ='#ffffff';
+  selectedFile: File | null = null;
 
   form = this.fb.group({
     name: this.fb.control<string>('', {
@@ -45,22 +46,6 @@ export class TableLayoutCreateDialog implements OnInit {
 
   imageUrl: string | null = null;
 
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    // Optional: show preview instantly
-    const reader = new FileReader();
-    reader.onload = () => this.imageUrl = reader.result as string;
-    reader.readAsDataURL(file);
-
-    // Upload to backend
-    this.fileUploadEndpoint.uploadFile(file).subscribe({
-      next: res => this.imageUrl = res.url, // Replace preview with backend URL
-      error: err => console.error('Upload error', err)
-    });
-  }
 
 
 
