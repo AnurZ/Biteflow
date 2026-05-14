@@ -1,4 +1,8 @@
 <app-header></app-header>
 <main>
   <router-outlet></router-outlet>
+  <app-upload-overlay
+    [visible]="uploadOverlay.visible"
+    [progress]="uploadOverlay.progress">
+  </app-upload-overlay>
 </main>

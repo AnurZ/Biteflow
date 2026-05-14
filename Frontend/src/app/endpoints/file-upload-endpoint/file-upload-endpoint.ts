@@ -2,6 +2,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { MyConfig } from '../../my-config';
+import { HttpEvent, HttpEventType, HttpRequest } from '@angular/common/http';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +13,16 @@ export class FileUploadEndpoint {
 
   constructor(private http: HttpClient) {}
 
-  uploadFile(file: File): Observable<{ url: string }> {
+  uploadFile(file: File): Observable<HttpEvent<any>> {
+
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<{ url: string }>(`${this.base}/upload`, formData);
+
+    return this.http.post(`${this.base}/upload`, formData, {
+      reportProgress: true,
+      observe: 'events',
+      responseType: 'json'
+    });
   }
 
   getImage(fileName: string): Observable<Blob> {

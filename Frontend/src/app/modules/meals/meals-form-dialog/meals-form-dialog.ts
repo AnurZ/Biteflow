@@ -54,6 +54,7 @@ export class MealsFormDialog implements OnInit {
   inventoryItemsList = new MatTableDataSource<MealIngredientQueryDto>();
   columns: string[] = ['name', 'quantity', 'unitType', 'actions'];
   loading = false;
+  selectedFile: File | null = null;
 
   constructor(
     private ref: MatDialogRef<MealsFormDialog>,
@@ -103,14 +104,6 @@ export class MealsFormDialog implements OnInit {
 
 
   mealCategories: MealCategory[] = [];
-
-
-
-
-
-
-
-
 
   get ingredientsArray(): FormArray {
     return this.form.get('ingredients') as FormArray;
@@ -271,17 +264,6 @@ export class MealsFormDialog implements OnInit {
         finalize(() => this.loading = false)
       ).subscribe({ next: () => this.ref.close(true) });
     }
-  }
-
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const file = input.files[0];
-    this.uploadFileEp.uploadFile(file).subscribe({
-      next: res => this.form.patchValue({ imageField: res.url }),
-      error: err => console.error('File upload failed', err)
-    });
   }
 
   /* ---------------- Helpers ---------------- */

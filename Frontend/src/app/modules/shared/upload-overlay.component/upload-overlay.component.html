@@ -1,0 +1,18 @@
+<div *ngIf="visible" class="upload-overlay">
+
+  <div class="upload-box">
+
+    <div class="progress-bar-container">
+      <div
+        class="progress-bar"
+        [style.width.%]="progress">
+      </div>
+    </div>
+
+    <div class="progress-text">
+      Uploading... {{ progress }}%
+    </div>
+
+  </div>
+
+</div>

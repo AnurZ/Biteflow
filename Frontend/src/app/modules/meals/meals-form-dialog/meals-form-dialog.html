@@ -5,10 +5,23 @@
     <!-- Meal image + details -->
     <div class="section-card">
       <div class="image-name-price-holder" style="display: flex; justify-content: space-between">
+
         <div class="image-preview" (click)="fileInput.click()">
-          <img [src]="form.get('imageField')?.value" alt="Meal image" width="250" height="250" />
+          <img [src]="form.get('imageField')?.value" width="250" height="250" />
         </div>
-        <input type="file" #fileInput style="display: none;" (change)="onFileSelected($event)" />
+
+        <input
+          type="file"
+          #fileInput
+          hidden
+          (change)="selectedFile = $any($event.target).files[0]"
+        />
+
+        <app-file-upload
+          [file]="selectedFile"
+          (uploaded)="form.patchValue({ imageField: $event })">
+        </app-file-upload>
+
         <div style="width: 75%; justify-content: space-between; flex-direction: column; display: flex;">
           <div class="inner-grid">
             <mat-form-field appearance="outline" class="inputInFlex">

@@ -23,31 +23,58 @@
           />
         </div>
         <!-- Image preview / clickable uploader -->
+
+        <!-- Image preview / clickable uploader -->
         <div class="image-wrapper">
+
+          <!-- Uploaded image -->
           <img
+            *ngIf="imageUrl"
             [src]="imageUrl"
             alt="Upload preview"
             class="image-uploader"
             (click)="fileInput.click()"
           />
+
+          <!-- Placeholder -->
+          <div
+            *ngIf="!imageUrl"
+            class="image-uploader upload-placeholder"
+            (click)="fileInput.click()">
+
+            <mat-icon style="font-size: 42px; width: 42px; height: 42px;">
+              cloud_upload
+            </mat-icon>
+
+            <span>Upload background</span>
+
+          </div>
+
         </div>
 
-
-        <!-- Hidden file input -->
+        <!-- Hidden input -->
         <input
           type="file"
           #fileInput
+          hidden
           accept="image/*"
-          style="display: none"
-          (change)="onFileSelected($event)"
+          (change)="selectedFile = $any($event.target).files[0]"
         />
+
+        <!-- Upload logic + fullscreen progress -->
+        <app-file-upload
+          [file]="selectedFile"
+          (uploaded)="imageUrl = $event">
+        </app-file-upload>
+
 
         <div style="margin-top: 20px; text-align: center;">
           <button
             mat-stroked-button
             color="warn"
+            [disabled]="!imageUrl"
             (click)="removeBackgroundImage()"
-            [disabled]="!imageUrl">
+          >
             Remove background
           </button>
         </div>

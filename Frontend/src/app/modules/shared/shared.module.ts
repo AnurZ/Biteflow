@@ -19,11 +19,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // My components
 import { InputText } from './reactive-forms/input-text/input-text';
+import {FileUploadComponent} from './file-upload/file-upload';
+import { UploadOverlayComponent } from './upload-overlay.component/upload-overlay.component';
 
 
 @NgModule({
   declarations: [
-    InputText
+    InputText,
+    FileUploadComponent,
+    UploadOverlayComponent
   ],
   imports: [
     CommonModule,
@@ -60,6 +64,8 @@ import { InputText } from './reactive-forms/input-text/input-text';
     MatInputModule,
     MatSelectModule,
     MatProgressSpinnerModule,
+    FileUploadComponent,
+    UploadOverlayComponent,
   ]
 })
 export class SharedModule {}
