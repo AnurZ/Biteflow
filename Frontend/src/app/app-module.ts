@@ -30,36 +30,37 @@ import {MatMenu, MatMenuTrigger} from '@angular/material/menu';
 import { WaiterModule } from './modules/waiter/waiter-module';
 import { KitchenModule } from './modules/kitchen/kitchen-module';
 import { MyConfig } from './my-config';
+import {FileUploadComponent} from "./modules/shared/file-upload/file-upload";
 
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
     AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent,
     TableLayoutCreateDialog, TableLayoutCreateDialog, TableReservation, TableReservationFormDialog],
-  imports: [
-    BrowserModule,
-    HttpClientModule,
-    AppRoutingModule,
-    ReactiveFormsModule,
-    OAuthModule.forRoot({
-      resourceServer: {
-        allowedUrls: MyConfig.oauth_allowed_urls,
-        sendAccessToken: true
-      }
-    }),
-    SharedModule,
-    PublicModule,
-    WaiterModule,
-    KitchenModule,
-    MatCheckbox,
-    MatTableModule,
-    ColorPickerDirective,
-    DragDropModule,
-    MatDatepickerInput,
-    MatDatepickerToggle,
-    MatDatepicker,
-    MatMenu,
-    MatMenuTrigger
-  ],
+    imports: [
+        BrowserModule,
+        HttpClientModule,
+        AppRoutingModule,
+        ReactiveFormsModule,
+        OAuthModule.forRoot({
+            resourceServer: {
+                allowedUrls: MyConfig.oauth_allowed_urls,
+                sendAccessToken: true
+            }
+        }),
+        SharedModule,
+        PublicModule,
+        WaiterModule,
+        KitchenModule,
+        MatCheckbox,
+        MatTableModule,
+        ColorPickerDirective,
+        DragDropModule,
+        MatDatepickerInput,
+        MatDatepickerToggle,
+        MatDatepicker,
+        MatMenu,
+        MatMenuTrigger,
+    ],
   providers: [
     provideBrowserGlobalErrorListeners(),
   ],
