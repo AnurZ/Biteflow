@@ -1,4 +1,4 @@
-﻿import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core';
+﻿import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import { DashboardAnalyticsService, KpiDto } from '../../../services/DashboardAnalyticsService';
 import { DateRange } from '../../../../admin-model';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
@@ -15,15 +15,10 @@ export class KpiComponent implements OnChanges, OnInit {
   @Input() range!: DateRange;
   @Input() refreshTick!: number;
   @Input() isEditMode = false;
+  @Input() kpiCards: string[] = [];
+  @Output() kpiCardsChange = new EventEmitter<string[]>();
 
   kpi!: KpiDto;
-
-  kpiCards = [
-    'orders',
-    'revenue',
-    'avgOrder',
-    'topItem'
-  ];
 
   constructor(private analyticsService: DashboardAnalyticsService) {}
 
@@ -35,7 +30,6 @@ export class KpiComponent implements OnChanges, OnInit {
   }
 
   ngOnInit(): void {
-    this.loadLayout();
   }
 
   load(): void {
@@ -57,25 +51,8 @@ export class KpiComponent implements OnChanges, OnInit {
       event.currentIndex
     );
 
-    this.saveLayout();
+    this.kpiCardsChange.emit([...this.kpiCards]);
   }
 
-  private saveLayout(): void {
 
-    localStorage.setItem(
-      'admin-kpi-layout',
-      JSON.stringify(this.kpiCards)
-    );
-  }
-
-  private loadLayout(): void {
-
-    const layout = localStorage.getItem(
-      'admin-kpi-layout'
-    );
-
-    if (!layout) return;
-
-    this.kpiCards = JSON.parse(layout);
-  }
 }

@@ -19,6 +19,7 @@ namespace Market.API.Controllers.Analytics
         }
 
         [HttpGet("kpis")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
         public async Task<ActionResult<KpiDto>> GetKpis(
             [FromQuery] DateTime from,
             [FromQuery] DateTime to)

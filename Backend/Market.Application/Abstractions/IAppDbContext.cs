@@ -1,4 +1,5 @@
 ﻿using Market.Domain.Entities.ActivationLinkEntity;
+using Market.Domain.Entities.DashboardLayout;
 using Market.Domain.Entities.DiningTables;
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.InventoryItem;
@@ -34,6 +35,7 @@ public interface IAppDbContext
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
     DbSet<NotificationEntity> Notifications { get; }
+    DbSet<DashboardLayout> DashboardLayouts { get; }
 
 
     Task<int> SaveChangesAsync(CancellationToken ct);
