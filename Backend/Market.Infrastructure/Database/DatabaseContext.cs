@@ -1,5 +1,6 @@
 ﻿using Market.Application.Abstractions;
 using Market.Domain.Entities.ActivationLinkEntity;
+using Market.Domain.Entities.DashboardLayout;
 using Market.Domain.Entities.DiningTables;
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.InventoryItem;
@@ -43,6 +44,7 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<NotificationEntity> Notifications => Set<NotificationEntity>();
+    public DbSet<DashboardLayout> DashboardLayouts => Set<DashboardLayout>();
 
     private readonly TimeProvider _clock;
     private readonly ITenantContext _tenantContext;

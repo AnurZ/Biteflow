@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import {Component, EventEmitter, Input, OnDestroy, OnInit, Output} from '@angular/core';
 import { Subscription } from 'rxjs';
 
 import {
@@ -10,7 +10,8 @@ import { DashboardAnalyticsService } from '../services/DashboardAnalyticsService
 import { RealtimeHubService } from '../../../../services/realtime/realtime-hub.service';
 import { DashboardRefreshService } from '../services/DashboardRefreshService';
 
-import { DateRange } from '../../admin-model';
+import {DashboardLayout, DateRange} from '../../admin-model';
+import {DashboardLayoutService} from '../../../../services/DashboardLayoutService/DashboardLayout-service';
 
 @Component({
   standalone: false,
@@ -48,10 +49,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
     'topSelling'
   ];
 
+  kpiCards = [
+    'orders',
+    'revenue',
+    'avgOrder',
+    'topItem'
+  ];
+
   constructor(
-    private analyticsService: DashboardAnalyticsService,
     private realtime: RealtimeHubService,
-    private refresh: DashboardRefreshService
+    private dashboardLayoutService: DashboardLayoutService,
   ) {}
 
   // ================================
@@ -100,6 +107,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.saveLayout();
   }
 
+  dropKpi(event: CdkDragDrop<string[]>): void {
+
+    moveItemInArray(
+      this.kpiCards,
+      event.previousIndex,
+      event.currentIndex
+    );
+
+  }
+
   // ================================
   // SAVE / LOAD LAYOUT
   // ================================
@@ -108,8 +125,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
     if (this.isEditMode) {
 
-      this.saveDashboardLayout();
-
+      this.saveLayout();
       this.isEditMode = false;
 
       return;
@@ -117,41 +133,44 @@ export class AdminDashboard implements OnInit, OnDestroy {
 
     this.isEditMode = true;
   }
-
-  private saveDashboardLayout(): void {
-
-    localStorage.setItem(
-      'admin-dashboard-layout',
-      JSON.stringify({
-        widgets: this.widgets,
-        charts: this.charts
-      })
-    );
-  }
   private saveLayout(): void {
 
-    localStorage.setItem(
-      'admin-dashboard-layout',
-      JSON.stringify({
-        widgets: this.widgets,
-        charts: this.charts
-      })
-    );
+    const layout: DashboardLayout = {
+      widgets: this.widgets,
+      charts: this.charts,
+      kpis: this.kpiCards
+    };
+
+    this.dashboardLayoutService.saveLayout(
+      JSON.stringify(layout)
+    ).subscribe({
+      next: () => {
+        console.log('LAYOUT SAVED');
+      },
+      error: err => {
+        console.error('SAVE ERROR', err);
+      }
+    });
   }
 
   private loadLayout(): void {
 
-    const layout = localStorage.getItem(
-      'admin-dashboard-layout'
-    );
+    this.dashboardLayoutService.getLayout().subscribe({
+      next: res => {
 
-    if (!layout) return;
+        if (!res.layoutJson) return;
 
-    const parsed = JSON.parse(layout);
+        const layout: DashboardLayout = JSON.parse(res.layoutJson);
 
-    this.widgets = parsed.widgets ?? this.widgets;
+        if (layout.widgets) this.widgets = layout.widgets;
+        if (layout.charts) this.charts = layout.charts;
+        if (layout.kpis) this.kpiCards = layout.kpis;
 
-    this.charts = parsed.charts ?? this.charts;
+      },
+      error: err => {
+        console.error('LOAD LAYOUT ERROR', err);
+      }
+    });
   }
 
   // ================================
