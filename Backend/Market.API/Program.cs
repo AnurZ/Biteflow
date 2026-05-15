@@ -13,6 +13,7 @@ using Market.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Serilog;
+using Market.API.Services;
 
 public partial class Program
 {
@@ -61,6 +62,8 @@ public partial class Program
                 .AddAPI(builder.Configuration, builder.Environment)
                 .AddInfrastructure(builder.Configuration, builder.Environment)
                 .AddApplication();
+
+            //builder.Services.AddScoped<IOrderExportService, OrderExportService>();
 
             Log.Information("Services registered successfully.");
 
