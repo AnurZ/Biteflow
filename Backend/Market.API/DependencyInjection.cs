@@ -129,6 +129,7 @@ public static class DependencyInjection
         services.AddScoped<IStaffIdentityTerminationService, StaffIdentityTerminationService>();
         services.AddHttpClient();
         services.AddScoped<ICaptchaVerifier, HcaptchaVerifier>();
+        services.AddScoped<IOrderExportService, OrderExportService>();
         return services;
     }
 
