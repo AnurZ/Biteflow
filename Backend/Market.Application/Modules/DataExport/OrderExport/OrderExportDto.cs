@@ -18,5 +18,8 @@ namespace Market.Application.Modules.DataExport.OrderExport
         public DateTime CreatedAt { get; set; }
 
         public int ItemCount { get; set; }
+        public int? DiningTableId { get; set; }
+
+        public int? TableNumber { get; set; }
     }
 }
