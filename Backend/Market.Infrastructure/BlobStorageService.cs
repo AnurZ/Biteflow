@@ -9,6 +9,9 @@ using Market.Domain.Entities.BlobStorageSettings;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 
 namespace Market.Infrastructure
 {
@@ -18,12 +21,12 @@ namespace Market.Infrastructure
         private readonly ILogger<BlobStorageService> _logger;
         private readonly BlobStorageSettings _settings;
 
-        private static readonly Dictionary<string, string> AllowedTypes = new()
-        {
-            { "image/jpeg", ".jpg" },
-            { "image/png", ".png" },
-            { "image/webp", ".webp" }
-        };
+        private static readonly HashSet<string> AllowedTypes =
+            [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
 
         public BlobStorageService(
             IOptions<BlobStorageSettings> options,
@@ -45,7 +48,7 @@ namespace Market.Infrastructure
 
         public async Task<object> UploadAsync(IFormFile file)
         {
-            if (!AllowedTypes.ContainsKey(file.ContentType))
+            if (!AllowedTypes.Contains(file.ContentType))
             {
                 throw new Exception("Invalid file type.");
             }
@@ -55,21 +58,46 @@ namespace Market.Infrastructure
                 throw new Exception("Invalid image content.");
             }
 
-            var extension = AllowedTypes[file.ContentType];
-
-            var fileName = $"{Guid.NewGuid()}{extension}";
+            var fileName = $"{Guid.NewGuid()}.jpg";
 
             var blobClient = _containerClient.GetBlobClient(fileName);
 
             try
             {
-                using var stream = file.OpenReadStream();
+                using var inputStream = file.OpenReadStream();
+
+                using var image = await Image.LoadAsync(inputStream);
+
+                if (image.Width > 10000 || image.Height > 10000)
+                {
+                    throw new Exception("Image dimensions too large.");
+                }
+
+                image.Mutate(x =>
+                {
+                    x.Resize(new ResizeOptions
+                    {
+                        Mode = ResizeMode.Max,
+                        Size = new Size(1920, 1080)
+                    });
+                });
+
+                using var outputStream = new MemoryStream();
+
+                await image.SaveAsJpegAsync(
+                    outputStream,
+                    new JpegEncoder
+                    {
+                        Quality = 75
+                    });
+
+                outputStream.Position = 0;
 
                 await blobClient.UploadAsync(
-                    stream,
+                    outputStream,
                     new BlobHttpHeaders
                     {
-                        ContentType = file.ContentType
+                        ContentType = "image/jpeg"
                     });
 
                 return new
