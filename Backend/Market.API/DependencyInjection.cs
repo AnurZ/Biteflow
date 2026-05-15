@@ -8,6 +8,7 @@ using Market.Shared.Options;
 using Microsoft.OpenApi.Models;
 using Market.API.Options;
 using Market.API.Services;
+using Market.Application.Modules.DataImport.OrderImport;
 
 namespace Market.API;
 
@@ -130,6 +131,7 @@ public static class DependencyInjection
         services.AddHttpClient();
         services.AddScoped<ICaptchaVerifier, HcaptchaVerifier>();
         services.AddScoped<IOrderExportService, OrderExportService>();
+        services.AddScoped<IOrderImportService, OrderImportService>();
         return services;
     }
 

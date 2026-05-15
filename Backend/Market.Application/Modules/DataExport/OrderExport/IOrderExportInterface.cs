@@ -55,9 +55,11 @@ public class OrderExportService : IOrderExportService
         worksheet.Cell(1, 2).Value = "Status";
         worksheet.Cell(1, 3).Value = "Total Price";
         worksheet.Cell(1, 4).Value = "Created At";
-        worksheet.Cell(1, 5).Value = "Item Count";
+        worksheet.Cell(1, 5).Value = "Item Count"; 
+        worksheet.Cell(1, 6).Value = "Dining Table Id";
+        worksheet.Cell(1, 7).Value = "Table Number";
 
-        var headerRange = worksheet.Range(1, 1, 1, 6);
+        var headerRange = worksheet.Range(1, 1, 1, 7);
 
         headerRange.Style.Font.Bold = true;
 
@@ -78,6 +80,13 @@ public class OrderExportService : IOrderExportService
 
             worksheet.Cell(row, 5).Value =
                 orders[i].ItemCount;
+
+            worksheet.Cell(row, 6).Value =
+                orders[i].DiningTableId;
+
+            worksheet.Cell(row, 7).Value =
+                orders[i].TableNumber;
+
         }
 
         worksheet.Column(3).Style.NumberFormat.Format =
@@ -130,7 +139,11 @@ public class OrderExportService : IOrderExportService
 
                 CreatedAt = x.CreatedAtUtc,
 
-                ItemCount = x.Items.Count()
+                ItemCount = x.Items.Count(),
+
+                DiningTableId = x.DiningTableId,
+
+                TableNumber = x.TableNumber
             })
             .ToListAsync();
 
