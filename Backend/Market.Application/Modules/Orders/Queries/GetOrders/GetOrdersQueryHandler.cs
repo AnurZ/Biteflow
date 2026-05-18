@@ -1,10 +1,11 @@
 using Market.Application.Abstractions;
+using Market.Application.Common;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Orders.Queries.GetOrders
 {
-    public sealed class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, List<OrderDto>>
+    public sealed class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PageResult<OrderDto>>
     {
         private readonly IAppDbContext _db;
 
@@ -13,7 +14,7 @@ namespace Market.Application.Modules.Orders.Queries.GetOrders
             _db = db;
         }
 
-        public async Task<List<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
+        public async Task<PageResult<OrderDto>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
         {
             var query = _db.Orders
                 .AsNoTracking()
@@ -26,7 +27,7 @@ namespace Market.Application.Modules.Orders.Queries.GetOrders
                 query = query.Where(o => request.Statuses!.Contains(o.Status));
             }
 
-            return await query
+            var projected = query
                 .Select(o => new OrderDto
                 {
                     Id = o.Id,
@@ -43,8 +44,9 @@ namespace Market.Application.Modules.Orders.Queries.GetOrders
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice
                     }).ToList()
-                })
-                .ToListAsync(cancellationToken);
+                });
+
+            return await PageResult<OrderDto>.FromQueryableAsync(projected, request.Paging, cancellationToken);
         }
     }
 }

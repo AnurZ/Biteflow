@@ -31,11 +31,16 @@ namespace Market.API.Controllers
 
         [HttpGet]
         [Authorize(Policy = PolicyNames.StaffMember)]
-        public async Task<List<OrderDto>> GetOrders([FromQuery] OrderStatus[]? statuses, CancellationToken ct)
+        public async Task<PageResult<OrderDto>> GetOrders(
+            [FromQuery] OrderStatus[]? statuses,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            CancellationToken ct = default)
         {
             var query = new GetOrdersQuery
             {
-                Statuses = statuses?.ToList() ?? new List<OrderStatus>()
+                Statuses = statuses?.ToList() ?? new List<OrderStatus>(),
+                Paging = new PageRequest { Page = page, PageSize = pageSize }
             };
 
             return await _sender.Send(query, ct);
