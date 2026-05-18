@@ -71,7 +71,7 @@ namespace Market.API.Controllers
                     Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
                     Type = "OrderCreated",
                     Link = $"/kitchen/orders/{order.Id}"
-                };
+                }; 
 
                 _db.Notifications.Add(notification);
                 await _db.SaveChangesAsync(ct);

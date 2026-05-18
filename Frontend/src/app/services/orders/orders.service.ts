@@ -25,14 +25,14 @@ export interface OrderDto {
 
 export interface CreateOrderItemRequest {
   mealId?: number;
-  name: string;
+  isCustom?: boolean;
+  name?: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number;
 }
 
 export interface CreateOrderRequest {
-  diningTableId?: number;
-  tableNumber?: number;
+  diningTableId: number;
   notes?: string;
   items: CreateOrderItemRequest[];
 }
