@@ -1,18 +1,16 @@
 using System;
 using System.Linq;
 using Market.API.Hubs;
-using Market.Application.Abstractions;
+using Market.Application.Modules.Orders;
 using Market.Application.Modules.Orders.Commands.CreateOrder;
 using Market.Application.Modules.Orders.Commands.UpdateOrderStatus;
 using Market.Application.Modules.Orders.Queries.GetOrders;
 using Market.Domain.Common.Enums;
-using Market.Domain.Entities.Notifications;
 using Market.Shared.Constants;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Market.API.Controllers
 {
@@ -21,19 +19,13 @@ namespace Market.API.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly ISender _sender;
-        private readonly IAppDbContext _db;
-        private readonly ITenantContext _tenantContext;
         private readonly IHubContext<OrdersHub> _hub;
 
         public OrdersController(
             ISender sender,
-            IAppDbContext db,
-            ITenantContext tenantContext,
             IHubContext<OrdersHub> hub)
         {
             _sender = sender;
-            _db = db;
-            _tenantContext = tenantContext;
             _hub = hub;
         }
 
@@ -53,84 +45,45 @@ namespace Market.API.Controllers
         [Authorize(Policy = PolicyNames.StaffMember)]
         public async Task<ActionResult<int>> Create([FromBody] CreateOrderCommand command, CancellationToken ct)
         {
-            var id = await _sender.Send(command, ct);
-            var tenantId = _tenantContext.RequireTenantId();
+            var result = await _sender.Send(command, ct);
 
-            var order = await _db.Orders
-                .Include(o => o.Items)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
-
-            if (order != null)
-            {
-                var notification = new NotificationEntity
+            await _hub.Clients
+                .Group(OrdersHubGroups.Kitchen(result.TenantId))
+                .SendAsync(OrdersHubEvents.OrderCreated, new
                 {
-                    TenantId = order.TenantId,
-                    TargetRole = RoleNames.Kitchen,
-                    Title = "Nova narudzba",
-                    Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
-                    Type = "OrderCreated",
-                    Link = $"/kitchen/orders/{order.Id}"
-                }; 
+                    orderId = result.Id,
+                    tableNumber = result.TableNumber,
+                    note = result.Notes,
+                    createdAt = result.CreatedAtUtc,
+                    status = result.Status.ToString()
+                }, ct);
 
-                _db.Notifications.Add(notification);
-                await _db.SaveChangesAsync(ct);
+            await SendNotificationCreatedAsync(result.CreatedNotification, result.TenantId, ct);
 
-                var kitchenPayload = new
+            await _hub.Clients
+                .Group(OrdersHubGroups.Admin(result.TenantId))
+                .SendAsync(OrdersHubEvents.OrderCreated, new
                 {
-                    orderId = order.Id,
-                    tableNumber = order.TableNumber,
-                    note = order.Notes,
-                    createdAt = order.CreatedAtUtc,
-                    status = order.Status.ToString()
-                };
-
-                await _hub.Clients
-                    .Group(OrdersHubGroups.Kitchen(order.TenantId))
-                    .SendAsync(OrdersHubEvents.OrderCreated, kitchenPayload, ct);
-
-                var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, order.TenantId);
-                if (!string.IsNullOrWhiteSpace(roleGroup))
-                {
-                    await _hub.Clients
-                        .Group(roleGroup)
-                        .SendAsync(OrdersHubEvents.NotificationCreated, new
-                        {
-                            id = notification.Id,
-                            title = notification.Title,
-                            message = notification.Message,
-                            type = notification.Type,
-                            link = notification.Link,
-                            createdAtUtc = notification.CreatedAtUtc,
-                            readAtUtc = notification.ReadAtUtc
-                        }, ct);
-                }
-
-                await _hub.Clients
-                    .Group(OrdersHubGroups.Admin(order.TenantId))
-                    .SendAsync(OrdersHubEvents.OrderCreated, new
+                    orderId = result.Id,
+                    tableNumber = result.TableNumber,
+                    status = result.Status.ToString(),
+                    createdAt = result.CreatedAtUtc,
+                    items = result.Items.Select(i => new
                     {
-                        orderId = order.Id,
-                        tableNumber = order.TableNumber,
-                        status = order.Status.ToString(),
-                        createdAt = order.CreatedAtUtc,
-                        items = order.Items.Select(i => new
-                        {
-                            i.Name,
-                            i.Quantity
-                        })
-                    }, ct);
+                        i.Name,
+                        i.Quantity
+                    })
+                }, ct);
 
-                await _hub.Clients
-                    .Group(OrdersHubGroups.Admin(order.TenantId))
-                    .SendAsync(OrdersHubEvents.DashboardUpdated, new
-                    {
-                        type = "order_created",
-                        orderId = order.Id
-                    }, ct);
-            }
+            await _hub.Clients
+                .Group(OrdersHubGroups.Admin(result.TenantId))
+                .SendAsync(OrdersHubEvents.DashboardUpdated, new
+                {
+                    type = "order_created",
+                    orderId = result.Id
+                }, ct);
 
-            return Created(string.Empty, new { id });
+            return Created(string.Empty, new { id = result.Id });
         }
 
         [HttpPut("{id:int}/status")]
@@ -138,25 +91,19 @@ namespace Market.API.Controllers
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusCommand command, CancellationToken ct)
         {
             command.Id = id;
-            await _sender.Send(command, ct);
+            var result = await _sender.Send(command, ct);
 
-            var tenantId = _tenantContext.RequireTenantId();
-
-            var order = await _db.Orders
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == id && o.TenantId == tenantId, ct);
-
-            if (order != null)
+            if (result.StatusChanged)
             {
                 var payload = new
                 {
-                    orderId = order.Id,
-                    status = order.Status.ToString()
+                    orderId = result.OrderId,
+                    status = result.Status.ToString()
                 };
 
-                var waiterGroup = OrdersHubGroups.Waiter(order.TenantId);
-                var kitchenGroup = OrdersHubGroups.Kitchen(order.TenantId);
-                var adminGroup = OrdersHubGroups.Admin(order.TenantId);
+                var waiterGroup = OrdersHubGroups.Waiter(result.TenantId);
+                var kitchenGroup = OrdersHubGroups.Kitchen(result.TenantId);
+                var adminGroup = OrdersHubGroups.Admin(result.TenantId);
 
                 await _hub.Clients
                     .Groups(waiterGroup, kitchenGroup, adminGroup)
@@ -167,66 +114,19 @@ namespace Market.API.Controllers
                     .SendAsync(OrdersHubEvents.DashboardUpdated, new
                     {
                         type = "order_status_changed",
-                        orderId = order.Id,
-                        status = order.Status.ToString()
+                        orderId = result.OrderId,
+                        status = result.Status.ToString()
                     }, ct);
 
-                if (order.Status == OrderStatus.ReadyForPickup)
+                if (result.CreatedNotification != null)
                 {
-                    var notification = new NotificationEntity
-                    {
-                        TenantId = order.TenantId,
-                        TargetRole = RoleNames.Waiter,
-                        Title = "Narudzba spremna",
-                        Message = $"Sto {order.TableNumber ?? order.DiningTableId} - narudzba je spremna.",
-                        Type = "OrderReady",
-                        Link = $"/waiter/orders/{order.Id}"
-                    };
-
-                    _db.Notifications.Add(notification);
-                    await _db.SaveChangesAsync(ct);
-
-                    var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, order.TenantId);
-                    if (!string.IsNullOrWhiteSpace(roleGroup))
-                    {
-                        await _hub.Clients
-                            .Group(roleGroup)
-                            .SendAsync(OrdersHubEvents.NotificationCreated, new
-                            {
-                                id = notification.Id,
-                                title = notification.Title,
-                                message = notification.Message,
-                                type = notification.Type,
-                                link = notification.Link,
-                                createdAtUtc = notification.CreatedAtUtc,
-                                readAtUtc = notification.ReadAtUtc
-                            }, ct);
-                    }
+                    await SendNotificationCreatedAsync(result.CreatedNotification, result.TenantId, ct);
                 }
 
-                if (order.Status == OrderStatus.Completed)
+                if (result.Status == OrderStatus.Completed)
                 {
-                    var linkSuffix = $"/{order.Id}";
-                    var notifications = await _db.Notifications
-                        .Where(n => n.TenantId == order.TenantId &&
-                                    n.Link != null &&
-                                    n.Link.EndsWith(linkSuffix))
-                        .ToListAsync(ct);
-
-                    if (notifications.Count > 0)
-                    {
-                        var now = DateTime.UtcNow;
-
-                        foreach (var item in notifications)
-                        {
-                            item.ReadAtUtc ??= now;
-                        }
-
-                        await _db.SaveChangesAsync(ct);
-                    }
-
-                    var waiterRole = OrdersHubGroups.Role(RoleNames.Waiter, order.TenantId);
-                    var kitchenRole = OrdersHubGroups.Role(RoleNames.Kitchen, order.TenantId);
+                    var waiterRole = OrdersHubGroups.Role(RoleNames.Waiter, result.TenantId);
+                    var kitchenRole = OrdersHubGroups.Role(RoleNames.Kitchen, result.TenantId);
 
                     var groups = new[] { waiterRole, kitchenRole }
                         .Where(g => !string.IsNullOrWhiteSpace(g))
@@ -238,14 +138,36 @@ namespace Market.API.Controllers
                             .Groups(groups)
                             .SendAsync(OrdersHubEvents.NotificationCleared, new
                             {
-                                orderId = order.Id,
-                                notificationIds = notifications.Select(n => n.Id).ToArray()
+                                orderId = result.OrderId,
+                                notificationIds = result.ClearedNotificationIds.ToArray()
                             }, ct);
                     }
                 }
             }
 
             return NoContent();
+        }
+
+        private async Task SendNotificationCreatedAsync(OrderNotificationResult notification, Guid tenantId, CancellationToken ct)
+        {
+            var roleGroup = OrdersHubGroups.Role(notification.TargetRole ?? string.Empty, tenantId);
+            if (string.IsNullOrWhiteSpace(roleGroup))
+            {
+                return;
+            }
+
+            await _hub.Clients
+                .Group(roleGroup)
+                .SendAsync(OrdersHubEvents.NotificationCreated, new
+                {
+                    id = notification.Id,
+                    title = notification.Title,
+                    message = notification.Message,
+                    type = notification.Type,
+                    link = notification.Link,
+                    createdAtUtc = notification.CreatedAtUtc,
+                    readAtUtc = notification.ReadAtUtc
+                }, ct);
         }
     }
 }

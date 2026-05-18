@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
 using FluentValidation.Results;
+using Market.Application.Common.Exceptions;
 using Market.Infrastructure.Common;
 using Market.Shared.Dtos;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +19,7 @@ public sealed class MarketExceptionHandlerTests
         { new KeyNotFoundException("Missing resource."), HttpStatusCode.NotFound, "entity.error", "Missing resource." },
         { new ArgumentException("Invalid input."), HttpStatusCode.BadRequest, "validation.error", "Invalid input." },
         { new InvalidOperationException("Business rule failed."), HttpStatusCode.Conflict, "entity.error", "Business rule failed." },
+        { new MarketForbiddenException("Forbidden action."), HttpStatusCode.Forbidden, "forbidden.error", "Forbidden action." },
         { new ValidationException("Data annotations validation failed."), HttpStatusCode.BadRequest, "validation.error", "Data annotations validation failed." },
         { new UnauthorizedAccessException("Invalid token."), HttpStatusCode.Unauthorized, "unauthorized.error", "Activation link is invalid or expired." },
         { new Exception("Sensitive detail."), HttpStatusCode.InternalServerError, "internal.error", "An error occurred. Please try again." }

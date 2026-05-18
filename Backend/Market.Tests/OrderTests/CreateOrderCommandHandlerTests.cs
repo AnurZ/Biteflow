@@ -24,11 +24,12 @@ public sealed class CreateOrderCommandHandlerTests
         var meal = await SeedMealAsync(db, tenantId, restaurantId, name: "Burger", basePrice: 12.50m);
         var handler = CreateHandler(db, tenantContext, RoleNames.Waiter);
 
-        var orderId = await handler.Handle(new CreateOrderCommand
+        var result = await handler.Handle(new CreateOrderCommand
         {
             DiningTableId = table.Id,
             Items = [new CreateOrderItemDto { MealId = meal.Id, Quantity = 2 }]
         }, CancellationToken.None);
+        var orderId = result.Id;
 
         var order = await db.Orders
             .Include(x => x.Items)
@@ -41,6 +42,15 @@ public sealed class CreateOrderCommandHandlerTests
         Assert.Equal("Burger", item.Name);
         Assert.Equal(12.50m, item.UnitPrice);
         Assert.Equal(2, item.Quantity);
+
+        var notification = await db.Notifications.SingleAsync(x => x.OrderId == orderId);
+        Assert.Equal(RoleNames.Kitchen, notification.TargetRole);
+        Assert.Equal("OrderCreated", notification.Type);
+        Assert.Equal($"/kitchen/orders/{orderId}", notification.Link);
+        Assert.Equal(notification.Id, result.CreatedNotification.Id);
+        Assert.Equal(RoleNames.Kitchen, result.CreatedNotification.TargetRole);
+        Assert.Equal("OrderCreated", result.CreatedNotification.Type);
+        Assert.Equal($"/kitchen/orders/{orderId}", result.CreatedNotification.Link);
     }
 
     [Fact]
@@ -154,12 +164,13 @@ public sealed class CreateOrderCommandHandlerTests
         var meal = await SeedMealAsync(db, tenantId, restaurantId);
         var handler = CreateHandler(db, tenantContext, RoleNames.Waiter);
 
-        var orderId = await handler.Handle(new CreateOrderCommand
+        var result = await handler.Handle(new CreateOrderCommand
         {
             DiningTableId = table.Id,
             TableNumber = 999,
             Items = [new CreateOrderItemDto { MealId = meal.Id, Quantity = 1 }]
         }, CancellationToken.None);
+        var orderId = result.Id;
 
         var order = await db.Orders.SingleAsync(x => x.Id == orderId);
         Assert.Equal(12, order.TableNumber);
@@ -176,7 +187,7 @@ public sealed class CreateOrderCommandHandlerTests
         var meal = await SeedMealAsync(db, tenantId, restaurantId, name: "Ribeye", basePrice: 29.99m);
         var handler = CreateHandler(db, tenantContext, RoleNames.Waiter);
 
-        var orderId = await handler.Handle(new CreateOrderCommand
+        var result = await handler.Handle(new CreateOrderCommand
         {
             DiningTableId = table.Id,
             Items =
@@ -190,6 +201,7 @@ public sealed class CreateOrderCommandHandlerTests
                 }
             ]
         }, CancellationToken.None);
+        var orderId = result.Id;
 
         var item = await db.OrderItems.SingleAsync(x => x.OrderId == orderId);
         Assert.Equal("Ribeye", item.Name);
@@ -270,7 +282,7 @@ public sealed class CreateOrderCommandHandlerTests
         var table = await SeedTableAsync(db, tenantId, restaurantId);
         var handler = CreateHandler(db, tenantContext, role);
 
-        var orderId = await handler.Handle(new CreateOrderCommand
+        var result = await handler.Handle(new CreateOrderCommand
         {
             DiningTableId = table.Id,
             Items =
@@ -284,6 +296,7 @@ public sealed class CreateOrderCommandHandlerTests
                 }
             ]
         }, CancellationToken.None);
+        var orderId = result.Id;
 
         var item = await db.OrderItems.SingleAsync(x => x.OrderId == orderId);
         Assert.Null(item.MealId);

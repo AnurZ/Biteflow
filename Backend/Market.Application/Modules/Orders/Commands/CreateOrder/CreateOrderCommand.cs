@@ -3,7 +3,7 @@ using MediatR;
 
 namespace Market.Application.Modules.Orders.Commands.CreateOrder
 {
-    public sealed class CreateOrderCommand : IRequest<int>
+    public sealed class CreateOrderCommand : IRequest<CreateOrderResult>
     {
         public int? DiningTableId { get; set; }
         [JsonIgnore]

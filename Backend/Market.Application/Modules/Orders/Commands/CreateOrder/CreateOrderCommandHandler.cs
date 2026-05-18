@@ -1,5 +1,7 @@
 using Market.Application.Abstractions;
+using Market.Application.Modules.Orders;
 using Market.Domain.Common.Enums;
+using Market.Domain.Entities.Notifications;
 using Market.Domain.Entities.Orders;
 using Market.Shared.Constants;
 using MediatR;
@@ -9,8 +11,10 @@ using ValidationException = System.ComponentModel.DataAnnotations.ValidationExce
 
 namespace Market.Application.Modules.Orders.Commands.CreateOrder
 {
-    public sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, int>
+    public sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, CreateOrderResult>
     {
+        private const string OrderCreatedNotificationType = "OrderCreated";
+
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
         private readonly IAppCurrentUser _currentUser;
@@ -28,7 +32,7 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
             _logger = logger;
         }
 
-        public async Task<int> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+        public async Task<CreateOrderResult> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
             var restaurantId = _tenantContext.RequireRestaurantId();
@@ -136,6 +140,20 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
             _db.Orders.Add(order);
             await _db.SaveChangesAsync(cancellationToken);
 
+            var notification = new NotificationEntity
+            {
+                TenantId = order.TenantId,
+                OrderId = order.Id,
+                TargetRole = RoleNames.Kitchen,
+                Title = "Nova narudzba",
+                Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
+                Type = OrderCreatedNotificationType,
+                Link = $"/kitchen/orders/{order.Id}"
+            };
+
+            _db.Notifications.Add(notification);
+            await _db.SaveChangesAsync(cancellationToken);
+
             foreach (var item in customOrderItems)
             {
                 _logger.LogInformation(
@@ -150,7 +168,17 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                     item.Quantity);
             }
 
-            return order.Id;
+            return new CreateOrderResult(
+                order.Id,
+                order.TenantId,
+                order.TableNumber,
+                order.Notes,
+                order.CreatedAtUtc,
+                order.Status,
+                order.Items
+                    .Select(item => new OrderRealtimeItemResult(item.Name, item.Quantity))
+                    .ToArray(),
+                ToNotificationResult(notification));
         }
 
         private bool CanCreateCustomItems()
@@ -193,6 +221,17 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 }
             }
         }
+
+        private static OrderNotificationResult ToNotificationResult(NotificationEntity notification)
+            => new(
+                notification.Id,
+                notification.TargetRole,
+                notification.Title,
+                notification.Message,
+                notification.Type,
+                notification.Link,
+                notification.CreatedAtUtc,
+                notification.ReadAtUtc);
 
         private sealed record MealSnapshot(int Id, string Name, decimal BasePrice);
     }
