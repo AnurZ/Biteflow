@@ -59,6 +59,61 @@ public sealed class TenantFilteringTests
     }
 
     [Fact]
+    public async Task GlobalFilter_ShouldUseCurrentTenantState_WhenContextTenantIsReset()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        var tenantA = Guid.NewGuid();
+        var tenantB = Guid.NewGuid();
+
+        await using (var seed = CreateContext(dbName, new TestTenantContext(tenantA)))
+        {
+            seed.ProductCategories.AddRange(
+                new ProductCategoryEntity { Name = "Tenant A", TenantId = tenantA, IsEnabled = true },
+                new ProductCategoryEntity { Name = "Tenant B", TenantId = tenantB, IsEnabled = true });
+            await seed.SaveChangesAsync();
+        }
+
+        await using var db = CreateContext(dbName, new TestTenantContext(tenantA));
+
+        var tenantAItems = await db.ProductCategories.Select(x => x.Name).ToListAsync();
+
+        db.SetTenantContext(new TestTenantContext(tenantB));
+        var tenantBItems = await db.ProductCategories.Select(x => x.Name).ToListAsync();
+
+        Assert.Equal(["Tenant A"], tenantAItems);
+        Assert.Equal(["Tenant B"], tenantBItems);
+    }
+
+    [Fact]
+    public async Task GlobalFilter_ShouldUseCurrentSuperAdminState_WhenContextTenantIsReset()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        var tenantA = Guid.NewGuid();
+        var tenantB = Guid.NewGuid();
+
+        await using (var seed = CreateContext(dbName, new TestTenantContext(tenantA)))
+        {
+            seed.ProductCategories.AddRange(
+                new ProductCategoryEntity { Name = "Tenant A", TenantId = tenantA, IsEnabled = true },
+                new ProductCategoryEntity { Name = "Tenant B", TenantId = tenantB, IsEnabled = true });
+            await seed.SaveChangesAsync();
+        }
+
+        await using var db = CreateContext(dbName, new TestTenantContext(tenantA));
+
+        var tenantItems = await db.ProductCategories.Select(x => x.Name).ToListAsync();
+
+        db.SetTenantContext(new TestTenantContext(null, null, true));
+        var superAdminItems = await db.ProductCategories
+            .OrderBy(x => x.Name)
+            .Select(x => x.Name)
+            .ToListAsync();
+
+        Assert.Equal(["Tenant A"], tenantItems);
+        Assert.Equal(["Tenant A", "Tenant B"], superAdminItems);
+    }
+
+    [Fact]
     public async Task RestaurantScopedQuery_ShouldFilterWithinCurrentTenantRestaurant()
     {
         var dbName = Guid.NewGuid().ToString();
