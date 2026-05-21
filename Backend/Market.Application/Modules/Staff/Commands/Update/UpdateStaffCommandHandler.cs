@@ -17,6 +17,12 @@ namespace Market.Application.Modules.Staff.Commands.Update
             RoleNames.Kitchen
         };
 
+        private static readonly string[] RestaurantAdminAssignableRoles =
+        {
+            RoleNames.Waiter,
+            RoleNames.Kitchen
+        };
+
         private static readonly string[] ManagedStaffRoles =
         {
             RoleNames.Admin,
@@ -92,7 +98,7 @@ namespace Market.Application.Modules.Staff.Commands.Update
                 return;
             }
 
-            if (!ActiveStaffRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+            if (!RestaurantAdminAssignableRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
             {
                 throw new ValidationException("Role is not allowed for the current user.");
             }

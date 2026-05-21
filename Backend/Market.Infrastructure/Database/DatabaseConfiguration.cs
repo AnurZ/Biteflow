@@ -84,6 +84,7 @@ public partial class DatabaseContext
 
     private LambdaExpression CreateGlobalFilter(Type entityClrType)
     {
+        // Keep context properties in the expression so EF reads per-instance state at query time.
         Expression<Func<BaseEntity, bool>> baseFilter = e =>
             !EF.Property<bool>(e, nameof(BaseEntity.IsDeleted)) &&
             (IsSuperAdmin || EF.Property<Guid>(e, nameof(BaseEntity.TenantId)) == CurrentTenantId);
