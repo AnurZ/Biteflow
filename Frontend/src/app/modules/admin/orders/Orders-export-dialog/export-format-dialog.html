@@ -1,0 +1,17 @@
+﻿<h2 mat-dialog-title style="text-align: center">Export Orders</h2>
+
+<mat-dialog-content>
+  <p style="text-align: center">Select export format:</p>
+
+  <mat-radio-group style="display: flex; justify-content: center" [(ngModel)]="selectedFormat">
+    <mat-radio-button value="xlsx">Excel (.xlsx)</mat-radio-button>
+    <mat-radio-button value="csv">CSV</mat-radio-button>
+  </mat-radio-group>
+</mat-dialog-content>
+
+<mat-dialog-actions style="display: flex; justify-content: center; gap: 20px">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="confirm()">
+    Export
+  </button>
+</mat-dialog-actions>

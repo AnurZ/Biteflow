@@ -1,63 +1,116 @@
 <div class="card">
+
+  <!-- HEADER -->
   <div class="card-header">
     <div class="title">Orders Management</div>
 
     <div class="actions">
+
+      <div>
+        <button mat-raised-button (click)="fileInput.click()">
+          Import Orders
+        </button>
+
+        <input
+          #fileInput
+          type="file"
+          hidden
+          accept=".csv,.xlsx"
+          (change)="onFileSelected($event)"
+        >
+
+        <button mat-raised-button (click)="exportOrders()">
+          Export Orders
+        </button>
+
+      </div>
+
+      <div class="filters">
+        <input
+          type="date"
+          [(ngModel)]="fromDate"
+          (change)="dateFilter()"
+        />
+
+        <input
+          type="date"
+          [(ngModel)]="toDate"
+          (change)="dateFilter()"
+        />
+
+      </div>
+      <!-- SEARCH (FIXED)
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search Orders</mat-label>
-       <!-- <input matInput (keyup.enter)="onSearch($any($event.target).value)"
-               placeholder="Order #, table, customer..." /> -->
-      </mat-form-field>
 
+        <input
+          matInput
+          placeholder="Order #, table, notes..."
+          (keyup.enter)="onSearch($event.target.value)"
+        />
+      </mat-form-field>
+        -->
+      <!-- STATUS FILTER -->
       <mat-form-field appearance="outline" class="filter">
         <mat-label>Status</mat-label>
+
         <mat-select (selectionChange)="onStatusFilter($event.value)">
           <mat-option value="">All</mat-option>
           <mat-option value="New">New</mat-option>
-          <mat-option value="Preparing">Preparing</mat-option>
-          <mat-option value="Ready">Ready</mat-option>
+          <mat-option value="Cooking">Cooking</mat-option>
+          <mat-option value="ReadyForPickup">Ready</mat-option>
           <mat-option value="Completed">Completed</mat-option>
+          <mat-option value="Cancelled">Cancelled</mat-option>
         </mat-select>
+
       </mat-form-field>
+
     </div>
   </div>
 
+  <!-- TABLE -->
   <div class="table-wrap">
-    <table mat-table  class="mat-elevation-z1">
 
-      <!-- Order ID -->
+
+    <table mat-table [dataSource]="orders" class="mat-elevation-z1">
+      <div>
+        aa
+      </div>
+      <!-- ORDER ID -->
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef class="sortable">Order #</th>
+        <th mat-header-cell *matHeaderCellDef class="sortable" (click)="onSort('id')">Order #</th>
         <td mat-cell *matCellDef="let r">#{{ r.id }}</td>
       </ng-container>
 
-      <!-- Table -->
+      <!-- TABLE -->
       <ng-container matColumnDef="tableNumber">
-        <th mat-header-cell *matHeaderCellDef class="sortable">Table</th>
+        <th mat-header-cell *matHeaderCellDef>Table</th>
         <td mat-cell *matCellDef="let r">{{ r.tableNumber }}</td>
       </ng-container>
 
-      <!-- Items -->
+      <!-- ITEMS -->
       <ng-container matColumnDef="items">
-        <th mat-header-cell *matHeaderCellDef>Items</th>
+        <th mat-header-cell *matHeaderCellDef class="sortable" (click)="onSort('itemscount')">Items</th>
         <td mat-cell *matCellDef="let r">
           <div class="items-preview">
-            {{ r.itemsSummary }}
+            {{ r.itemsCount }} items
           </div>
         </td>
       </ng-container>
 
-      <!-- Total -->
+      <!-- TOTAL -->
       <ng-container matColumnDef="total">
-        <th mat-header-cell *matHeaderCellDef class="sortable">Total</th>
+        <th mat-header-cell *matHeaderCellDef class="sortable" (click)="onSort('totalprice')">Total</th>
         <td mat-cell *matCellDef="let r">
-          <span class="price">{{ r.totalPrice | currency:'EUR' }}</span>
+          <span class="price">
+            {{ r.totalPrice | currency:'EUR' }}
+          </span>
         </td>
       </ng-container>
 
-      <!-- Status -->
+      <!-- STATUS -->
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <th mat-header-cell *matHeaderCellDef class="sortable" (click)="onSort('status')">Status</th>
         <td mat-cell *matCellDef="let r">
           <span class="status" [ngClass]="r.status.toLowerCase()">
             {{ r.status }}
@@ -65,15 +118,15 @@
         </td>
       </ng-container>
 
-      <!-- Time -->
+      <!-- TIME -->
       <ng-container matColumnDef="createdAt">
-        <th mat-header-cell *matHeaderCellDef class="sortable">Time</th>
+        <th mat-header-cell *matHeaderCellDef class="sortable" (click)="onSort('createdat')">Time</th>
         <td mat-cell *matCellDef="let r">
-          {{ r.createdAt | date:'HH:mm' }}
+          {{ r.createdAtUtc | date:'dd.MM.yyyy HH:mm' }}
         </td>
       </ng-container>
 
-      <!-- Actions -->
+      <!-- ACTIONS -->
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef class="right">Actions</th>
         <td mat-cell *matCellDef="let r" class="right my-actions">
@@ -89,18 +142,20 @@
         </td>
       </ng-container>
 
-     <!-- <tr mat-header-row *matHeaderRowDef="columns"></tr>
-      <tr mat-row *matRowDef="let row; columns: columns;"></tr>
+      <!-- ROWS -->
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
-    -->
     </table>
   </div>
 
-  <!--<mat-paginator [length]="total"
-                 [pageSize]="pageSize"
-                 [pageIndex]="pageNumber - 1"
-                 [pageSizeOptions]="[5,10,25,50]"
-                 (page)="onPage($event)">
+  <!-- PAGINATOR -->
+  <mat-paginator
+    [length]="total"
+    [pageSize]="pageSize"
+    [pageIndex]="pageNumber - 1"
+    [pageSizeOptions]="[5, 10, 25, 50]"
+    (page)="onPage($event)">
   </mat-paginator>
-  -->
+
 </div>

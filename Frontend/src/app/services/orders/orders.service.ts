@@ -5,6 +5,32 @@ import { MyConfig } from '../../my-config';
 
 export type OrderStatus = 'New' | 'Cooking' | 'ReadyForPickup' | 'Completed' | 'Cancelled';
 
+export interface AdminOrderDto {
+  id: number;
+  diningTableId?: number;
+  tableNumber?: number;
+  status: OrderStatus;
+  createdAtUtc: string;
+  notes?: string;
+  itemsCount: number;
+  totalPrice: number;
+  items: OrderItemDto[];
+}
+
+export interface PageResult<T> {
+  items: T[];
+  total: number;
+}
+
+export interface AdminGetOrdersQuery {
+  pageNumber: number;
+  pageSize: number;
+  statuses?: OrderStatus[];
+  fromUtc?: string;
+  toUtc?: string;
+  sort?: string;
+}
+
 export interface OrderItemDto {
   id: number;
   mealId?: number;
@@ -76,6 +102,46 @@ export class OrdersService {
         }))
       )
     );
+  }
+
+  adminList(query: AdminGetOrdersQuery) {
+    let params = new HttpParams();
+
+    params = params.set('paging.page', query.pageNumber);
+    params = params.set('paging.pageSize', query.pageSize);
+
+    if (query.sort) {
+      params = params.set('sort', query.sort);
+    }
+
+    if (query.fromUtc) {
+      params = params.set('fromUtc', query.fromUtc);
+    }
+
+    if (query.toUtc) {
+      params = params.set('toUtc', query.toUtc);
+    }
+
+    if (query.statuses?.length) {
+      query.statuses.forEach(s => {
+        params = params.append('statuses', s);
+      });
+    }
+
+    return this.http
+      .get<PageResult<AdminOrderDto>>(`${this.base}/admin`, { params })
+      .pipe(
+        map(res => ({
+          ...res,
+          items: res.items.map(o => ({
+            ...o,
+            status:
+              typeof o.status === 'number'
+                ? this.statusMap[o.status as number] ?? String(o.status)
+                : o.status
+          })),
+        }))
+      );
   }
 
   create(body: CreateOrderRequest) {

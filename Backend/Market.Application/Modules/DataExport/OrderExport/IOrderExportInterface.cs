@@ -111,8 +111,11 @@ public class OrderExportService : IOrderExportService
             .Include(x => x.Items)
             .AsQueryable();
 
+        if (request.Status.HasValue)
+        {
             query = query.Where(x =>
-                x.Status == request.Status);
+                x.Status == request.Status.Value);
+        }
 
         if (request.FromDate.HasValue)
         {
