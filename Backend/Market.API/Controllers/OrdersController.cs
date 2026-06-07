@@ -4,6 +4,7 @@ using Market.API.Hubs;
 using Market.Application.Modules.Orders;
 using Market.Application.Modules.Orders.Commands.CreateOrder;
 using Market.Application.Modules.Orders.Commands.UpdateOrderStatus;
+using Market.Application.Modules.Orders.Queries.AdminGetOrders;
 using Market.Application.Modules.Orders.Queries.GetOrders;
 using Market.Domain.Common.Enums;
 using Market.Shared.Constants;
@@ -44,6 +45,16 @@ namespace Market.API.Controllers
             };
 
             return await _sender.Send(query, ct);
+        }
+
+        [HttpGet("admin")]
+        [Authorize(Policy = PolicyNames.RestaurantAdmin)]
+        public async Task<ActionResult<PageResult<AdminOrderDto>>> AdminGetOrders(
+        [FromQuery] AdminGetOrdersQuery query,
+        CancellationToken ct)
+        {
+            var result = await _sender.Send(query, ct);
+            return Ok(result);
         }
 
         [HttpPost]
