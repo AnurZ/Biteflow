@@ -18,7 +18,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatSelect, MatOption } from '@angular/material/select';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatTooltip } from '@angular/material/tooltip';
-import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {MatCalendar, MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 
 import { StaffList } from './staff/staff-list/staff-list';
@@ -46,46 +46,47 @@ import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
     KpiComponent,
     LiveOrders
   ],
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    AdminRoutingModule,
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        AdminRoutingModule,
 
-    MatTable,
-    MatHeaderRow,
-    MatRow,
-    MatColumnDef,
-    MatHeaderCell,
-    MatCell,
-    MatHeaderRowDef,
-    MatRowDef,
-    MatHeaderCellDef,
-    MatCellDef,
+        MatTable,
+        MatHeaderRow,
+        MatRow,
+        MatColumnDef,
+        MatHeaderCell,
+        MatCell,
+        MatHeaderRowDef,
+        MatRowDef,
+        MatHeaderCellDef,
+        MatCellDef,
 
-    MatPaginator,
-    MatDialogModule,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatDialogTitle,
-    MatButton,
-    MatIconButton,
-    MatIcon,
-    MatDialogActions,
-    MatDialogContent,
-    MatSelect,
-    MatOption,
-    MatCheckbox,
-    MatTooltip,
-    MatDatepicker,
-    MatDatepickerToggle,
-    MatNativeDateModule,
-    MatDatepickerInput,
-    MatError,
-    MatDivider,
-    FormsModule,
-    CdkDrag,
-    CdkDropList,
-  ]
+        MatPaginator,
+        MatDialogModule,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatDialogTitle,
+        MatButton,
+        MatIconButton,
+        MatIcon,
+        MatDialogActions,
+        MatDialogContent,
+        MatSelect,
+        MatOption,
+        MatCheckbox,
+        MatTooltip,
+        MatDatepicker,
+        MatDatepickerToggle,
+        MatNativeDateModule,
+        MatDatepickerInput,
+        MatError,
+        MatDivider,
+        FormsModule,
+        CdkDrag,
+        CdkDropList,
+        MatCalendar,
+    ]
 })
 export class AdminModule {}
