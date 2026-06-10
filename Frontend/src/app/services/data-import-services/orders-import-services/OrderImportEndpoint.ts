@@ -17,7 +17,11 @@ export class OrderImportEndpoint {
 
     return this.http.post(
       `${this.base}/csv`,
-      formData
+      formData,
+      {
+        reportProgress: true,
+        observe: 'events'
+      }
     );
   }
 
@@ -27,7 +31,11 @@ export class OrderImportEndpoint {
 
     return this.http.post(
       `${this.base}/xlsx`,
-      formData
+      formData,
+      {
+        reportProgress: true,
+        observe: 'events'
+      }
     );
   }
 }

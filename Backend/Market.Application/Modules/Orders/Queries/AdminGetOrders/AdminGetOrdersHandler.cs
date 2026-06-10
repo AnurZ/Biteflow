@@ -19,6 +19,14 @@ namespace Market.Application.Modules.Orders.Queries.AdminGetOrders
                 .AsQueryable();
 
             // -------------------
+            // SEARCH FILTER
+            // -------------------
+            if (request.SearchById.HasValue)
+            {
+                q = q.Where(r => r.Id == request.SearchById.Value);
+            }
+
+            // -------------------
             // STATUS FILTER
             // -------------------
             if (request.Statuses?.Any() == true)

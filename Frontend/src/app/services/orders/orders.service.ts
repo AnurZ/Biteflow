@@ -29,6 +29,7 @@ export interface AdminGetOrdersQuery {
   fromUtc?: string;
   toUtc?: string;
   sort?: string;
+  searchById?: number;
 }
 
 export interface OrderItemDto {
@@ -73,7 +74,7 @@ export interface CreateOrderRequest {
 })
 export class OrdersService {
   private http = inject(HttpClient);
-  private base = `${MyConfig.api_address}/orders`;
+  private base = `${MyConfig.api_address}/Orders`;
   private statusMap: Record<number, OrderStatus> = {
     0: 'New',
     1: 'Cooking',
@@ -89,6 +90,22 @@ export class OrdersService {
     Cancelled: 4
   };
 
+  getAdminOrderById(id: number) {
+    return this.http
+      .get<AdminOrderDto>(`${this.base}/${id}`)
+      .pipe(
+        map(o => ({
+          ...o,
+          status:
+            typeof o.status === 'number'
+              ? this.statusMap[o.status as number] ?? String(o.status)
+              : o.status
+        }))
+      );
+  }
+
+  list(statuses?: OrderStatus[]) {
+    let params = new HttpParams();
   list(statuses?: OrderStatus[], page = 1, pageSize = 100) {
     let params = new HttpParams()
       .set('page', page)
@@ -128,6 +145,10 @@ export class OrdersService {
 
     if (query.toUtc) {
       params = params.set('toUtc', query.toUtc);
+    }
+
+    if(query.searchById) {
+      params = params.set('searchById', query.searchById);
     }
 
     if (query.statuses?.length) {

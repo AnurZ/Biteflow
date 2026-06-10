@@ -1,0 +1,80 @@
+<h2 mat-dialog-title class="header">
+  <div>
+    Order <span>#{{ data.id }}</span>
+  </div>
+
+  <span class="status" [ngClass]="data.status.toLowerCase()">
+    {{ data.status }}
+  </span>
+</h2>
+
+<mat-dialog-content class="content">
+
+  <!-- META INFO -->
+  <div class="meta">
+
+    <div class="meta-item">
+      <span class="label">Table</span>
+      <span class="value">
+        {{ data.tableNumber ?? data.diningTableId ?? '-' }}
+      </span>
+    </div>
+
+    <div class="meta-item">
+      <span class="label">Created</span>
+      <span class="value">
+        {{ data.createdAtUtc | date:'dd.MM.yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <div class="meta-item" *ngIf="data.notes">
+      <span class="label">Notes</span>
+      <span class="value">{{ data.notes }}</span>
+    </div>
+
+  </div>
+
+  <!-- ITEMS -->
+  <div class="section-title">
+    Items ({{ data.itemsCount }})
+  </div>
+
+  <div class="items">
+
+    <div class="item" *ngFor="let item of data.items">
+
+      <div class="name">
+        {{ item.name }}
+      </div>
+
+      <div class="qty">
+        x{{ item.quantity }}
+      </div>
+
+      <div class="price">
+        {{ item.unitPrice | currency:'EUR' }}
+      </div>
+
+      <div class="total">
+        {{ (item.quantity * item.unitPrice) | currency:'EUR' }}
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- TOTAL -->
+  <div class="footer">
+    <div class="total-label">Total</div>
+    <div class="total-value">
+      {{ data.totalPrice | currency:'EUR' }}
+    </div>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="actions">
+  <button mat-stroked-button mat-dialog-close>
+    Close
+  </button>
+</mat-dialog-actions>
