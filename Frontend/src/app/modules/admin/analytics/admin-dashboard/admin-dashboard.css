@@ -33,11 +33,12 @@
 }
 
 .field label {
-  font-size: 12px;
+  font-size: 18px;
   color: #666;
 }
 
 .controls input {
+  font-size: 1rem;
   padding: 6px 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -49,6 +50,7 @@
   background: #f2f2f2;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
 }
 
 .controls button:hover {
@@ -135,8 +137,6 @@
 
 .edit-button{
   padding: 10px;
-  color: white;
-  background: green;
   border-radius: 10px;
   border: 1px solid black;
   cursor: pointer;

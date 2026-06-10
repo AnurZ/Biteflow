@@ -6,6 +6,7 @@ namespace Market.Application.Modules.Orders.Queries.AdminGetOrders
     {
         public List<OrderStatus>? Statuses { get; set; }
         public string? Sort { get; init; }
+        public int? SearchById { get; set; }
         public DateTime? FromUtc { get; set; }
         public DateTime? ToUtc { get; set; }
     }

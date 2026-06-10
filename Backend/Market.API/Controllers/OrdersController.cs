@@ -5,6 +5,7 @@ using Market.Application.Abstractions;
 using Market.Application.Modules.Orders.Commands.CreateOrder;
 using Market.Application.Modules.Orders.Commands.UpdateOrderStatus;
 using Market.Application.Modules.Orders.Queries.AdminGetOrders;
+using Market.Application.Modules.Orders.Queries.GetOrderById;
 using Market.Application.Modules.Orders.Queries.GetOrders;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Notifications;
@@ -57,6 +58,14 @@ namespace Market.API.Controllers
         CancellationToken ct)
         {
             var result = await _sender.Send(query, ct);
+            return Ok(result);
+        }
+
+        [HttpGet("{id:int}")]
+        [Authorize(Policy = PolicyNames.StaffMember)]
+        public async Task<ActionResult<OrderByIdDto>> GetById(int id, CancellationToken ct)
+        {
+            var result = await _sender.Send(new GetOrderByIdQuery { Id = id }, ct);
             return Ok(result);
         }
 
