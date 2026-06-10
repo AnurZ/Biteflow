@@ -1,3 +1,4 @@
+using Market.Application.Common.Provisioning;
 using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Catalog;
 using Market.Domain.Entities.DiningTables;
@@ -5,7 +6,6 @@ using Market.Domain.Entities.Meal;
 using Market.Domain.Entities.MealCategory;
 using Market.Domain.Entities.Orders;
 using Market.Domain.Entities.Staff;
-using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.Tenants;
 using Market.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -144,178 +144,10 @@ public static class DynamicDataSeeder
 
     private static async Task SeedTableLayoutsAndTablesAsync(DatabaseContext context)
     {
-        if (await context.TableLayouts.AnyAsync() || await context.DiningTables.AnyAsync())
-            return;
-
-        var layout = new TableLayout
-        {
-            Name = "Main Floor",
-            BackgroundColor = "#f5f5f5",
-            FloorImageUrl = string.Empty,
-
-            // OPCIJA 1 RULE:
-            TenantId = SeedConstants.DefaultTenantId,
-            RestaurantId = SeedConstants.DefaultRestaurantId
-        };
-
-        var tables = new List<DiningTable>
-    {
-        new()
-        {
-            Number = 1,
-            NumberOfSeats = 2,
-            TableLayout = layout,
-            X = 50,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#e5e7eb",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 2,
-            NumberOfSeats = 2,
-            TableLayout = layout,
-            X = 220,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#dbeafe",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 3,
-            NumberOfSeats = 4,
-            TableLayout = layout,
-            X = 390,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#dbeafe",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 4,
-            NumberOfSeats = 4,
-            TableLayout = layout,
-            X = 560,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#dcfce7",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Serving,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 5,
-            NumberOfSeats = 4,
-            TableLayout = layout,
-            X = 730,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#e5e7eb",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 6,
-            NumberOfSeats = 2,
-            TableLayout = layout,
-            X = 900,
-            Y = 80,
-            Width = 150,
-            Height = 80,
-            Shape = "rectangle",
-            Color = "#fee2e2",
-            TableType = TableTypes.LowTable,
-            Status = TableStatus.Paying,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 9,
-            NumberOfSeats = 6,
-            TableLayout = layout,
-            X = 50,
-            Y = 200,
-            Width = 250,
-            Height = 100,
-            Shape = "rectangle",
-            Color = "#dcfce7",
-            TableType = TableTypes.Hightable,
-            Status = TableStatus.Serving,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 10,
-            NumberOfSeats = 6,
-            TableLayout = layout,
-            X = 320,
-            Y = 200,
-            Width = 250,
-            Height = 100,
-            Shape = "rectangle",
-            Color = "#dbeafe",
-            TableType = TableTypes.Hightable,
-            Status = TableStatus.Seated,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 11,
-            NumberOfSeats = 6,
-            TableLayout = layout,
-            X = 590,
-            Y = 200,
-            Width = 250,
-            Height = 100,
-            Shape = "rectangle",
-            Color = "#e5e7eb",
-            TableType = TableTypes.Hightable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        },
-        new()
-        {
-            Number = 12,
-            NumberOfSeats = 6,
-            TableLayout = layout,
-            X = 860,
-            Y = 200,
-            Width = 250,
-            Height = 100,
-            Shape = "rectangle",
-            Color = "#e5e7eb",
-            TableType = TableTypes.Hightable,
-            Status = TableStatus.Free,
-            TenantId = SeedConstants.DefaultTenantId
-        }
-    };
-
-        context.TableLayouts.Add(layout);
-        context.DiningTables.AddRange(tables);
-
-        Console.WriteLine("Seed: table layout and dining tables added.");
+        await DefaultDiningTableLayoutProvisioner.EnsureMainFloorAsync(
+            context,
+            SeedConstants.DefaultTenantId,
+            SeedConstants.DefaultRestaurantId);
     }
 
     private static async Task SeedMealCategoriesAsync(DatabaseContext context)
@@ -496,6 +328,8 @@ public static class DynamicDataSeeder
 
     private static async Task SeedOrdersAsync(DatabaseContext context)
     {
+        await AttachDefaultDiningTablesToExistingOrdersAsync(context);
+
         if (await context.Orders.AnyAsync())
         {
             return;
@@ -560,8 +394,11 @@ public static class DynamicDataSeeder
             mTiramisu = meals.First(m => m.Name == "Tiramisu");
         }
 
+        var tablesByNumber = await GetDefaultTablesByNumberAsync(context);
+
         var order1 = new Order
         {
+            DiningTableId = tablesByNumber.GetValueOrDefault(3)?.Id,
             TableNumber = 3,
             Status = OrderStatus.New,
             TenantId = SeedConstants.DefaultTenantId,
@@ -574,6 +411,7 @@ public static class DynamicDataSeeder
 
         var order2 = new Order
         {
+            DiningTableId = tablesByNumber.GetValueOrDefault(4)?.Id,
             TableNumber = 4,
             Status = OrderStatus.Cooking,
             TenantId = SeedConstants.DefaultTenantId,
@@ -586,6 +424,7 @@ public static class DynamicDataSeeder
 
         var order3 = new Order
         {
+            DiningTableId = tablesByNumber.GetValueOrDefault(6)?.Id,
             TableNumber = 6,
             Status = OrderStatus.ReadyForPickup,
             TenantId = SeedConstants.DefaultTenantId,
@@ -598,5 +437,49 @@ public static class DynamicDataSeeder
 
         context.Orders.AddRange(order1, order2, order3);
         Console.WriteLine("Seed: orders with items added.");
+    }
+
+    private static async Task AttachDefaultDiningTablesToExistingOrdersAsync(DatabaseContext context)
+    {
+        var orders = await context.Orders
+            .IgnoreQueryFilters()
+            .Where(x =>
+                x.TenantId == SeedConstants.DefaultTenantId &&
+                x.DiningTableId == null &&
+                x.TableNumber != null)
+            .ToListAsync();
+
+        if (orders.Count == 0)
+        {
+            return;
+        }
+
+        var tablesByNumber = await GetDefaultTablesByNumberAsync(context);
+
+        foreach (var order in orders)
+        {
+            if (order.TableNumber.HasValue &&
+                tablesByNumber.TryGetValue(order.TableNumber.Value, out var table))
+            {
+                order.DiningTableId = table.Id;
+                order.TableNumber = table.Number;
+            }
+        }
+    }
+
+    private static async Task<Dictionary<int, DiningTable>> GetDefaultTablesByNumberAsync(DatabaseContext context)
+    {
+        var tables = await context.DiningTables
+            .IgnoreQueryFilters()
+            .Include(x => x.TableLayout)
+            .Where(x =>
+                x.TenantId == SeedConstants.DefaultTenantId &&
+                x.TableLayout.RestaurantId == SeedConstants.DefaultRestaurantId &&
+                x.IsActive)
+            .ToListAsync();
+
+        return tables
+            .GroupBy(x => x.Number)
+            .ToDictionary(x => x.Key, x => x.OrderBy(table => table.Id).First());
     }
 }

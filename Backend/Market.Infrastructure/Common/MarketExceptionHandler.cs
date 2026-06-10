@@ -43,6 +43,7 @@ public sealed class MarketExceptionHandler(
         {
             MarketNotFoundException or KeyNotFoundException => StatusCodes.Status404NotFound,
             MarketConflictException or MarketBusinessRuleException or InvalidOperationException => StatusCodes.Status409Conflict,
+            MarketForbiddenException => StatusCodes.Status403Forbidden,
             TenantContextMissingException => StatusCodes.Status403Forbidden,
             ValidationException or DataAnnotationsValidationException or ArgumentException => StatusCodes.Status400BadRequest,
             UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
@@ -69,6 +70,11 @@ public sealed class MarketExceptionHandler(
             case InvalidOperationException:
             case TenantContextMissingException:
                 code = "entity.error";
+                message = ex.Message;
+                break;
+
+            case MarketForbiddenException:
+                code = "forbidden.error";
                 message = ex.Message;
                 break;
 

@@ -89,6 +89,7 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Theory]
+    [InlineData(RoleNames.Admin)]
     [InlineData(RoleNames.SuperAdmin)]
     public async Task RestaurantAdmin_ShouldNotCreatePrivilegedStaffRole(string role)
     {
@@ -107,7 +108,6 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
     }
 
     [Theory]
-    [InlineData(RoleNames.Admin)]
     [InlineData(RoleNames.Waiter)]
     [InlineData(RoleNames.Kitchen)]
     public async Task RestaurantAdmin_ShouldCreateOnlyRestaurantScopedStaffRoles(string role)
@@ -136,6 +136,29 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
         Assert.NotNull(profile);
         Assert.Equal(SeedConstants.DefaultTenantId, profile!.TenantId);
         Assert.Equal(ExpectedPositionForRole(role), profile.Position);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RestaurantAdmin_ShouldRejectMissingStaffRoleWithoutCreatingUserOrProfile(string? role)
+    {
+        var email = $"missing-role-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var profileCountBefore = await db.EmployeeProfiles.IgnoreQueryFilters().CountAsync();
+
+        var response = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, role));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(await userManager.FindByEmailAsync(email));
+
+        var profileCountAfter = await db.EmployeeProfiles.IgnoreQueryFilters().CountAsync();
+        Assert.Equal(profileCountBefore, profileCountAfter);
     }
 
     [Fact]
@@ -211,6 +234,52 @@ public sealed class ControllerAuthorizationIntegrationTests : IClassFixture<Cust
 
         Assert.NotNull(profile);
         Assert.Equal("Cook", profile!.Position);
+    }
+
+    [Fact]
+    public async Task RestaurantAdmin_ShouldNotUpdateStaffToAdminRole()
+    {
+        var email = $"restaurant-staff-update-admin-{Guid.NewGuid():N}@example.test";
+        var client = await _factory.GetAuthenticatedClientAsync();
+
+        var createResponse = await client.PostAsJsonAsync("/api/Staff", CreateStaffPayload(email, RoleNames.Waiter));
+        createResponse.EnsureSuccessStatusCode();
+        var staffId = await ReadCreatedIdAsync(createResponse);
+
+        var updateResponse = await client.PutAsJsonAsync($"/api/Staff/{staffId}", new
+        {
+            DisplayName = "Restaurant Staff Test",
+            Role = RoleNames.Admin,
+            FirstName = "Restaurant",
+            LastName = "Staff",
+            PhoneNumber = "123456",
+            HireDate = DateTime.UtcNow.Date,
+            HourlyRate = 10m,
+            EmploymentType = "FullTime",
+            ShiftType = "Morning",
+            ShiftStart = "08:00:00",
+            ShiftEnd = "16:00:00",
+            IsActive = true,
+            Notes = "Authorization integration test"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, updateResponse.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+        var user = await userManager.FindByEmailAsync(email);
+
+        Assert.NotNull(user);
+        Assert.True(await userManager.IsInRoleAsync(user!, RoleNames.Waiter));
+        Assert.False(await userManager.IsInRoleAsync(user!, RoleNames.Admin));
+
+        var profile = await db.EmployeeProfiles
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.ApplicationUserId == user.Id);
+
+        Assert.NotNull(profile);
+        Assert.Equal("Waiter", profile!.Position);
     }
 
     [Fact]

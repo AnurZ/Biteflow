@@ -47,9 +47,8 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<DashboardLayout> DashboardLayouts => Set<DashboardLayout>();
 
     private readonly TimeProvider _clock;
-    private readonly ITenantContext _tenantContext;
-    public Guid? CurrentTenantId => _tenantContext.TenantId;
-    public bool IsSuperAdmin => _tenantContext.IsSuperAdmin;
+    public Guid? CurrentTenantId { get; private set; }
+    public bool IsSuperAdmin { get; private set; }
 
     public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock)
         : this(options, clock, new SystemTenantContext())
@@ -60,6 +59,12 @@ public partial class DatabaseContext : DbContext, IAppDbContext
         : base(options)
     {
         _clock = clock;
-        _tenantContext = tenantContext;
+        SetTenantContext(tenantContext);
+    }
+
+    public void SetTenantContext(ITenantContext tenantContext)
+    {
+        CurrentTenantId = tenantContext.TenantId;
+        IsSuperAdmin = tenantContext.IsSuperAdmin;
     }
 }

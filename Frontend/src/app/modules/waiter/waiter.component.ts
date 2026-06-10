@@ -13,6 +13,8 @@ import { MealDto, MealCategory } from '../meals/meals-model';
 import { MealCategoryGetEndpoint } from '../../endpoints/meal-category-crud-endpoint/meal-category-get-endpoint';
 import { OrderStatus } from '../../services/orders/orders.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DiningTableGetListEndpoint } from '../../endpoints/dining-table-endpoints/dining-table-get-list-endpoint';
+import { TableStatus as ApiTableStatus, UpdateDiningTableDto } from '../table-layout/table-layout-model';
 
 type TableStatus = 'free' | 'seated' | 'serving' | 'paying';
 
@@ -27,12 +29,6 @@ interface TableSection {
   title: string;
   description: string;
   tables: TableTile[];
-}
-
-interface MenuItem {
-  name: string;
-  price: number;
-  category: 'Starters' | 'Mains' | 'Desserts' | 'Drinks';
 }
 
 interface OrderItem {
@@ -56,33 +52,11 @@ export class WaiterComponent implements OnInit, OnDestroy {
     { key: 'paying', label: 'Paying', color: '#ffe4e6' }
   ];
 
-  sections: TableSection[] = [
-    {
-      title: 'Family Section',
-      description: '4 large tables',
-      tables: [
-        { id: 9, label: 'Table 9', guests: 6, status: 'free' },
-        { id: 10, label: 'Table 10', guests: 6, status: 'free' },
-        { id: 11, label: 'Table 11', guests: 6, status: 'free' },
-        { id: 12, label: 'Table 12', guests: 6, status: 'free' }
-      ]
-    },
-    {
-      title: 'Regular Section',
-      description: '6 standard tables',
-      tables: [
-        { id: 1, label: 'Table 1', guests: 2, status: 'free' },
-        { id: 2, label: 'Table 2', guests: 2, status: 'free' },
-        { id: 3, label: 'Table 3', guests: 4, status: 'free' },
-        { id: 4, label: 'Table 4', guests: 4, status: 'free' },
-        { id: 5, label: 'Table 5', guests: 2, status: 'free' },
-        { id: 6, label: 'Table 6', guests: 2, status: 'free' }
-      ]
-    }
-  ];
+  sections: TableSection[] = [];
 
   orders: OrderDto[] = [];
   loadingOrders = false;
+  loadingTables = false;
   submitting = false;
   meals: MealDto[] = [];
   categories: MealCategory[] = [];
@@ -93,7 +67,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
   tableStatusOverrides: Record<number, TableStatus> = {};
   private realtimeSub = new Subscription();
 
-  selectedTableId: number = this.sections[0].tables[0].id;
+  selectedTableId = 0;
   selectedCategoryId?: number;
   sort: string | undefined;
   tableOrders: Record<number, OrderItem[]> = {};
@@ -102,6 +76,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
     private readonly ordersService: OrdersService,
     private readonly mealsService: MealsService,
     private readonly mealCategoryEndpoint: MealCategoryGetEndpoint,
+    private readonly diningTableEndpoint: DiningTableGetListEndpoint,
     private readonly snack: MatSnackBar,
     private readonly realtime: RealtimeHubService
   ) {}
@@ -114,6 +89,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadTables();
     this.loadOrders();
     this.loadMenu();
     this.pollHandle = setInterval(() => this.loadOrders(), 10000);
@@ -123,6 +99,28 @@ export class WaiterComponent implements OnInit, OnDestroy {
         this.loadOrders();
       })
     );
+  }
+
+  loadTables(): void {
+    this.loadingTables = true;
+    this.diningTableEndpoint.handleAsync().subscribe({
+      next: tables => {
+        this.sections = this.buildTableSections(tables);
+        const flat = this.tablesFlat;
+
+        if ((!this.selectedTableId || !flat.some(table => table.id === this.selectedTableId)) && flat.length) {
+          this.selectedTableId = flat[0].id;
+        }
+
+        this.updateTableStatuses();
+      },
+      error: () => {
+        this.loadingTables = false;
+      },
+      complete: () => {
+        this.loadingTables = false;
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -183,7 +181,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
         name: i.name,
         price: i.unitPrice,
         qty: i.quantity,
-        mealId: i.id
+        mealId: i.mealId ?? 0
       }));
     }
 
@@ -207,7 +205,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
     const tableId = this.selectedTableId;
     return this.orders.some(
       o =>
-        (o.tableNumber ?? o.diningTableId) === tableId &&
+        o.diningTableId === tableId &&
         this.isActiveStatus(o.status)
     );
   }
@@ -222,11 +220,11 @@ export class WaiterComponent implements OnInit, OnDestroy {
     const activeOrders = this.orders.filter(o => this.isActiveStatus(o.status));
     const latestByTable = new Map<number, OrderDto>();
     for (const order of activeOrders) {
-      const tableNum = order.tableNumber ?? order.diningTableId;
-      if (!tableNum) continue;
-      const existing = latestByTable.get(tableNum);
+      const tableId = order.diningTableId;
+      if (!tableId) continue;
+      const existing = latestByTable.get(tableId);
       if (!existing || new Date(order.createdAtUtc) > new Date(existing.createdAtUtc)) {
-        latestByTable.set(tableNum, order);
+        latestByTable.set(tableId, order);
       }
     }
 
@@ -251,6 +249,44 @@ export class WaiterComponent implements OnInit, OnDestroy {
         status: statusByTable[table.id] ?? 'free'
       }))
     }));
+  }
+
+  private buildTableSections(tables: UpdateDiningTableDto[]): TableSection[] {
+    const activeTables = (tables ?? [])
+      .filter(table => table.id !== undefined && table.isActive)
+      .sort((a, b) => a.tableLayoutId - b.tableLayoutId || a.number - b.number);
+
+    const byLayout = new Map<number, TableTile[]>();
+
+    for (const table of activeTables) {
+      const items = byLayout.get(table.tableLayoutId) ?? [];
+      items.push({
+        id: table.id!,
+        label: `Table ${table.number}`,
+        guests: table.numberOfSeats,
+        status: this.mapApiTableStatus(table.status)
+      });
+      byLayout.set(table.tableLayoutId, items);
+    }
+
+    return Array.from(byLayout.entries()).map(([layoutId, layoutTables]) => ({
+      title: `Layout ${layoutId}`,
+      description: `${layoutTables.length} table${layoutTables.length === 1 ? '' : 's'}`,
+      tables: layoutTables
+    }));
+  }
+
+  private mapApiTableStatus(status: ApiTableStatus | number): TableStatus {
+    switch (Number(status)) {
+      case 1:
+        return 'seated';
+      case 2:
+        return 'serving';
+      case 3:
+        return 'paying';
+      default:
+        return 'free';
+    }
   }
 
   selectTable(tableId: number): void {
@@ -326,11 +362,9 @@ export class WaiterComponent implements OnInit, OnDestroy {
     }
 
     const payload: CreateOrderRequest = {
-      tableNumber: this.selectedTable?.label ? Number(this.selectedTable.label.replace(/\D/g, '')) : this.selectedTableId,
+      diningTableId: this.selectedTableId,
       items: this.currentOrder.map(item => ({
-        name: item.name,
         quantity: item.qty,
-        unitPrice: item.price,
         mealId: item.mealId
       }))
     };
@@ -355,9 +389,9 @@ export class WaiterComponent implements OnInit, OnDestroy {
   markPickedUp(order: OrderDto): void {
     this.ordersService.updateStatus(order.id, 'Completed').subscribe({
       next: () => {
-        const tableNum = order.tableNumber ?? order.diningTableId;
-        if (tableNum) {
-          this.tableStatusOverrides[tableNum] = 'paying';
+        const tableId = order.diningTableId;
+        if (tableId) {
+          this.tableStatusOverrides[tableId] = 'paying';
         }
         this.loadOrders();
         this.showSnack(`Order #${order.id} picked up. Table set to paying.`, 'info');
@@ -380,9 +414,9 @@ export class WaiterComponent implements OnInit, OnDestroy {
     const order = this.billingOrder;
     this.ordersService.updateStatus(order.id, 'Completed').subscribe({
       next: () => {
-        const tableNum = order.tableNumber ?? order.diningTableId;
-        if (tableNum) {
-          this.tableStatusOverrides[tableNum] = 'free';
+        const tableId = order.diningTableId;
+        if (tableId) {
+          this.tableStatusOverrides[tableId] = 'free';
         }
         this.loadOrders();
         this.closeBill();
@@ -397,7 +431,7 @@ export class WaiterComponent implements OnInit, OnDestroy {
     const matching = this.orders
       .filter(
         o =>
-          (o.tableNumber ?? o.diningTableId) === tableId &&
+          o.diningTableId === tableId &&
           (!activeOnly || this.isActiveStatus(o.status))
       )
       .sort((a, b) => new Date(b.createdAtUtc).getTime() - new Date(a.createdAtUtc).getTime());

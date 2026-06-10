@@ -5,6 +5,7 @@ import { StaffCreateEndpoint } from '../../../../endpoints/staff-crud-endpoints/
 import { StaffUpdateEndpoint } from '../../../../endpoints/staff-crud-endpoints/staff-update-endpoint';
 import { StaffGetByIdEndpoint } from '../../../../endpoints/staff-crud-endpoints/staff-get-by-id--endpoint';
 import { CreateStaffRequest, StaffDetails, UpdateStaffRequest } from '../models';
+import { AuthService } from '../../../../services/auth-services/auth.service';
 
 type DialogData = { mode: 'create' } | { mode: 'edit'; id: number };
 
@@ -21,6 +22,7 @@ export class StaffFormDialogComponent implements OnInit {
   private createEp = inject(StaffCreateEndpoint);
   private updateEp = inject(StaffUpdateEndpoint);
   private getByIdEp = inject(StaffGetByIdEndpoint);
+  private auth = inject(AuthService);
 
 
   generateRandomPassword(): string {
@@ -61,17 +63,28 @@ export class StaffFormDialogComponent implements OnInit {
 
   loading = false;
   showPwd = true;
-  readonly roleOptions = [
+  readonly createRoleOptions = [
+    { value: 'waiter', label: 'Waiter' },
+    { value: 'kitchen', label: 'Kitchen' }
+  ];
+  readonly editRoleOptions = [
     { value: 'admin', label: 'Admin' },
     { value: 'waiter', label: 'Waiter' },
     { value: 'kitchen', label: 'Kitchen' }
   ];
+  get roleOptions() {
+    if (this.auth.hasRole('superadmin')) {
+      return this.editRoleOptions;
+    }
+
+    return this.createRoleOptions;
+  }
 
   form = this.fb.group({
     email: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
     displayName: this.fb.control<string>('', { nonNullable: true, validators: [Validators.required] }),
     plainPassword: this.fb.control<string>(this.generateRandomPassword(), { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
-    role: this.fb.control<string>('admin', { validators: [Validators.required], nonNullable: true }),
+    role: this.fb.control<string>('waiter', { validators: [Validators.required], nonNullable: true }),
 
     id: this.fb.control<number | null>(null),
     firstName: this.fb.control<string>('', { validators: [Validators.required], nonNullable: true }),

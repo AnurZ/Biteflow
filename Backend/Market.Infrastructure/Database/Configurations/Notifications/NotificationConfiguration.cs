@@ -10,6 +10,8 @@ namespace Market.Infrastructure.Database.Configurations.Notifications
         {
             builder.ToTable("Notifications");
 
+            builder.Property(x => x.OrderId);
+
             builder.Property(x => x.TargetUserId)
                 .HasMaxLength(64);
 
@@ -33,6 +35,7 @@ namespace Market.Infrastructure.Database.Configurations.Notifications
 
             builder.HasIndex(x => new { x.TenantId, x.TargetUserId });
             builder.HasIndex(x => new { x.TenantId, x.TargetRole });
+            builder.HasIndex(x => new { x.TenantId, x.OrderId, x.Type });
         }
     }
 }

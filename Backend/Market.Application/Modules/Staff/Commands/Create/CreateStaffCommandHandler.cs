@@ -20,7 +20,6 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
 
     private static readonly string[] RestaurantAdminAssignableRoles =
     {
-        RoleNames.Admin,
         RoleNames.Waiter,
         RoleNames.Kitchen
     };
@@ -183,7 +182,7 @@ public sealed class CreateStaffCommandHandler : IRequestHandler<CreateStaffComma
     private static string NormalizeRole(string? requestedRole)
     {
         if (string.IsNullOrWhiteSpace(requestedRole))
-            return RoleNames.Admin;
+            throw new ValidationException("Role is required.");
 
         var match = AllAssignableRoles.FirstOrDefault(r =>
             string.Equals(r, requestedRole, StringComparison.OrdinalIgnoreCase));

@@ -20,4 +20,13 @@ public interface IAppCurrentUser
     /// </summary>
     bool IsAuthenticated { get; }
 
+    /// <summary>
+    /// Roles assigned to the current user.
+    /// </summary>
+    IReadOnlyCollection<string> Roles { get; }
+
+    /// <summary>
+    /// Indicates whether the current user has the specified role.
+    /// </summary>
+    bool IsInRole(string role);
 }

@@ -50,16 +50,21 @@ export interface OrderDto {
   items: OrderItemDto[];
 }
 
+export interface PageResult<T> {
+  total: number;
+  items: T[];
+}
+
 export interface CreateOrderItemRequest {
   mealId?: number;
-  name: string;
+  isCustom?: boolean;
+  name?: string;
   quantity: number;
-  unitPrice: number;
+  unitPrice?: number;
 }
 
 export interface CreateOrderRequest {
-  diningTableId?: number;
-  tableNumber?: number;
+  diningTableId: number;
   notes?: string;
   items: CreateOrderItemRequest[];
 }
@@ -101,14 +106,19 @@ export class OrdersService {
 
   list(statuses?: OrderStatus[]) {
     let params = new HttpParams();
+  list(statuses?: OrderStatus[], page = 1, pageSize = 100) {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('pageSize', pageSize);
+
     if (statuses?.length) {
       statuses.forEach(s => {
         params = params.append('statuses', s);
       });
     }
-    return this.http.get<OrderDto[]>(this.base, { params }).pipe(
-      map(orders =>
-        orders.map(o => ({
+    return this.http.get<PageResult<OrderDto>>(this.base, { params }).pipe(
+      map(result =>
+        (result.items ?? []).map(o => ({
           ...o,
           status:
             typeof o.status === 'number'

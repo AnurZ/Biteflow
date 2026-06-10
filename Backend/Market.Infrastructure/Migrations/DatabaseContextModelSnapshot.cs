@@ -594,6 +594,9 @@ namespace Market.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("ReadAtUtc")
                         .HasColumnType("datetime2");
 
@@ -619,6 +622,8 @@ namespace Market.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "OrderId", "Type");
 
                     b.HasIndex("TenantId", "TargetRole");
 

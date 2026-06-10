@@ -4,9 +4,12 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
     {
         public CreateOrderCommandValidator()
         {
-            RuleFor(x => x)
-                .Must(x => x.DiningTableId.HasValue || x.TableNumber.HasValue)
-                .WithMessage("Either DiningTableId or TableNumber must be provided.");
+            RuleFor(x => x.DiningTableId)
+                .Cascade(CascadeMode.Stop)
+                .NotNull()
+                .WithMessage("DiningTableId is required.")
+                .GreaterThan(0)
+                .WithMessage("DiningTableId is required.");
 
             RuleFor(x => x.Items)
                 .NotNull()
@@ -22,15 +25,35 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
     {
         public CreateOrderItemDtoValidator()
         {
-            RuleFor(x => x.Name)
-                .NotEmpty()
-                .MaximumLength(256);
-
             RuleFor(x => x.Quantity)
                 .GreaterThan(0);
 
-            RuleFor(x => x.UnitPrice)
-                .GreaterThanOrEqualTo(0);
+            When(x => x.IsCustom, () =>
+            {
+                RuleFor(x => x.MealId)
+                    .Null()
+                    .WithMessage("Custom order items cannot reference a meal.");
+
+                RuleFor(x => x.Name)
+                    .NotEmpty()
+                    .MaximumLength(256);
+
+                RuleFor(x => x.UnitPrice)
+                    .Cascade(CascadeMode.Stop)
+                    .NotNull()
+                    .WithMessage("Custom order item unit price is required.")
+                    .GreaterThan(0);
+            });
+
+            When(x => !x.IsCustom, () =>
+            {
+                RuleFor(x => x.MealId)
+                    .Cascade(CascadeMode.Stop)
+                    .NotNull()
+                    .WithMessage("MealId is required for menu order items.")
+                    .GreaterThan(0)
+                    .WithMessage("MealId is required for menu order items.");
+            });
         }
     }
 }
