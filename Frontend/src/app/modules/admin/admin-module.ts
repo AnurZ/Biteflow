@@ -33,6 +33,8 @@ import { Orders } from './orders/orders';
 import {KpiComponent} from './analytics/admin-dashboard/analyticsdashboard/KPI/KpiComponent';
 import { LiveOrders } from './analytics/admin-dashboard/analyticsdashboard/live-orders/live-orders';
 import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
+import {SharedModule} from "../shared/shared.module";
+import { ViewOrderDetails } from './orders/view-order-details/view-order-details';
 
 @NgModule({
   declarations: [
@@ -44,7 +46,8 @@ import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
     OrdersChartComponent,
     Orders,
     KpiComponent,
-    LiveOrders
+    LiveOrders,
+    ViewOrderDetails
   ],
     imports: [
         CommonModule,
@@ -87,6 +90,7 @@ import {CdkDrag, CdkDropList} from '@angular/cdk/drag-drop';
         CdkDrag,
         CdkDropList,
         MatCalendar,
+        SharedModule,
     ]
 })
 export class AdminModule {}

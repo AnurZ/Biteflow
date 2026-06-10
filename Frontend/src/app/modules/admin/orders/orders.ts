@@ -10,6 +10,10 @@ import {OrderExportEndpoint} from '../../../services/data-export-services/orders
 import {OrderImportEndpoint} from '../../../services/data-import-services/orders-import-services/OrderImportEndpoint';
 import {MatDialog} from '@angular/material/dialog';
 import {ExportFormatDialogComponent} from './Orders-export-dialog/ExportFormatDialogComponent';
+import {UploadOverlayService} from '../../../services/upload-overlay-service/upload-overlay-service';
+import {HttpEventType} from '@angular/common/http';
+import {MatSnackBar} from '@angular/material/snack-bar';
+import {ViewOrderDetails} from './view-order-details/view-order-details';
 
 @Component({
   selector: 'app-orders',
@@ -29,6 +33,7 @@ export class Orders implements OnInit {
 
   selectedStatus?: OrderStatus;
   sort: string = '-createdAt';
+  searchById?: number;
 
   displayedColumns: string[] = [
     'id',
@@ -42,7 +47,9 @@ export class Orders implements OnInit {
 
   constructor(private orderService: OrdersService, private orderExport: OrderExportEndpoint,
               private orderImport: OrderImportEndpoint,
-              private dialog: MatDialog) {}
+              private dialog: MatDialog,
+              private overlay: UploadOverlayService,
+              private snackBar: MatSnackBar) {}
 
 
   ngOnInit(): void {
@@ -60,9 +67,9 @@ export class Orders implements OnInit {
       pageSize: this.pageSize,
       statuses: this.selectedStatus ? [this.selectedStatus] : undefined,
       sort: this.sort,
-
       fromUtc: this.fromDate ? new Date(this.fromDate).toISOString() : undefined,
-      toUtc: this.toDate ? new Date(this.toDate).toISOString() : undefined
+      toUtc: this.toDate ? new Date(this.toDate).toISOString() : undefined,
+      searchById: this.searchById
     }).subscribe({
       next: (res) => {
         this.orders = res.items;
@@ -84,6 +91,11 @@ export class Orders implements OnInit {
     this.loadOrders();
   }
 
+  onSearch() {
+    this.pageNumber = 1;
+    this.loadOrders();
+  }
+
   onSort(column: string) {
     if (this.sort === column) {
       this.sort = `-${column}`;
@@ -94,8 +106,13 @@ export class Orders implements OnInit {
     this.loadOrders();
   }
 
-  view(id: number) {
-    console.log('View order', id);
+  viewOrder(id: number) {
+    this.orderService.getAdminOrderById(id).subscribe(order => {
+      this.dialog.open(ViewOrderDetails, {
+        width: '600px',
+        data: order
+      });
+    });
   }
 
   changeStatus(id: number) {
@@ -136,10 +153,13 @@ export class Orders implements OnInit {
   }
 
   onFileSelected(event: Event) {
+
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     const extension =
       file.name.split('.').pop()?.toLowerCase();
@@ -157,12 +177,59 @@ export class Orders implements OnInit {
       return;
     }
 
+    this.overlay.show();
+
     request.subscribe({
-      next: () => {
-        this.loadOrders();
+
+      next: (event) => {
+
+        if (event.type === HttpEventType.UploadProgress) {
+
+          const progress = event.total
+            ? Math.round((100 * event.loaded) / event.total)
+            : 0;
+
+          this.overlay.setProgress(progress);
+        }
+
+        if (event.type === HttpEventType.DownloadProgress) {
+
+          const progress = event.total
+            ? Math.round((100 * event.loaded) / event.total)
+            : 0;
+
+          this.overlay.setProgress(progress);
+        }
+
+        if (event.type === HttpEventType.Response) {
+
+          this.overlay.setProgress(100);
+
+          const importedRows = (event.body as any).imported;
+
+          this.snackBar.open(
+            `Successfully imported ${importedRows} orders`,
+            'Close',
+            {
+              duration: 4000
+            }
+          );
+
+          this.loadOrders();
+
+          setTimeout(() => {
+            this.overlay.hide();
+          }, 300);
+        }
       },
-      error: err => {
+
+      error: (err) => {
+
         console.error(err);
+
+        this.overlay.hide();
+
+        alert('Import failed');
       }
     });
   }

@@ -1,0 +1,100 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header span {
+  color: #555;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+/* reuse your existing status colors */
+.status.new { background: #e3f2fd; color: #1565c0; }
+.status.cooking { background: #fff3e0; color: #ef6c00; }
+.status.readyforpickup { background: #e8f5e9; color: #2e7d32; }
+.status.completed { background: #ede7f6; color: #5e35b1; }
+.status.cancelled { background: #ffebee; color: #c62828; }
+
+.content {
+  padding-top: 10px;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.meta-item {
+  background: #fafafa;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  color: #888;
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.section-title {
+  margin: 15px 0 8px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 1fr 50px 90px 90px;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: white;
+}
+
+.name {
+  font-weight: 500;
+}
+
+.qty, .price, .total {
+  text-align: right;
+  font-size: 13px;
+  color: #555;
+}
+
+.footer {
+  margin-top: 15px;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.actions {
+  margin-top: 10px;
+}
