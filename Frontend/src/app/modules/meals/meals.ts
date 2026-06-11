@@ -39,6 +39,7 @@ export class Meals implements OnInit {
     'actions'
   ];
 
+  mealCategories: any[] = [];
   rows: MealDto[] = [];
   total = 0;
 
@@ -93,23 +94,15 @@ export class Meals implements OnInit {
 
   /* ---------------- CATEGORY ---------------- */
 
-  onCategoryChange(event: Event) {
-    this.selectedCategoryId = +(event.target as HTMLSelectElement).value;
+  onCategoryChange(categoryId: number) {
+    this.selectedCategoryId = categoryId;
     this.pageNumber = 1;
     this.loadMeals();
   }
 
   loadMealCategories() {
-    const picker = document.getElementById('mealCategoryPicker') as HTMLSelectElement;
-    picker.innerHTML = '<option value="0">Any</option>';
-
     this.getMealCategoriesList.handleAsync().subscribe(categories => {
-      for (const category of categories) {
-        const option = document.createElement('option');
-        option.value = category.id.toString();
-        option.textContent = category.name;
-        picker.appendChild(option);
-      }
+      this.mealCategories = categories;
     });
   }
 
@@ -171,18 +164,7 @@ export class Meals implements OnInit {
     });
   }
 
-  /* ---------------- CATEGORY CACHE ---------------- */
 
-  categoryCache$: { [id: number]: Observable<string> } = {};
-
-  getCategoryName$(categoryId: number): Observable<string> {
-    if (!this.categoryCache$[categoryId]) {
-      this.categoryCache$[categoryId] = this.getByIdMealCategoryEp
-        .handleAsync(categoryId)
-        .pipe(map(res => res.name));
-    }
-    return this.categoryCache$[categoryId];
-  }
 
   /* ---------------- CATEGORY FORM ---------------- */
 

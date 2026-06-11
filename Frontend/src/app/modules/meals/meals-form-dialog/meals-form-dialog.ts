@@ -69,7 +69,7 @@ export class MealsFormDialog implements OnInit {
       nonNullable: true
     }),
     description: this.fb.control<string | null>(null),
-    basePrice: this.fb.control<number>(0, { validators: [Validators.required], nonNullable: true }),
+    basePrice: this.fb.control<number>(1, { validators: [Validators.required, Validators.min(1)], nonNullable: true }),
     isAvailable: this.fb.control<boolean | null>(null),
     isFeatured: this.fb.control<boolean | null>(null),
     imageField: this.fb.control<string | null>(null),

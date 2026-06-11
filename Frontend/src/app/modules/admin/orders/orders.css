@@ -107,6 +107,19 @@ mat-paginator {
   border-top: 1px solid #e9ecef;
 }
 
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable::after {
+  content: "↕";
+  opacity: .35;
+  margin-left: 6px;
+  font-size: .75rem;
+}
+
 /* MOBILE FIX */
 @media (max-width: 550px) {
 

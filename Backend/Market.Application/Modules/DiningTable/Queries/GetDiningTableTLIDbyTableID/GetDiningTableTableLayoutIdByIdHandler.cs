@@ -14,22 +14,29 @@ namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableTLIDbyTab
         }
 
         public async Task<GetDiningTableTableLayoutIdByIdDto> Handle(
-            GetDiningTableTableLayoutIdByIdQuery request,
-            CancellationToken cancellationToken)
+        GetDiningTableTableLayoutIdByIdQuery request,
+        CancellationToken cancellationToken)
         {
-            var tableLayoutId = await _context.DiningTables
+            var table = await _context.DiningTables
                 .Where(t => t.Id == request.DiningTableId)
-                .Select(t => t.TableLayoutId)
+                .Select(t => new
+                {
+                    t.TableLayoutId,
+                    TableLayoutName = t.TableLayout.Name
+                })
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (tableLayoutId == 0)
+            if (table == null)
+            {
                 throw new KeyNotFoundException(
                     $"Dining table with ID {request.DiningTableId} not found."
                 );
+            }
 
             return new GetDiningTableTableLayoutIdByIdDto
             {
-                TableLayoutId = tableLayoutId
+                TableLayoutId = table.TableLayoutId,
+                TableLayoutName = table.TableLayoutName
             };
         }
     }

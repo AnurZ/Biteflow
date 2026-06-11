@@ -48,7 +48,7 @@ export class MealcategoryFormDialog implements OnInit {
   openAddEditCategoryDialog(elementId?: number) {
     const ref = this.dialog.open(MealcategoryAddEditDialog, {
       width: '500px',
-      height: '680px',
+      height: '330px',
       maxWidth: 'none',
       disableClose: true,
       data: elementId

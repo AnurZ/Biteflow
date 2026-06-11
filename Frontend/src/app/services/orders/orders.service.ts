@@ -7,6 +7,8 @@ export type OrderStatus = 'New' | 'Cooking' | 'ReadyForPickup' | 'Completed' | '
 
 export interface AdminOrderDto {
   id: number;
+  tableLayoutId?: number;
+  tableLayoutName?: string;
   diningTableId?: number;
   tableNumber?: number;
   status: OrderStatus;
@@ -104,8 +106,6 @@ export class OrdersService {
       );
   }
 
-  list(statuses?: OrderStatus[]) {
-    let params = new HttpParams();
   list(statuses?: OrderStatus[], page = 1, pageSize = 100) {
     let params = new HttpParams()
       .set('page', page)
