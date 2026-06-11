@@ -26,6 +26,8 @@ namespace Market.Application.Modules.Orders.Queries.GetOrderById
                 .Select(o => new OrderByIdDto
                 {
                     Id = o.Id,
+                    TableLayoutId = o.DiningTable.TableLayoutId,
+                    TableLayoutName = o.DiningTable.TableLayout.Name,
                     DiningTableId = o.DiningTableId,
                     TableNumber = o.TableNumber,
                     Status = o.Status,

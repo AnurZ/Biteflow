@@ -1,3 +1,4 @@
+using Market.Application.Common.Provisioning;
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.Tenants;
 using Market.Shared.Constants;
@@ -99,6 +100,12 @@ namespace Market.Application.Modules.TenantActivation.Commands.ConfirmActivation
 
                 e.MarkActivated(tenantId);
                 await db.SaveChangesAsync(ct);
+
+                await DefaultDiningTableLayoutProvisioner.EnsureMainFloorAsync(
+                    db,
+                    tenantId,
+                    restaurantId,
+                    ct);
             }
             catch
             {

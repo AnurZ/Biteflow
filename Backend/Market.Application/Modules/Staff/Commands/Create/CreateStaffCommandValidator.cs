@@ -43,7 +43,9 @@ public sealed class CreateStaffCommandValidator : AbstractValidator<CreateStaffC
             .When(x => x.HourlyRate.HasValue);
 
         RuleFor(x => x.Role)
-            .Must(role => string.IsNullOrWhiteSpace(role) || AllowedRoles.Contains(role.Trim()))
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage("Role is required.")
+            .Must(role => AllowedRoles.Contains(role!.Trim()))
             .WithMessage("Role is invalid.");
 
         RuleFor(x => x.PlainPassword)

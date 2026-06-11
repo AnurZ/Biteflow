@@ -32,15 +32,20 @@
             </mat-form-field>
             <mat-form-field appearance="outline" class="inputInFlex">
               <mat-label>Base price</mat-label>
-              <input type="number" matInput formControlName="basePrice" required min="1">
+              <input type="number" matInput formControlName="basePrice" required min="1" value="1">
+              <mat-error *ngIf="form.controls.basePrice.hasError('required')">Base price is required.</mat-error>
+              <mat-error *ngIf="form.controls.basePrice.hasError('min')">Base price must be greater than 0.</mat-error>
             </mat-form-field>
             <mat-form-field appearance="outline">
               <mat-label>Category</mat-label>
-              <select matNativeControl formControlName="categoryId">
-                <option *ngFor="let category of mealCategories" [ngValue]="category.id">
+
+              <mat-select formControlName="categoryId">
+                <mat-option
+                  *ngFor="let category of mealCategories"
+                  [value]="category.id">
                   {{ category.name }}
-                </option>
-              </select>
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
 
@@ -69,7 +74,8 @@
       <div class="card-header">
         <div class="title">Manage Ingredients</div>
         <div class="actions">
-          <button (click)="addIngredient()" mat-flat-button color="primary">
+          <button (click)="addIngredient()" mat-flat-button color="primary"
+          class="action-btn">
             <mat-icon>add</mat-icon>&nbsp;Add ingredient
           </button>
           <mat-form-field appearance="outline" class="search hide-subscript">
@@ -117,7 +123,7 @@
                     style="height: 20px; text-align: center"
                     type="number"
                     matInput
-                    min="0"
+                    min="1"
                     [value]="element.quantity"
                     (change)="onQuantityChange(i, $event.target.value)"
                   />

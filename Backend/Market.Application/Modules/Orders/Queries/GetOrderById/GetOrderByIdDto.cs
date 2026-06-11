@@ -10,6 +10,8 @@ namespace Market.Application.Modules.Orders.Queries.GetOrderById
     public sealed class OrderByIdDto
     {
         public int Id { get; set; }
+        public int? TableLayoutId { get; set; }
+        public string? TableLayoutName { get; set; }
         public int? DiningTableId { get; set; }
         public int? TableNumber { get; set; }
         public OrderStatus Status { get; set; }

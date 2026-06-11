@@ -30,4 +30,8 @@ Every production `IgnoreQueryFilters()` call must include a nearby comment expla
 
 ## DbContext Pooling Note
 
-The global query filter must reference runtime `DatabaseContext` properties, not tenant values evaluated once during model creation. If `AddDbContextPool` is introduced later, also revisit how per-request tenant state is injected into `DatabaseContext`, because pooled contexts can retain constructor-injected state across requests unless the state is reset explicitly.
+The application currently registers `DatabaseContext` with `AddDbContext`, not `AddDbContextPool`.
+
+The global query filter must read runtime `DatabaseContext` state (`CurrentTenantId` and `IsSuperAdmin`) and must not close over tenant values evaluated once during model creation. `DatabaseContext.SetTenantContext(...)` copies the current request tenant into explicit context instance state so the compiled EF model can be reused while each context instance still evaluates the latest tenant values.
+
+If `AddDbContextPool` is introduced later, tenant state must be assigned for every leased context and reset before reuse, either through a scoped factory or an equivalent `SetTenantContext(...)` call in the context acquisition path.

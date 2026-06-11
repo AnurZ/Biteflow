@@ -28,7 +28,7 @@ namespace Market.API.Hubs
 
             if (!IsTenantScoped(tenantId))
             {
-                return $"user:{trimmed}";
+                return string.Empty;
             }
 
             return $"tenant:{tenantId}:user:{trimmed}";
@@ -44,7 +44,7 @@ namespace Market.API.Hubs
 
             if (!IsTenantScoped(tenantId))
             {
-                return $"role:{trimmed}";
+                return string.Empty;
             }
 
             return $"tenant:{tenantId}:role:{trimmed}";
@@ -54,7 +54,7 @@ namespace Market.API.Hubs
         {
             if (!IsTenantScoped(tenantId))
             {
-                return "kitchen";
+                return string.Empty;
             }
 
             return $"tenant:{tenantId}:kitchen";
@@ -64,7 +64,7 @@ namespace Market.API.Hubs
         {
             if (!IsTenantScoped(tenantId))
             {
-                return "waiter";
+                return string.Empty;
             }
 
             return $"tenant:{tenantId}:waiter";
@@ -74,7 +74,7 @@ namespace Market.API.Hubs
         {
             if (!IsTenantScoped(tenantId))
             {
-                return "admin";
+                return string.Empty;
             }
 
             return $"tenant:{tenantId}:admin";
@@ -117,17 +117,17 @@ namespace Market.API.Hubs
                 {
                     if (string.Equals(role, RoleNames.Kitchen, StringComparison.OrdinalIgnoreCase))
                     {
-                        groups.Add(OrdersHubGroups.Kitchen(tenantId));
+                        AddGroupIfPresent(groups, OrdersHubGroups.Kitchen(tenantId));
                     }
 
                     if (string.Equals(role, RoleNames.Waiter, StringComparison.OrdinalIgnoreCase))
                     {
-                        groups.Add(OrdersHubGroups.Waiter(tenantId));
+                        AddGroupIfPresent(groups, OrdersHubGroups.Waiter(tenantId));
                     }
 
                     if (string.Equals(role, RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
                     {
-                        groups.Add(OrdersHubGroups.Admin(tenantId));
+                        AddGroupIfPresent(groups, OrdersHubGroups.Admin(tenantId));
                     }
 
                     var roleGroup = OrdersHubGroups.Role(role, tenantId);
@@ -145,6 +145,14 @@ namespace Market.API.Hubs
 
             _logger.LogInformation("OrdersHub connected {ConnectionId}. Groups={Groups}", Context.ConnectionId, string.Join(",", groups));
             await base.OnConnectedAsync();
+        }
+
+        private static void AddGroupIfPresent(HashSet<string> groups, string group)
+        {
+            if (!string.IsNullOrWhiteSpace(group))
+            {
+                groups.Add(group);
+            }
         }
 
         private static string? ResolveUserId(ClaimsPrincipal? user)

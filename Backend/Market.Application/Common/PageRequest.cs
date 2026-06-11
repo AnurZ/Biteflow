@@ -3,7 +3,13 @@
 public sealed class PageRequest
 {
     private const int MaxPageSize = 100;
-    public int Page { get; init; } = 1;
+
+    private int _page = 1;
+    public int Page
+    {
+        get => _page;
+        init => _page = value <= 0 ? 1 : value;
+    }
 
     private int _pageSize = 10;
     public int PageSize

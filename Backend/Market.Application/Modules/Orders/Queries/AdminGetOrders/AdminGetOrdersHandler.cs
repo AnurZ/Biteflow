@@ -16,6 +16,8 @@ namespace Market.Application.Modules.Orders.Queries.AdminGetOrders
             var q = db.Orders
                 .AsNoTracking()
                 .Include(x => x.Items)
+                .Include(x => x.DiningTable)
+                    .ThenInclude(x => x.TableLayout)
                 .AsQueryable();
 
             // -------------------
@@ -53,7 +55,12 @@ namespace Market.Application.Modules.Orders.Queries.AdminGetOrders
             var projected = q.Select(o => new AdminOrderDto
             {
                 Id = o.Id,
+
                 DiningTableId = o.DiningTableId,
+
+                TableLayoutId = o.DiningTable.TableLayoutId,
+                TableLayoutName = o.DiningTable.TableLayout.Name,
+
                 TableNumber = o.TableNumber,
                 Status = o.Status,
                 CreatedAtUtc = o.CreatedAtUtc,

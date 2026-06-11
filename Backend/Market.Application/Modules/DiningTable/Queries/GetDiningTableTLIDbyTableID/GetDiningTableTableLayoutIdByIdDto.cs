@@ -12,5 +12,6 @@ namespace Market.Application.Modules.DiningTable.Queries.GetDiningTableTLIDbyTab
     public class GetDiningTableTableLayoutIdByIdDto
     {
         public int TableLayoutId { get; set; }
+        public string TableLayoutName { get; set; }
     }
 }

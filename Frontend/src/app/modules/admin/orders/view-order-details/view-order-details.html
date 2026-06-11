@@ -16,7 +16,7 @@
     <div class="meta-item">
       <span class="label">Table</span>
       <span class="value">
-        {{ data.tableNumber ?? data.diningTableId ?? '-' }}
+       {{ data.tableLayoutName }} - {{ data.tableNumber ?? data.diningTableId ?? '-' }}
       </span>
     </div>
 
@@ -27,11 +27,12 @@
       </span>
     </div>
 
-    <div class="meta-item" *ngIf="data.notes">
-      <span class="label">Notes</span>
-      <span class="value">{{ data.notes }}</span>
-    </div>
+  </div>
 
+
+  <div class="meta-item" *ngIf="data.notes">
+    <span class="label">Notes</span>
+    <span class="value">{{ data.notes }}</span>
   </div>
 
   <!-- ITEMS -->
@@ -41,25 +42,33 @@
 
   <div class="items">
 
+    <div class="item header">
+      <div class="name">Item</div>
+      <div style="text-align: center" class="qty">Quantity</div>
+      <div style="text-align: center" class="price">Unit Price</div>
+      <div style="text-align: center" class="total">Total</div>
+    </div>
+
     <div class="item" *ngFor="let item of data.items">
 
       <div class="name">
         {{ item.name }}
       </div>
 
-      <div class="qty">
+      <div style="text-align: center" class="qty">
         x{{ item.quantity }}
       </div>
 
-      <div class="price">
+      <div style="text-align: center" class="price">
         {{ item.unitPrice | currency:'EUR' }}
       </div>
 
-      <div class="total">
+      <div style="text-align: center" class="total">
         {{ (item.quantity * item.unitPrice) | currency:'EUR' }}
       </div>
 
     </div>
+
 
   </div>
 

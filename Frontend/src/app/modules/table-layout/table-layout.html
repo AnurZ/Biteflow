@@ -5,8 +5,9 @@
 
     <div class="selected-layout-title" *ngIf="selectedLayout">{{ selectedLayout.name }}</div>
 
-    <button mat-flat-button color="primary" (click)="createTableLayout()">
-      <mat-icon>add</mat-icon>&nbsp;New Table Layout
+    <button mat-flat-button color="primary" class="action-btn" (click)="createTableLayout()">
+      <mat-icon>add</mat-icon>
+      <span>New Table Layout</span>
     </button>
   </div>
 
