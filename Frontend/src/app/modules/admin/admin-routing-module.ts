@@ -4,7 +4,6 @@ import { AdminLayout } from './admin-layout';
 import { StaffList } from './staff/staff-list/staff-list';
 import {Meals} from '../meals/meals';
 import {InventoryItems} from '../inventory-items/inventory-items';
-import {MealsStats} from '../meals/Stats/meals-stats';
 import {TableLayoutComponent} from '../table-layout/table-layout';
 import {TableReservation} from '../table-reservation/table-reservation';
 import {OrdersChartComponent} from './analytics/admin-dashboard/analyticsdashboard/orders-chart/orders-chart';

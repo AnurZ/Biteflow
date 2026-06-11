@@ -24,7 +24,7 @@ namespace Market.Application.Modules.Meal.Queries.GetList
         public bool StockManaged { get; set; }
         public string ImageField { get; set; } = string.Empty;
         public int? CategoryId { get; set; }
-
+        public string? CategoryName { get; set; }
         public int IngredientsCount { get; set; }
     }
 }

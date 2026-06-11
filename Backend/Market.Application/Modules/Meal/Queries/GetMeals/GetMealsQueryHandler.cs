@@ -28,6 +28,7 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                     StockManaged = m.StockManaged,
                     IngredientsCount = m.Ingredients.Count,
                     CategoryId = m.CategoryId,
+                    CategoryName = m.Category.Name,
                     RestaurantId = restaurantId
                 });
 
@@ -63,7 +64,7 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                     "isavailable" => desc ? q.OrderByDescending(x => x.IsAvailable) : q.OrderBy(x => x.IsAvailable),
                     "isfeatured" => desc ? q.OrderByDescending(x => x.IsFeatured) : q.OrderBy(x => x.IsFeatured),
                     "ingredientscount" => desc ? q.OrderByDescending(x => x.IngredientsCount) : q.OrderBy(x => x.IngredientsCount),
-                    "category" => desc ? q.OrderByDescending(x => x.CategoryId) : q.OrderBy(x => x.CategoryId),
+                    "category" => desc ? q.OrderByDescending(x => x.CategoryName) : q.OrderBy(x => x.CategoryName),
                     _ => q.OrderBy(x => x.Id)
                 };
             }

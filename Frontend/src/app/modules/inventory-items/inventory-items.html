@@ -1,9 +1,10 @@
-<div class="card">
+<div class="card" xmlns="http://www.w3.org/1999/html">
   <div class="card-header">
     <div class="title">Inventory Items</div>
     <div class="actions">
-      <button mat-flat-button color="primary" (click)="createItem()">
-        <mat-icon>add</mat-icon>&nbsp;New Item
+      <button mat-flat-button color="primary"  (click)="createItem()" class="action-btn">
+        <mat-icon>add</mat-icon>
+        <span>New Item</span>
       </button>
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search</mat-label>

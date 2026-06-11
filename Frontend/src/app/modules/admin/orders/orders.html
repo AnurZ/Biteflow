@@ -93,7 +93,7 @@
 
       <ng-container matColumnDef="tableNumber">
         <th mat-header-cell *matHeaderCellDef>Table</th>
-        <td mat-cell *matCellDef="let r">{{ r.tableNumber }}</td>
+        <td mat-cell *matCellDef="let r">{{ r.tableLayoutName }} - #{{ r.tableNumber }}</td>
       </ng-container>
 
       <ng-container matColumnDef="items">
@@ -155,10 +155,13 @@
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
     </table>
+
+
   </div>
 
   <!-- PAGINATOR -->
   <mat-paginator
+    style="background-color: #fff "
     [length]="total"
     [pageSize]="pageSize"
     [pageIndex]="pageNumber - 1"

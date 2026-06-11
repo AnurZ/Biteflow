@@ -6,6 +6,7 @@ import { MyConfig } from '../../my-config';
 
 export interface GetDiningTableTableLayoutIdByIdDto {
   tableLayoutId: number;
+  tableLayoutName: string;
 }
 
 @Injectable({ providedIn: 'root' })

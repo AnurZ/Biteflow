@@ -57,6 +57,7 @@ export interface MealDto {
   isFeatured: boolean;
   imageField: string;
   categoryId: number;
+  categoryName: string;
   ingredientsCount?: number; // optional
 }
 
