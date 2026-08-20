@@ -107,15 +107,6 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.saveLayout();
   }
 
-  dropKpi(event: CdkDragDrop<string[]>): void {
-
-    moveItemInArray(
-      this.kpiCards,
-      event.previousIndex,
-      event.currentIndex
-    );
-
-  }
 
   // ================================
   // SAVE / LOAD LAYOUT

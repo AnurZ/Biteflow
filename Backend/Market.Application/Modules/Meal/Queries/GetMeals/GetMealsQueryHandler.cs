@@ -73,9 +73,6 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                 q = q.OrderBy(x => x.Id);
             }
 
-            // -------------------
-            // PAGINATION
-            // -------------------
             return await PageResult<MealDto>.FromQueryableAsync(q, request.Paging, cancellationToken);
         }
     }

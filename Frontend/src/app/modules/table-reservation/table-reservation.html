@@ -48,9 +48,6 @@
         </mat-form-field>
       </div>
 
-
-
-
       <div class="checkboxes">
         <mat-checkbox
           [(ngModel)]="filters.showPast"
@@ -66,9 +63,6 @@
           Filter by selected layout
         </mat-checkbox>
       </div>
-
-
-
 
       <!-- Show message if no reservations -->
       <div *ngIf="tableReservations.length === 0" class="no-reservations">

@@ -25,7 +25,4 @@ export class FileUploadEndpoint {
     });
   }
 
-  getImage(fileName: string): Observable<Blob> {
-    return this.http.get(`${this.base}/${fileName}`, { responseType: 'blob' });
-  }
 }

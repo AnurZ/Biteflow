@@ -31,7 +31,6 @@ export class FileUploadComponent implements OnChanges {
 
         console.log(event);
 
-        // 1. UPLOAD PROGRESS
         if (event.type === HttpEventType.UploadProgress) {
 
           const progress = event.total
@@ -41,7 +40,6 @@ export class FileUploadComponent implements OnChanges {
           this.overlay.setProgress(progress);
         }
 
-        // 2. DOWNLOAD PROGRESS (BITNO - kod tebe se dešava!)
         if (event.type === HttpEventType.DownloadProgress) {
 
           const progress = event.total
@@ -51,7 +49,6 @@ export class FileUploadComponent implements OnChanges {
           this.overlay.setProgress(progress);
         }
 
-        // 3. RESPONSE
         if (event.type === HttpEventType.Response) {
 
           const body = event.body as any;

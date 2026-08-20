@@ -15,7 +15,5 @@ export class FileGetEndpoint {
    * Get the public URL of a file by its filename
    * @param fileName The file name returned by the upload endpoint
    */
-  getFileUrl(fileName: string): Observable<{ url: string }> {
-    return this.http.get<{ url: string }>(`${this.base}/${fileName}`);
-  }
+
 }

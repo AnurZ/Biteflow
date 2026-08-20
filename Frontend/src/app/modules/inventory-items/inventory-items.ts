@@ -133,7 +133,7 @@ export class InventoryItems implements OnInit, AfterViewInit {
 
   deleteItem(id: number) {
     const ref = this.dialog.open(InventoryItemsConfirmDialogComponent, {
-      data: { title: 'Delete staff member?', message: 'This cannot be undone.' }
+      data: { title: 'Delete inventory item?', message: 'This cannot be undone.' }
     });
     ref.afterClosed().subscribe(ok => {
       console.log(`ID ${id}`);
