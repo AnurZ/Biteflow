@@ -47,6 +47,11 @@ public static class DependencyInjection
             }
 
             var cs = sp.GetRequiredService<IOptions<ConnectionStringsOptions>>().Value.Main;
+
+            Console.WriteLine("=================================");
+            Console.WriteLine($"DATABASE CONNECTION: {cs}");
+            Console.WriteLine("=================================");
+
             options.UseSqlServer(cs);
         });
 
