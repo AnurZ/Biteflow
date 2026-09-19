@@ -37,7 +37,6 @@ export class LiveOrders implements OnInit, OnDestroy {
 
     this.loadLiveOrders();
 
-    // connect
     this.realtime.start(MyConfig.orders_hub);
 
     // NEW ORDER
@@ -45,7 +44,6 @@ export class LiveOrders implements OnInit, OnDestroy {
       this.realtime.on<LiveOrderEvent>('OrderCreated')
         .subscribe(order => {
 
-          console.log('🔥 LIVE ORDER RECEIVED:', order);
 
           this.liveOrders = [order, ...this.liveOrders];
 
@@ -60,10 +58,9 @@ export class LiveOrders implements OnInit, OnDestroy {
       this.realtime.on<OrderStatusChangedEvent>('OrderStatusChanged')
         .subscribe(update => {
 
-          console.log('🔄 ORDER STATUS UPDATED:', update);
 
           // HANDLE COMPLETED WITH ANIMATION
-          if (update.status === 'Completed') {
+          if (update.status === 'Completed' || update.status === 'Cancelled') {
 
             this.removingOrders.add(update.orderId);
 
@@ -119,7 +116,6 @@ export class LiveOrders implements OnInit, OnDestroy {
             }))
           }));
 
-          console.log('📦 INITIAL LIVE ORDERS:', this.liveOrders);
         })
     );
   }

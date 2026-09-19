@@ -4,15 +4,15 @@
   diningTableNumber: number;
   tableLayoutName: string;
   tableLayoutId: number;
-  applicationUserId?: string | null; // Guid? → string | null
+  applicationUserId?: string | null;
   firstName: string;
   lastName: string;
   email?: string;
   phoneNumber: string;
   numberOfGuests: number;
   notes?: string | null;
-  reservationStart: string;          // DateTime → ISO string
-  reservationEnd?: string | null;    // DateTime? → string | null
+  reservationStart: string;
+  reservationEnd?: string | null;
   status: TableReservationStatus;
 }
 
@@ -32,10 +32,10 @@ export interface CreateTableReservationCommandDto {
 }
 
 export interface TableReservationFilter {
-  reservationId?: number;       // optional
-  diningTableId?: number;       // optional
-  requestedStart?: string;      // ISO datetime string
-  requestedEnd?: string;        // ISO datetime string
+  reservationId?: number;
+  diningTableId?: number;
+  requestedStart?: string;
+  requestedEnd?: string;
 }
 
 

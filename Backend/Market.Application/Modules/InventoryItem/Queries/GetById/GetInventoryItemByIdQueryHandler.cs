@@ -1,21 +1,29 @@
-using Market.Application.Modules.Staff.Queries.GetById;
-using System;
+using Market.Application.Abstractions;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Market.Application.Modules.InventoryItem.Queries.GetById
 {
-    internal class GetInventoryItemByIdQueryHandler(IAppDbContext db)
+    public class GetInventoryItemByIdQueryHandler(
+        IAppDbContext db,
+        ITenantContext tenantContext)
         : IRequestHandler<GetInventoryItemByIdQuery, GetInventoryItemByIdDto>
     {
-        public async Task<GetInventoryItemByIdDto> Handle(GetInventoryItemByIdQuery req, CancellationToken ct)
+        public async Task<GetInventoryItemByIdDto> Handle(
+            GetInventoryItemByIdQuery req,
+            CancellationToken ct)
         {
-            var ie = await db.InventoryItems
-                .FirstOrDefaultAsync(x => x.Id == req.Id, ct);
+            var restaurantId = tenantContext.RequireRestaurantId();
 
-            if (ie is null) throw new KeyNotFoundException("InventoryItem");
+            var ie = await db.InventoryItems
+                .FirstOrDefaultAsync(
+                    x => x.Id == req.Id &&
+                         x.RestaurantId == restaurantId,
+                    ct);
+
+            if (ie is null)
+                throw new KeyNotFoundException("InventoryItem");
 
             return new GetInventoryItemByIdDto
             {

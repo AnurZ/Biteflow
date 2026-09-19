@@ -34,8 +34,12 @@ public partial class DatabaseContext
                         }
                     }
 
-                    entry.Entity.CreatedAtUtc = UtcNow;
-                    entry.Entity.ModifiedAtUtc = null; // ili = UtcNow
+                    if (entry.Entity.CreatedAtUtc == default)
+                    {
+                        entry.Entity.CreatedAtUtc = UtcNow;
+                    }
+
+                    entry.Entity.ModifiedAtUtc = null;
                     entry.Entity.IsDeleted = false;
                     break;
 

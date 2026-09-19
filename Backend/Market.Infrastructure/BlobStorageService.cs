@@ -20,6 +20,7 @@ namespace Market.Infrastructure
         private readonly BlobContainerClient _containerClient;
         private readonly ILogger<BlobStorageService> _logger;
         private readonly BlobStorageSettings _settings;
+        private const long MaxFileSize = 5 * 1024 * 1024; // 5 MB
 
         private static readonly HashSet<string> AllowedTypes =
             [
@@ -41,13 +42,26 @@ namespace Market.Infrastructure
                 throw new Exception("Azure Blob configuration missing.");
             }
 
-            _containerClient = new BlobContainerClient(_settings.ConnectionString, _settings.ContainerName);
+            _containerClient = new BlobContainerClient(
+                _settings.ConnectionString,
+                _settings.ContainerName);
 
             _containerClient.CreateIfNotExists(PublicAccessType.None);
         }
 
         public async Task<object> UploadAsync(IFormFile file)
         {
+            if (file.Length <= 0)
+            {
+                throw new Exception("File is empty.");
+            }
+
+            if (file.Length > MaxFileSize)
+            {
+                throw new Exception(
+                    "File is too large. Maximum size is 10 MB.");
+            }
+
             if (!AllowedTypes.Contains(file.ContentType))
             {
                 throw new Exception("Invalid file type.");
@@ -125,12 +139,16 @@ namespace Market.Infrastructure
         {
             if (!blobClient.CanGenerateSasUri)
             {
-                _logger.LogError("Blob SAS generation failed because the client is not authenticated with a shared key credential.");
+                _logger.LogError(
+                    "Blob SAS generation failed because the client is not authenticated with a shared key credential.");
+
                 throw new Exception("File access failed.");
             }
 
             var expiresOn = DateTimeOffset.UtcNow.AddMinutes(
-                _settings.SasReadMinutes > 0 ? _settings.SasReadMinutes : 15);
+                _settings.SasReadMinutes > 0
+                    ? _settings.SasReadMinutes
+                    : 15);
 
             var sasBuilder = new BlobSasBuilder
             {
@@ -139,6 +157,7 @@ namespace Market.Infrastructure
                 Resource = "b",
                 ExpiresOn = expiresOn
             };
+
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
             return blobClient.GenerateSasUri(sasBuilder).ToString();

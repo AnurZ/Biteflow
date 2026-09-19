@@ -8,6 +8,7 @@ import { SuperAdminActivationRequestsComponent } from './modules/superadmin/supe
 import { WaiterGuard } from './modules/core/auth/waiter.guard';
 import { KitchenGuard } from './modules/core/auth/kitchen.guard';
 import { LoggedInGuard } from './modules/core/auth/logged-in.guard';
+import {AdminGuard} from './modules/core/auth/admin.guard';
 
 const routes: Routes = [
   {
@@ -20,6 +21,7 @@ const routes: Routes = [
   },
   {
     path: 'admin',
+    canActivate: [AdminGuard],
     loadChildren: () => import('./modules/admin/admin-module').then(m => m.AdminModule)
   },
   {

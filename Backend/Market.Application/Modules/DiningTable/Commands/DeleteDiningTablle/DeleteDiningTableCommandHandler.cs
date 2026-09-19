@@ -4,28 +4,44 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.DiningTable.Commands.DeleteDiningTable
 {
-    public sealed class DeleteDiningTableCommandHandler(
-        IAppDbContext db,
-        ITenantContext tenantContext
-    ) : IRequestHandler<DeleteDiningTableCommandDto>
+    public sealed class DeleteDiningTableCommandHandler
+        : IRequestHandler<DeleteDiningTableCommandDto>
     {
-        public async Task Handle(DeleteDiningTableCommandDto request, CancellationToken cancellationToken)
-        {
-            var restaurantId = tenantContext.RequireRestaurantId();
+        private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-            var table = await db.DiningTables
+        public DeleteDiningTableCommandHandler(
+            IAppDbContext db,
+            ITenantContext tenantContext)
+        {
+            _db = db;
+            _tenantContext = tenantContext;
+        }
+
+        public async Task Handle(
+            DeleteDiningTableCommandDto request,
+            CancellationToken cancellationToken)
+        {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
+            var table = await _db.DiningTables
                 .Include(x => x.TableLayout)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == request.Id &&
-                    x.TableLayout.RestaurantId == restaurantId,
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Id == request.Id &&
+                        !x.IsDeleted &&
+                        x.TableLayout.RestaurantId == restaurantId,
                     cancellationToken);
 
             if (table == null)
-                throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");
+            {
+                throw new KeyNotFoundException(
+                    $"Dining table with ID {request.Id} not found.");
+            }
 
-            db.DiningTables.Remove(table);
+            table.IsDeleted = true;
 
-            await db.SaveChangesAsync(cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
         }
     }
 }

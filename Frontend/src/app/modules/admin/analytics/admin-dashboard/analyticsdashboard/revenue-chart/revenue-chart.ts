@@ -1,9 +1,21 @@
-import {Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges} from '@angular/core';
+
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  SimpleChanges
+} from '@angular/core';
 import { Chart } from 'chart.js/auto';
-import { ChartService, RevenuePerDayDto } from '../../../services/chart-services';
+import {
+  ChartService,
+  RevenuePerDayDto
+} from '../../../services/chart-services';
 import { DashboardRefreshService } from '../../../services/DashboardRefreshService';
 import { Subscription } from 'rxjs';
-import {DateRange} from '../../../../admin-model';
+import { DateRange } from '../../../../admin-model';
+import { CurrencyService} from '../../../../../../services/currency-service/currency.service';
 
 @Component({
   standalone: false,
@@ -21,11 +33,11 @@ export class RevenueChart implements OnChanges, OnInit, OnDestroy {
 
   constructor(
     private service: ChartService,
-    private refresh: DashboardRefreshService
+    private refresh: DashboardRefreshService,
+    private currencyService: CurrencyService
   ) {}
 
   ngOnInit(): void {
-
 
     this.sub.add(
       this.refresh.refresh$.subscribe(() => {
@@ -37,8 +49,11 @@ export class RevenueChart implements OnChanges, OnInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.range?.from && this.range?.to &&
-      (changes['range'] || changes['refreshTick'])) {
+    if (
+      this.range?.from &&
+      this.range?.to &&
+      (changes['range'] || changes['refreshTick'])
+    ) {
       this.load();
     }
   }
@@ -55,7 +70,6 @@ export class RevenueChart implements OnChanges, OnInit, OnDestroy {
     this.service.getRevenuePerDay(this.range)
       .subscribe(data => {
         this.render(data);
-        console.log('RevenueChart data', data);
       });
   }
 
@@ -65,20 +79,23 @@ export class RevenueChart implements OnChanges, OnInit, OnDestroy {
 
     this.chart = new Chart('revenueChart', {
       type: 'line',
+
       data: {
         labels: data.map(x => x.date),
+
         datasets: [{
           label: 'Revenue',
           data: data.map(x => x.revenue),
           borderWidth: 2
         }]
       },
+
       options: {
         plugins: {
           tooltip: {
             callbacks: {
               label: (context) => {
-                return `$${context.parsed.y}`;
+                return this.currencyService.format(context.parsed.y);
               }
             }
           }

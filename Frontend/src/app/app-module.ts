@@ -35,7 +35,7 @@ import {FileUploadComponent} from "./modules/shared/file-upload/file-upload";
 @NgModule({
   declarations: [App, AdminLayout, MealsFormDialog, MealcategoryFormDialog,
     AddIngredientsDialog, InventoryItemsFormDialogComponent, TableLayoutComponent,
-    TableLayoutCreateDialog, TableLayoutCreateDialog, TableReservation, TableReservationFormDialog],
+    TableLayoutCreateDialog, TableReservation, TableReservationFormDialog],
     imports: [
         BrowserModule,
         HttpClientModule,

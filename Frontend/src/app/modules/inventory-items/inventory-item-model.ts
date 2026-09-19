@@ -47,7 +47,17 @@ export interface UpdateInventoryItemDto {
   currentQty: number;
 }
 
-// Delete command (optional)
+// Delete command
 export interface DeleteInventoryItemDto {
   id: number;
+}
+
+export interface InventoryItemListRequest {
+  pageNumber: number;
+  pageSize: number;
+  search?: string;
+  sort?: string;
+  unitType?: UnitTypes;
+  minQty?: number;
+  maxQty?: number;
 }

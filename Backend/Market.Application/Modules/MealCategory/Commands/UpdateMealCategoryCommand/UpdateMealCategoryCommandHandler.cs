@@ -19,15 +19,20 @@ namespace Market.Application.Modules.MealCategory.Commands.UpdateMealCategoryCom
             if (mealCategory is null)
                 throw new KeyNotFoundException($"Meal category with ID {request.Id} not found.");
 
+            var normalizedName = request.Name.Trim().ToLower();
+
             var nameExists = await db.MealCategories
                 .WhereCurrentRestaurant(tenantContext)
-                .AnyAsync(m => m.Id != request.Id && m.Name == request.Name, cancellationToken);
+                .AnyAsync(m =>
+                    m.Id != request.Id &&
+                    m.Name.ToLower() == normalizedName,
+                    cancellationToken);
 
             if (nameExists)
                 throw new ValidationException($"A meal category with the name '{request.Name.Trim()}' already exists.");
 
-            mealCategory.Name = request.Name;
-            mealCategory.Description = request.Description;
+            mealCategory.Name = request.Name.Trim();
+            mealCategory.Description = request.Description.Trim();
 
             await db.SaveChangesAsync(cancellationToken);
         }

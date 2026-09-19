@@ -29,8 +29,26 @@ export class MealsService {
   ) {}
 
   // === CRUD Methods ===
-  getMeals(page: number, pageSize: number, search?: string, sort?: string, categoryId?: number) {
-    return this.getListEp.handleAsync(page, pageSize, search, sort, categoryId);
+  getMeals(
+    page: number,
+    pageSize: number,
+    search?: string,
+    sort?: string,
+    categoryId?: number,
+    minPrice?: number,
+    maxPrice?: number,
+    isAvailable?: boolean
+  ) {
+    return this.getListEp.handleAsync(
+      page,
+      pageSize,
+      search,
+      sort,
+      categoryId,
+      minPrice,
+      maxPrice,
+      isAvailable
+    );
   }
   getMealById(id: number): Observable<GetMealByIdDto> {
     return this.getByIdEp.handleAsync(id);

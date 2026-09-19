@@ -10,6 +10,7 @@ import {MatButton} from '@angular/material/button';
 
 @Component({
   selector: 'app-staff-confirm-dialog',
+  standalone: true,
   imports: [
     MatDialogContent,
     MatDialogTitle,

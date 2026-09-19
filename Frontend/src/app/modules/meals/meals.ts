@@ -3,15 +3,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 
 import { MealsService } from './meals-service';
-import { MealDto } from './meals-model';
+import { MealDto, MealCategory } from './meals-model';
 import { MealDeleteEndpoint } from '../../endpoints/meals-crud-endpoints/meal-delete-endpoint';
 import { MealsFormDialog } from './meals-form-dialog/meals-form-dialog';
 import { ConfirmDialogComponent } from '../admin/staff/confirm-dialog/confirm-dialog-component';
-import { FileGetEndpoint } from '../../endpoints/file-upload-endpoint/file-get-endpoint';
 import { MealCategoryGetEndpoint } from '../../endpoints/meal-category-crud-endpoint/meal-category-get-endpoint';
-import { MealCategoryGetByIdEndpoint } from '../../endpoints/meal-category-crud-endpoint/meal-category-get-by-id-endpoint';
-import { map, Observable } from 'rxjs';
-import {MealcategoryFormDialog} from './MealCategory-form-dialog/mealcategory-form-dialog';
+import { CurrencyService } from '../../services/currency-service/currency.service';
+import { MealcategoryFormDialog } from './MealCategory-form-dialog/mealcategory-form-dialog';
 
 @Component({
   selector: 'app-meals',
@@ -20,13 +18,12 @@ import {MealcategoryFormDialog} from './MealCategory-form-dialog/mealcategory-fo
   standalone: false
 })
 export class Meals implements OnInit {
-
-  private fileGetEp = inject(FileGetEndpoint);
   private mealsService = inject(MealsService);
   private dialog = inject(MatDialog);
   private deleteEp = inject(MealDeleteEndpoint);
   private getMealCategoriesList = inject(MealCategoryGetEndpoint);
-  private getByIdMealCategoryEp = inject(MealCategoryGetByIdEndpoint);
+
+  currencyService = inject(CurrencyService);
 
   columns = [
     'image',
@@ -39,7 +36,7 @@ export class Meals implements OnInit {
     'actions'
   ];
 
-  mealCategories: any[] = [];
+  mealCategories: MealCategory[] = [];
   rows: MealDto[] = [];
   total = 0;
 
@@ -48,8 +45,11 @@ export class Meals implements OnInit {
   search = '';
   sort: string | undefined;
 
-  selectedCategoryId: number = 0;
-  currentSearchName: string = '';
+  selectedCategoryId = 0;
+  selectedIsAvailable: boolean | null = null;
+
+  minPrice: number | null = null;
+  maxPrice: number | null = null;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -58,79 +58,71 @@ export class Meals implements OnInit {
     this.loadMealCategories();
   }
 
-  /* ---------------- MAIN LOAD (UNIFIED) ---------------- */
-
-  loadMeals() {
-
+  loadMeals(): void {
     this.mealsService.getMeals(
       this.pageNumber,
       this.pageSize,
       this.search,
       this.sort,
-      this.selectedCategoryId
+      this.selectedCategoryId,
+      this.minPrice ?? undefined,
+      this.maxPrice ?? undefined,
+      this.selectedIsAvailable ?? undefined
     ).subscribe(res => {
       this.rows = res.items ?? [];
       this.total = res.total ?? 0;
     });
   }
 
-  /* ---------------- PAGING ---------------- */
-
-  onPage(e: PageEvent) {
+  onPage(e: PageEvent): void {
     this.pageNumber = e.pageIndex + 1;
     this.pageSize = e.pageSize;
     this.loadMeals();
   }
 
-  /* ---------------- SEARCH ---------------- */
-
-  onSearch(term: string) {
+  onSearch(term: string): void {
     this.search = term;
     this.pageNumber = 1;
     this.paginator?.firstPage();
     this.loadMeals();
   }
 
-
-  /* ---------------- CATEGORY ---------------- */
-
-  onCategoryChange(categoryId: number) {
+  onCategoryChange(categoryId: number): void {
     this.selectedCategoryId = categoryId;
     this.pageNumber = 1;
     this.loadMeals();
   }
 
-  loadMealCategories() {
+  onAvailabilityChange(value: boolean | null): void {
+    this.selectedIsAvailable = value;
+    this.pageNumber = 1;
+    this.loadMeals();
+  }
+
+  onPriceChange(): void {
+    this.pageNumber = 1;
+    this.loadMeals();
+  }
+
+  loadMealCategories(): void {
     this.getMealCategoriesList.handleAsync().subscribe(categories => {
       this.mealCategories = categories;
     });
   }
 
-  /* ---------------- SORT FIXED ---------------- */
-
-  onSort(key: string) {
-    const map: any = {
-      name: 'name',
-      baseprice: 'baseprice',
-      isavailable: 'isavailable',
-      isfeatured: 'isfeatured',
-      ingredientscount: 'ingredientscount',
-      category: 'category'
-    };
-
-    const k = map[key];
-    if (!k) return;
-
-    if (this.sort === k) this.sort = `-${k}`;
-    else if (this.sort === `-${k}`) this.sort = undefined;
-    else this.sort = k;
+  onSort(key: string): void {
+    if (this.sort === key) {
+      this.sort = `-${key}`;
+    } else if (this.sort === `-${key}`) {
+      this.sort = undefined;
+    } else {
+      this.sort = key;
+    }
 
     this.loadMeals();
   }
 
-  /* ---------------- CRUD ---------------- */
-
-  createMeal() {
+  createMeal(): void {
     const ref = this.dialog.open(MealsFormDialog, {
       width: '1200px',
       height: '830px',
@@ -138,10 +130,14 @@ export class Meals implements OnInit {
       data: { mode: 'create' }
     });
 
-    ref.afterClosed().subscribe(r => r && this.loadMeals());
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadMeals();
+      }
+    });
   }
 
-  editMeal(id: number) {
+  editMeal(id: number): void {
     const ref = this.dialog.open(MealsFormDialog, {
       width: '1200px',
       height: '830px',
@@ -149,26 +145,33 @@ export class Meals implements OnInit {
       data: { mode: 'edit', id }
     });
 
-    ref.afterClosed().subscribe(r => r && this.loadMeals());
-  }
-
-  deleteMeal(id: number) {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      data: { title: 'Delete meal?', message: 'This cannot be undone.' }
-    });
-
-    ref.afterClosed().subscribe(ok => {
-      if (ok) {
-        this.deleteEp.handleAsync(id).subscribe(() => this.loadMeals());
+    ref.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadMeals();
       }
     });
   }
 
+  deleteMeal(id: number): void {
+    const ref = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete meal?',
+        message: 'This cannot be undone.'
+      }
+    });
 
+    ref.afterClosed().subscribe(ok => {
+      if (!ok) {
+        return;
+      }
 
-  /* ---------------- CATEGORY FORM ---------------- */
+      this.deleteEp.handleAsync(id).subscribe(() => {
+        this.loadMeals();
+      });
+    });
+  }
 
-  addMealCategoryForm() {
+  addMealCategoryForm(): void {
     const ref = this.dialog.open(MealcategoryFormDialog, {
       width: '800px',
       maxWidth: '1000px',

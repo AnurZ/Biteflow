@@ -10,7 +10,6 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
     public sealed class UpdateInventoryItemCommand : IRequest
     {
         public int Id { get; set; }
-        public Guid RestaurantId { get; init; }
         public string Name { get; init; } = string.Empty;
         public string Sku { get; init; } = string.Empty;
         public UnitTypes UnitType { get; init; }

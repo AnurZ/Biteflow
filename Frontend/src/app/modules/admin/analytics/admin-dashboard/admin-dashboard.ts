@@ -12,6 +12,7 @@ import { DashboardRefreshService } from '../services/DashboardRefreshService';
 
 import {DashboardLayout, DateRange} from '../../admin-model';
 import {DashboardLayoutService} from '../../../../services/DashboardLayoutService/DashboardLayout-service';
+import {MyConfig} from '../../../../my-config';
 
 @Component({
   standalone: false,
@@ -65,18 +66,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
   // INIT
   // ================================
   ngOnInit(): void {
-
     this.initDates();
-
     this.loadLayout();
-
     this.logRange('INIT');
+
+    this.realtime.start(MyConfig.orders_hub);
 
     this.sub.add(
       this.realtime.on('DashboardUpdated').subscribe(() => {
-
         console.log('📡 DASHBOARD EVENT RECEIVED');
-
         this.refreshTick++;
       })
     );

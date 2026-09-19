@@ -607,14 +607,12 @@ export class TableLayoutComponent implements OnInit {
     this.selectedLayout = layout;
     this.otherLayouts = this.layouts.filter(l => l.id !== layout.id);
 
-    // Clear the UI and tables IMMEDIATELY
     this.diningTables = [];
     this.savedTables = [];
+    this.deletedTables = [];
     this.clearInputsAndSelection();
     this.clearAllFilters();
 
-
-    // Now load new tables
     this.loadTables(layout.id);
   }
 
@@ -624,7 +622,8 @@ export class TableLayoutComponent implements OnInit {
   resetLayout() {
     this.selectedLayout = undefined;
     this.otherLayouts = this.layouts;
-    this.cancelTableEdit()
+    this.deletedTables = [];
+    this.cancelTableEdit();
     this.diningTables = [];
   }
 

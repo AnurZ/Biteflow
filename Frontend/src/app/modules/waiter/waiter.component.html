@@ -90,7 +90,9 @@
             <div class="order-line" *ngFor="let item of currentOrder">
               <div>
                 <div class="item-name">{{ item.name }}</div>
-                <div class="item-price">$ {{ (item.price * item.qty) | number: '1.2-2' }}</div>
+                <div class="item-price">
+                  {{ currencyService.format(item.price * item.qty) }}
+                </div>
               </div>
             <ng-container *ngIf="isEditingLocal; else readonlyQty">
               <div class="qty-controls">
@@ -127,7 +129,9 @@
             <div class="menu-left">
               <span class="meal-avatar">{{ item.name.charAt(0) }}</span>
               <div class="item-name">{{ item.name }}</div>
-              <div class="item-price">$ {{ item.basePrice | number: '1.2-2' }}</div>
+              <div class="item-price">
+                {{ currencyService.format(item.basePrice) }}
+              </div>
             </div>
             <button class="add" (click)="addItem(item)">+</button>
           </div>
@@ -141,13 +145,13 @@
           <button
             class="send"
             (click)="sendToKitchen()"
-            [disabled]="!currentOrder.length || submitting || hasActiveOrderForSelectedTable || billingOrder || selectedTable?.status === 'paying'"
+            [disabled]="!currentOrder.length || submitting || hasActiveOrderForSelectedTable || billingOrder || selectedTable.status === 'paying'"
           >
             Send to Kitchen
           </button>
           <button
             class="print"
-            [disabled]="selectedTable?.status !== 'paying' || !latestOrderForSelectedTable(false)"
+            [disabled]="selectedTable.status !== 'paying' || !latestOrderForSelectedTable(false)"
             (click)="printBill()"
           >
             Print Bill
@@ -161,7 +165,7 @@
       <div class="bill-header">
         <div>
           <div class="bill-title">Bill Summary</div>
-          <div class="bill-table">Table {{ billingOrder?.tableNumber || billingOrder?.diningTableId }}</div>
+          <div class="bill-table">Table {{ billingOrder.tableNumber || billingOrder.diningTableId }}</div>
         </div>
         <button class="close" (click)="closeBill()">×</button>
       </div>
@@ -169,21 +173,30 @@
       <div class="bill-items">
         <div class="bill-row" *ngFor="let item of billingOrder?.items">
           <span>{{ item.name }} ×{{ item.quantity }}</span>
-          <span>$ {{ (item.quantity * item.unitPrice) | number: '1.2-2' }}</span>
+          <span>{{ currencyService.format(item.quantity * item.unitPrice) }}</span>
         </div>
       </div>
 
       <div class="bill-summary">
-        <div class="bill-row"><span>Subtotal</span><span>$ {{ billSubtotal | number: '1.2-2' }}</span></div>
-        <div class="bill-row"><span>Tax (8%)</span><span>$ {{ billTax | number: '1.2-2' }}</span></div>
+        <div class="bill-row">
+          <span>Subtotal</span>
+          <span>{{ currencyService.format(billSubtotal) }}</span>
+        </div>
+        <div class="bill-row">
+          <span>Tax (8%)</span>
+          <span>{{ currencyService.format(billTax) }}</span>
+        </div>
         <div class="bill-row">
           <span>Tip ({{ (billTipRate * 100) | number:'1.0-0' }}%)</span>
           <div class="tip-input">
             <input type="range" min="0" max="0.3" step="0.01" [(ngModel)]="billTipRate" />
-            <span>$ {{ billTip | number: '1.2-2' }}</span>
+            <span>{{ currencyService.format(billTip) }}</span>
           </div>
         </div>
-        <div class="bill-total bill-row"><span>Total</span><span>$ {{ billTotal | number: '1.2-2' }}</span></div>
+        <div class="bill-total bill-row">
+          <span>Total</span>
+          <span>{{ currencyService.format(billTotal) }}</span>
+        </div>
       </div>
 
       <div class="bill-actions">

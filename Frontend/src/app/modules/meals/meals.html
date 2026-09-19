@@ -1,6 +1,7 @@
 <div class="card">
   <div class="card-header">
     <div class="title">Manage Meals</div>
+
     <div class="actions">
       <div style="display:flex; align-items:center; gap:12px;">
 
@@ -13,6 +14,7 @@
           <span>Add Category</span>
         </button>
 
+        <!-- Category -->
         <mat-form-field appearance="outline" style="width:220px;">
           <mat-label>Category</mat-label>
 
@@ -32,6 +34,54 @@
 
           </mat-select>
         </mat-form-field>
+
+        <!-- Availability -->
+        <mat-form-field appearance="outline" style="width:150px;">
+          <mat-label>Availability</mat-label>
+
+          <mat-select
+            [value]="selectedIsAvailable"
+            (selectionChange)="onAvailabilityChange($event.value)">
+
+            <mat-option [value]="null">
+              Any
+            </mat-option>
+
+            <mat-option [value]="true">
+              Available
+            </mat-option>
+
+            <mat-option [value]="false">
+              Unavailable
+            </mat-option>
+
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Min Price -->
+        <mat-form-field appearance="outline" style="width:130px;">
+          <mat-label>Min price</mat-label>
+
+          <input
+            matInput
+            type="number"
+            min="0"
+            [(ngModel)]="minPrice"
+            (keyup.enter)="onPriceChange()" />
+        </mat-form-field>
+
+        <!-- Max Price -->
+        <mat-form-field appearance="outline" style="width:130px;">
+          <mat-label>Max price</mat-label>
+
+          <input
+            matInput
+            type="number"
+            min="0"
+            [(ngModel)]="maxPrice"
+            (keyup.enter)="onPriceChange()" />
+        </mat-form-field>
+
       </div>
 
       <button
@@ -45,10 +95,11 @@
 
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search</mat-label>
-        <input #mealsInput
-               matInput
-               (keyup.enter)="onSearch($any($event.target).value)"
-               placeholder="Name, description…" />
+        <input
+          #mealsInput
+          matInput
+          (keyup.enter)="onSearch($any($event.target).value)"
+          placeholder="Name, description…" />
       </mat-form-field>
 
     </div>
@@ -95,7 +146,9 @@
           Price
         </th>
         <td mat-cell *matCellDef="let item">
-          <div class="cell-content">{{ item.basePrice | currency }}</div>
+          <div class="cell-content">
+            {{ currencyService.format(item.basePrice) }}
+          </div>
         </td>
       </ng-container>
 

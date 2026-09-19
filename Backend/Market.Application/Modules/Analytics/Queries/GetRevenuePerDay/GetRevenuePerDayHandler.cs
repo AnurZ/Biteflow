@@ -8,19 +8,27 @@ namespace Market.Application.Modules.Analytics.Queries.GetRevenuePerDay
         : IRequestHandler<GetRevenuePerDayQuery, List<GetRevenuePerDayDto>>
     {
         private readonly IAppDbContext _context;
+        private readonly ITenantContext _tenantContext;
 
-        public GetRevenuePerDayHandler(IAppDbContext context)
+        public GetRevenuePerDayHandler(
+            IAppDbContext context,
+            ITenantContext tenantContext)
         {
             _context = context;
+            _tenantContext = tenantContext;
         }
 
         public async Task<List<GetRevenuePerDayDto>> Handle(
             GetRevenuePerDayQuery request,
             CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var query = _context.OrderItems
                 .AsNoTracking()
-                .Where(oi => oi.Order.Status != OrderStatus.Cancelled);
+                .Where(oi =>
+                    oi.Order.RestaurantId == restaurantId &&
+                    oi.Order.Status != OrderStatus.Cancelled);
 
             if (request.From.HasValue)
                 query = query.Where(x => x.Order.CreatedAtUtc >= request.From.Value);

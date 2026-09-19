@@ -55,7 +55,6 @@ export class OrdersChartComponent implements OnChanges, OnInit, OnDestroy {
     this.analyticsService.getOrdersPerDay(this.range)
       .subscribe(data => {
         this.render(data);
-        console.log('OrdersChartComponent data', data);
       });
   }
 

@@ -24,5 +24,4 @@ export class FileUploadEndpoint {
       responseType: 'json'
     });
   }
-
 }

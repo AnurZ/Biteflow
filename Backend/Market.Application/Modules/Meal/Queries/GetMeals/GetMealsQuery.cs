@@ -10,6 +10,9 @@ namespace Market.Application.Modules.Meal.Queries.GetList
         public string? Search { get; init; }
         public string? Sort { get; init; }
         public int? CategoryId { get; init; }
+        public decimal? MinPrice { get; init; }
+        public decimal? MaxPrice {  get; init; }
+        public bool? isAvailable { get; init; }
     }
 
     public sealed class MealDto

@@ -49,7 +49,9 @@ export class StaffFormDialogComponent implements OnInit {
   }
 
   private randomChar(chars: string): string {
-    return chars.charAt(Math.floor(Math.random() * chars.length));
+    const array = new Uint32Array(1);
+    crypto.getRandomValues(array);
+    return chars[array[0] % chars.length];
   }
 
   constructor(

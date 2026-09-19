@@ -8,8 +8,4 @@ export class DashboardRefreshService {
 
   refresh$ = this.refreshSubject.asObservable();
 
-  triggerRefresh(): void {
-    console.log('🔥 REFRESH TRIGGERED');
-    this.refreshSubject.next();
-  }
 }

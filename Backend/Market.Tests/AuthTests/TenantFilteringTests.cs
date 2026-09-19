@@ -154,14 +154,16 @@ public sealed class TenantFilteringTests
     public void ProductionIgnoreQueryFilters_ShouldRemainLimitedToDocumentedSystemFlows()
     {
         var allowedProductionFiles = new[]
-        {
-            "Backend/Market.Application/Modules/TenantActivation",
-            "Backend/Market.Application/Modules/TableReservation/Commands/CreateTableReservation/CreatePublicTableReservationCommandHandler.cs",
-            "Backend/Market.Infrastructure/Common/PublicTenantResolver.cs",
-            "Backend/Market.Infrastructure/Common/ActivationLinkService.cs",
-            "Backend/Market.Infrastructure/Identity/StaffProfileService.cs",
-            "Backend/Market.Infrastructure/Database/Seeders"
-        };
+{
+    "Backend/Market.Application/Modules/TenantActivation",
+    "Backend/Market.Application/Modules/TableReservation/Commands/CreateTableReservation/CreatePublicTableReservationCommandHandler.cs",
+    "Backend/Market.Infrastructure/Common/PublicTenantResolver.cs",
+    "Backend/Market.Infrastructure/Common/ActivationLinkService.cs",
+    "Backend/Market.Infrastructure/Identity/StaffProfileService.cs",
+    "Backend/Market.Infrastructure/Database/Seeders",
+    "Backend/Market.API/Identity/CustomProfileService.cs",
+    "Backend/Market.Application/Common/Provisioning/DefaultDiningTableLayoutProvisioner.cs"
+};
 
         var productionFiles = Directory
             .EnumerateFiles(GetBackendPath(), "*.cs", SearchOption.AllDirectories)

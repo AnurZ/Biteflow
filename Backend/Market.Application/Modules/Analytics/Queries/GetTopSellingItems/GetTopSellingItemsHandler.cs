@@ -1,4 +1,5 @@
-﻿using Market.Application.Abstractions;
+﻿
+using Market.Application.Abstractions;
 using Market.Domain.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,20 +9,27 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
         : IRequestHandler<GetTopSellingItemsQuery, List<GetTopSellingItemsDto>>
     {
         private readonly IAppDbContext _context;
+        private readonly ITenantContext _tenantContext;
 
-        public GetTopSellingItemsHandler(IAppDbContext context)
+        public GetTopSellingItemsHandler(
+            IAppDbContext context,
+            ITenantContext tenantContext)
         {
             _context = context;
+            _tenantContext = tenantContext;
         }
 
         public async Task<List<GetTopSellingItemsDto>> Handle(
             GetTopSellingItemsQuery request,
             CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var query = _context.OrderItems
                 .AsNoTracking()
-                .Include(x => x.Meal)
-                .Where(oi => oi.Order.Status != OrderStatus.Cancelled);
+                .Where(oi =>
+                    oi.Order.RestaurantId == restaurantId &&
+                    oi.Order.Status != OrderStatus.Cancelled);
 
             if (request.From.HasValue)
                 query = query.Where(x => x.Order.CreatedAtUtc >= request.From.Value);
@@ -30,13 +38,10 @@ namespace Market.Application.Modules.Analytics.Queries.GetTopSellingItems
                 query = query.Where(x => x.Order.CreatedAtUtc < request.To.Value);
 
             var data = await query
-                .GroupBy(x => x.MealId)
+                .GroupBy(x => x.Name)
                 .Select(g => new GetTopSellingItemsDto
                 {
-                    ItemName = g.First().Meal != null
-                        ? g.First().Meal.Name
-                        : "Custom Item",
-
+                    ItemName = g.Key,
                     Quantity = g.Sum(x => x.Quantity)
                 })
                 .OrderByDescending(x => x.Quantity)

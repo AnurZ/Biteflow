@@ -38,8 +38,8 @@ public static class DatabaseInitializer
         if (env.IsDevelopment())
         {
             await DynamicDataSeeder.SeedAsync(ctx);
+            await identitySeeder.SeedAsync();
         }
 
-        await identitySeeder.SeedAsync();
     }
 }

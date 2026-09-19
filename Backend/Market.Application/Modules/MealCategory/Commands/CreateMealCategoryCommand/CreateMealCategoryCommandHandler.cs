@@ -24,8 +24,8 @@ namespace Market.Application.Modules.MealCategory.Commands.CreateMealCategoryCom
 
             var entity = new Domain.Entities.MealCategory.MealCategory
             {
-                Name = request.Name,
-                Description = request.Description,
+                Name = request.Name.Trim(),
+                Description = request.Description.Trim(),
                 RestaurantId = restaurantId,
             };
 

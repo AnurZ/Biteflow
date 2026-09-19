@@ -30,7 +30,7 @@ namespace Market.Application.Modules.TableLayout.Commands.UpdateTableLayout
                 .WhereCurrentRestaurant(_tenantContext)
                 .AnyAsync(x =>
                     x.Id != request.Id &&
-                    x.Name == normalizedName,
+                    x.Name.ToLower() == normalizedName.ToLower(),
                     cancellationToken);
 
             if (nameExists)

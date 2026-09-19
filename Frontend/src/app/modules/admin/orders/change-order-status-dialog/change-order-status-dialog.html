@@ -1,0 +1,32 @@
+﻿<h2 mat-dialog-title>
+  Change Order #{{ data.orderId }} Status
+</h2>
+
+<mat-dialog-content>
+
+  <p>
+    Current status:
+    <strong>{{ data.currentStatus }}</strong>
+  </p>
+
+  <mat-form-field appearance="outline" style="width: 100%">
+    <mat-label>New status</mat-label>
+
+    <mat-select [(ngModel)]="selectedStatus">
+
+      <mat-option
+        *ngFor="let status of availableStatuses"
+        [value]="status">
+        {{ status }}
+      </mat-option>
+
+    </mat-select>
+  </mat-form-field>
+
+</mat-dialog-content>
+
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="confirm()" [disabled]="!selectedStatus"> Change status </button>
+</mat-dialog-actions>

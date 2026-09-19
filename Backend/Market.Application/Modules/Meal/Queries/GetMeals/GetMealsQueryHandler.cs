@@ -49,6 +49,22 @@ namespace Market.Application.Modules.Meal.Queries.GetList
                 q = q.Where(x => x.CategoryId == request.CategoryId);
             }
 
+            if (request.MinPrice.HasValue)
+            {
+                q = q.Where(x => x.BasePrice >= request.MinPrice.Value);
+            }
+
+            if (request.MaxPrice.HasValue)
+            {
+                q = q.Where(x => x.BasePrice <= request.MaxPrice.Value);
+            }
+
+            if (request.isAvailable.HasValue)
+            {
+                q = q.Where(x => x.IsAvailable == request.isAvailable.Value);
+            }
+
+
             // -------------------
             // SORT
             // -------------------

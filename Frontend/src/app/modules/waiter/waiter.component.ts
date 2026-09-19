@@ -15,6 +15,7 @@ import { OrderStatus } from '../../services/orders/orders.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DiningTableGetListEndpoint } from '../../endpoints/dining-table-endpoints/dining-table-get-list-endpoint';
 import { TableStatus as ApiTableStatus, UpdateDiningTableDto } from '../table-layout/table-layout-model';
+import { CurrencyService } from '../../services/currency-service/currency.service';
 
 type TableStatus = 'free' | 'seated' | 'serving' | 'paying';
 
@@ -78,7 +79,8 @@ export class WaiterComponent implements OnInit, OnDestroy {
     private readonly mealCategoryEndpoint: MealCategoryGetEndpoint,
     private readonly diningTableEndpoint: DiningTableGetListEndpoint,
     private readonly snack: MatSnackBar,
-    private readonly realtime: RealtimeHubService
+    private readonly realtime: RealtimeHubService,
+    public readonly currencyService: CurrencyService
   ) {}
 
   private showSnack(message: string, type: 'success' | 'info' | 'warn' = 'info'): void {

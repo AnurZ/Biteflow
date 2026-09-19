@@ -2,6 +2,7 @@
 import { DashboardAnalyticsService, KpiDto } from '../../../services/DashboardAnalyticsService';
 import { DateRange } from '../../../../admin-model';
 import {CdkDragDrop, moveItemInArray} from '@angular/cdk/drag-drop';
+import {CurrencyService} from '../../../../../../services/currency-service/currency.service';
 
 
 @Component({
@@ -20,7 +21,8 @@ export class KpiComponent implements OnChanges, OnInit {
 
   kpi!: KpiDto;
 
-  constructor(private analyticsService: DashboardAnalyticsService) {}
+  constructor(private analyticsService: DashboardAnalyticsService,
+              public currencyService: CurrencyService,) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.range?.from && this.range?.to &&

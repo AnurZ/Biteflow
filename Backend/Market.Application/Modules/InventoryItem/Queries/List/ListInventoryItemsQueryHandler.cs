@@ -45,6 +45,21 @@ public sealed class ListInventoryItemsQueryHandler : IRequestHandler<ListInvento
                 x.Sku.ToLower().Contains(s));
         }
 
+        if (req.MinQty.HasValue)
+        {
+            q = q.Where(x => x.CurrentQty >= req.MinQty.Value);
+        }
+
+        if (req.MaxQty.HasValue)
+        {
+            q = q.Where(x => x.CurrentQty <= req.MaxQty.Value);
+        }
+
+        if (req.UnitType.HasValue)
+        {
+            q = q.Where(x => x.UnitType == req.UnitType.Value);
+        }
+
         // Sorting
         if (!string.IsNullOrWhiteSpace(req.Sort))
         {

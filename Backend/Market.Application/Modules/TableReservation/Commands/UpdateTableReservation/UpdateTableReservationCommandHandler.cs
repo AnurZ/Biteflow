@@ -2,6 +2,7 @@
 using Market.Domain.Entities.IdentityV2;
 using Market.Domain.Entities.TableReservations;
 using MediatR;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReservation
@@ -11,65 +12,97 @@ namespace Market.Application.Modules.TableReservation.Commands.UpdateTableReserv
     {
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
+        private readonly UserManager<ApplicationUser> _userManager;
 
         public UpdateTableReservationCommandHandler(
             IAppDbContext db,
-            ITenantContext tenantContext)
+            ITenantContext tenantContext,
+            UserManager<ApplicationUser> userManager)
         {
             _db = db;
             _tenantContext = tenantContext;
+            _userManager = userManager;
         }
 
-        public async Task Handle(UpdateTableReservationCommandDto request, CancellationToken cancellationToken)
+        public async Task Handle(
+            UpdateTableReservationCommandDto request,
+            CancellationToken cancellationToken)
         {
+            var tenantId = _tenantContext.RequireTenantId();
             var restaurantId = _tenantContext.RequireRestaurantId();
 
             var reservation = await _db.TableReservations
                 .Include(x => x.DiningTable)
                 .ThenInclude(x => x!.TableLayout)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == request.Id &&
-                    x.DiningTable!.TableLayout.RestaurantId == restaurantId,
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Id == request.Id &&
+                        x.DiningTable!.TableLayout.RestaurantId == restaurantId,
                     cancellationToken);
 
             if (reservation == null)
-                throw new KeyNotFoundException($"Reservation with ID {request.Id} not found.");
+                throw new KeyNotFoundException(
+                    $"Reservation with ID {request.Id} not found.");
 
             if (request.NumberOfGuests <= 0)
-                throw new ValidationException("Number of guests must be greater than zero.");
+                throw new ValidationException(
+                    "Number of guests must be greater than zero.");
 
             if (request.ReservationEnd.HasValue &&
                 request.ReservationStart >= request.ReservationEnd)
-                throw new ValidationException("Reservation start must be before reservation end.");
+            {
+                throw new ValidationException(
+                    "Reservation start must be before reservation end.");
+            }
+
+            // Validate optional user
+            if (request.ApplicationUserId.HasValue)
+            {
+                var user = await _userManager.FindByIdAsync(
+                    request.ApplicationUserId.Value.ToString());
+
+                if (user == null)
+                    throw new KeyNotFoundException(
+                        $"User with ID {request.ApplicationUserId} not found.");
+
+                if (user.TenantId != tenantId)
+                    throw new InvalidOperationException(
+                        "User does not belong to the current tenant.");
+            }
 
             var table = await _db.DiningTables
                 .Include(x => x.TableLayout)
-                .FirstOrDefaultAsync(t =>
-                    t.Id == request.DiningTableId &&
-                    t.TableLayout.RestaurantId == restaurantId,
+                .FirstOrDefaultAsync(
+                    t =>
+                        t.Id == request.DiningTableId &&
+                        t.TableLayout.RestaurantId == restaurantId,
                     cancellationToken);
 
             if (table == null)
-                throw new KeyNotFoundException($"Dining table with ID {request.DiningTableId} not found.");
+                throw new KeyNotFoundException(
+                    $"Dining table with ID {request.DiningTableId} not found.");
 
             if (request.NumberOfGuests > table.NumberOfSeats)
-                throw new ValidationException("Too many guests for this table.");
+                throw new ValidationException(
+                    "Too many guests for this table.");
 
-            // Overlap check (clean version)
             var overlapping = await _db.TableReservations
                 .Where(r =>
                     r.DiningTableId == request.DiningTableId &&
                     r.Id != request.Id &&
                     r.Status != ReservationStatus.Cancelled)
-                .AnyAsync(r =>
-                    request.ReservationStart < (r.ReservationEnd ?? DateTime.MaxValue) &&
-                    (request.ReservationEnd ?? DateTime.MaxValue) > r.ReservationStart,
+                .AnyAsync(
+                    r =>
+                        request.ReservationStart <
+                            (r.ReservationEnd ?? DateTime.MaxValue) &&
+                        (request.ReservationEnd ?? DateTime.MaxValue) >
+                            r.ReservationStart,
                     cancellationToken);
 
             if (overlapping)
-                throw new ValidationException("The table is already reserved in this time slot.");
+                throw new ValidationException(
+                    "The table is already reserved in this time slot.");
 
-            // Apply updates
             reservation.DiningTableId = request.DiningTableId;
             reservation.NumberOfGuests = request.NumberOfGuests;
             reservation.ApplicationUserId = request.ApplicationUserId;

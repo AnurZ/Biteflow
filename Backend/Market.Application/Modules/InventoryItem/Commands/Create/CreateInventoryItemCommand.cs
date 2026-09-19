@@ -9,7 +9,6 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
 {
     public sealed class CreateInventoryItemCommand:IRequest<int>
     {
-        public Guid RestaurantId { get; set; }
         public string Name { get; init; } = string.Empty;
         public string Sku { get; init; } = string.Empty;
         public UnitTypes UnitType { get; init; }

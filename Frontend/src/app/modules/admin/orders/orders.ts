@@ -14,6 +14,8 @@ import {UploadOverlayService} from '../../../services/upload-overlay-service/upl
 import {HttpEventType} from '@angular/common/http';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {ViewOrderDetails} from './view-order-details/view-order-details';
+import {CurrencyService} from '../../../services/currency-service/currency.service';
+import {ChangeOrderStatusDialogComponent} from './change-order-status-dialog/ChangeOrderStatusDialogComponent';
 
 @Component({
   selector: 'app-orders',
@@ -49,7 +51,8 @@ export class Orders implements OnInit {
               private orderImport: OrderImportEndpoint,
               private dialog: MatDialog,
               private overlay: UploadOverlayService,
-              private snackBar: MatSnackBar) {}
+              private snackBar: MatSnackBar,
+              public currencyService: CurrencyService,) {}
 
 
   ngOnInit(): void {
@@ -115,8 +118,52 @@ export class Orders implements OnInit {
     });
   }
 
-  changeStatus(id: number) {
-    console.log('Change status', id);
+  changeStatus(id: number): void {
+    const order = this.orders.find(o => o.id === id);
+
+    if (!order) {
+      return;
+    }
+
+    const dialogRef = this.dialog.open(ChangeOrderStatusDialogComponent, {
+      width: '400px',
+      data: {
+        orderId: order.id,
+        currentStatus: order.status
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((status: OrderStatus | null) => {
+      if (!status) {
+        return;
+      }
+
+      this.orderService.updateStatus(order.id, status).subscribe({
+        next: () => {
+          this.snackBar.open(
+            `Order #${order.id} status changed to ${status}`,
+            'Close',
+            {
+              duration: 3000
+            }
+          );
+
+          this.loadOrders();
+        },
+
+        error: err => {
+          console.error(err);
+
+          this.snackBar.open(
+            'Failed to change order status',
+            'Close',
+            {
+              duration: 4000
+            }
+          );
+        }
+      });
+    });
   }
 
   exportOrders() {

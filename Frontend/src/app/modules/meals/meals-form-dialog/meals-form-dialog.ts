@@ -274,7 +274,7 @@ export class MealsFormDialog implements OnInit {
 
     return this.getListEp.handleAsync().pipe(
       map((result: any) => {
-        const meals = result?.items ?? []; // 👈 BITNO
+        const meals = result?.items ?? [];
 
         const exists = meals.some((meal: MealDto) => {
           return this.data.mode === 'create'

@@ -15,6 +15,15 @@ namespace Market.Infrastructure.Persistence.Configurations
             // Key
             builder.HasKey(t => t.Id);
 
+            // A table number must be unique within the same table layout
+            // only for non-deleted tables.
+            builder.HasIndex(t => new
+            {
+                t.TableLayoutId,
+                t.Number
+            })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
 
             builder.Property(t => t.Number)
                 .IsRequired();
@@ -70,20 +79,17 @@ namespace Market.Infrastructure.Persistence.Configurations
                 .WithMany(l => l.Tables)
                 .HasForeignKey(t => t.TableLayoutId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_DiningTables_TableLayouts_TableLayoutId"); // explicit name
-
+                .HasConstraintName("FK_DiningTables_TableLayouts_TableLayoutId");
 
             builder.HasMany(t => t.Reservations)
                 .WithOne(r => r.DiningTable)
                 .HasForeignKey(r => r.DiningTableId)
-                .OnDelete(DeleteBehavior.Cascade);  
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasMany(t => t.Orders)
                 .WithOne(o => o.DiningTable)
                 .HasForeignKey(o => o.DiningTableId)
-                .OnDelete(DeleteBehavior.Cascade);   
-
-
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

@@ -14,11 +14,12 @@ namespace Market.Application.Modules.Orders.Queries.AdminGetOrders
         public async Task<PageResult<AdminOrderDto>> Handle(AdminGetOrdersQuery request, CancellationToken cancellationToken)
         {
             var q = db.Orders
-                .AsNoTracking()
-                .Include(x => x.Items)
-                .Include(x => x.DiningTable)
-                    .ThenInclude(x => x.TableLayout)
-                .AsQueryable();
+            .AsNoTracking()
+            .WhereCurrentRestaurant(tenantContext)
+            .Include(x => x.Items)
+            .Include(x => x.DiningTable)
+                .ThenInclude(x => x.TableLayout)
+            .AsQueryable();
 
             // -------------------
             // SEARCH FILTER

@@ -10,52 +10,68 @@ namespace Market.Application.Modules.DiningTable.Commands.UpdateDiningTable
         private readonly IAppDbContext _db;
         private readonly ITenantContext _tenantContext;
 
-        public UpdateDiningTableCommandHandler(IAppDbContext db, ITenantContext tenantContext)
+        public UpdateDiningTableCommandHandler(
+            IAppDbContext db,
+            ITenantContext tenantContext)
         {
             _db = db;
             _tenantContext = tenantContext;
         }
 
-        public async Task Handle(UpdateDiningTableCommandDto request, CancellationToken cancellationToken)
+        public async Task Handle(
+            UpdateDiningTableCommandDto request,
+            CancellationToken cancellationToken)
         {
             var restaurantId = _tenantContext.RequireRestaurantId();
 
             var table = await _db.DiningTables
                 .Include(x => x.TableLayout)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == request.Id &&
-                    x.TableLayout.RestaurantId == restaurantId,
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Id == request.Id &&
+                        !x.IsDeleted &&
+                        x.TableLayout.RestaurantId == restaurantId,
                     cancellationToken);
 
             if (table == null)
-                throw new KeyNotFoundException($"Dining table with ID {request.Id} not found.");
+            {
+                throw new KeyNotFoundException(
+                    $"Dining table with ID {request.Id} not found.");
+            }
 
             if (request.NumberOfSeats <= 0)
-                throw new ArgumentException("Number of seats must be greater than zero.");
+            {
+                throw new ArgumentException(
+                    "Number of seats must be greater than zero.");
+            }
 
-            // Validate layout belongs to the current restaurant
             var layoutExists = await _db.TableLayouts
                 .WhereCurrentRestaurant(_tenantContext)
-                .AnyAsync(l =>
-                    l.Id == request.TableLayoutId,
+                .AnyAsync(
+                    l => l.Id == request.TableLayoutId,
                     cancellationToken);
 
             if (!layoutExists)
-                throw new KeyNotFoundException($"TableLayout with ID {request.TableLayoutId} not found.");
+            {
+                throw new KeyNotFoundException(
+                    $"TableLayout with ID {request.TableLayoutId} not found.");
+            }
 
-            // Duplicate number check (same layout)
             var numberExists = await _db.DiningTables
-                .AnyAsync(t =>
-                    t.TableLayoutId == request.TableLayoutId &&
-                    t.Number == request.Number &&
-                    t.Id != request.Id,
+                .AnyAsync(
+                    t =>
+                        t.TableLayoutId == request.TableLayoutId &&
+                        t.Number == request.Number &&
+                        !t.IsDeleted &&
+                        t.Id != request.Id,
                     cancellationToken);
 
             if (numberExists)
+            {
                 throw new ArgumentException(
                     $"A table with number {request.Number} already exists in this layout.");
+            }
 
-            // Update
             table.Number = request.Number;
             table.NumberOfSeats = request.NumberOfSeats;
             table.IsActive = request.IsActive;

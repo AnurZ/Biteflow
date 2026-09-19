@@ -1,14 +1,13 @@
-import { Component, Inject, inject, OnInit } from '@angular/core';
-import {
-  InventoryItemListEndpoint
-} from '../../../../endpoints/inventory-items-crud-endpoints/inventory-item-list-endpoint';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MealGetIngredientsEndpoint } from '../../../../endpoints/meals-crud-endpoints/meal-getingredients-endpoint';
-import { ListInventoryItemsDto } from '../../../inventory-items/inventory-item-model';
-import {addIngredientDto, MealIngredientQueryDto, UnitTypes} from '../../meals-model';
-import {FormBuilder, FormGroup} from '@angular/forms';
+import { InventoryItemListEndpoint } from '../../../../endpoints/inventory-items-crud-endpoints/inventory-item-list-endpoint';
+import { addIngredientDto, UnitTypes } from '../../meals-model';
 
-type DialogData = { mode: 'create' | 'edit'; id?: number; selectedIngredientsList: addIngredientDto[]};
+type DialogData = {
+  mode?: 'create' | 'edit';
+  id?: number;
+  selectedIngredientsList: addIngredientDto[];
+};
 
 @Component({
   selector: 'app-add-ingredients-dialog',
@@ -17,52 +16,53 @@ type DialogData = { mode: 'create' | 'edit'; id?: number; selectedIngredientsLis
   styleUrl: './add-ingredients-dialog.css'
 })
 export class AddIngredientsDialog implements OnInit {
-  private getInventoryItemsListEp = inject(InventoryItemListEndpoint);
-  private getMealIngredientsEp = inject(MealGetIngredientsEndpoint);
+  private getInventoryItemsListEp: InventoryItemListEndpoint;
 
   constructor(
     private ref: MatDialogRef<AddIngredientsDialog>,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData
-  ) {}
+    @Inject(MAT_DIALOG_DATA) public data: DialogData,
+    getInventoryItemsListEp: InventoryItemListEndpoint
+  ) {
+    this.getInventoryItemsListEp = getInventoryItemsListEp;
+  }
 
   listIngredients: addIngredientDto[] = [];
-  cancelListIngredients: addIngredientDto[] = [];
+  selectedIngredients: addIngredientDto[] = [];
   loading = false;
 
-  cancel() {
+  ngOnInit(): void {
+    // Work on a copy so Cancel does not modify the parent dialog.
+    this.selectedIngredients = this.data.selectedIngredientsList.map(item => ({
+      ...item
+    }));
+
+    this.loadItems();
+  }
+
+  cancel(): void {
     this.ref.close(false);
   }
 
-  onIngredientChange(ingredient: addIngredientDto) {
+  onIngredientChange(ingredient: addIngredientDto): void {
     if (ingredient.selected) {
-      // Add to array if selected and not already in array
-      if (!this.data.selectedIngredientsList.some(x => x.inventoryItemId === ingredient.inventoryItemId)) {
-        this.data.selectedIngredientsList.push(ingredient);
+      const exists = this.selectedIngredients.some(
+        x => x.inventoryItemId === ingredient.inventoryItemId
+      );
+
+      if (!exists) {
+        this.selectedIngredients.push({
+          ...ingredient
+        });
       }
     } else {
-      // Remove from array if deselected
-      this.data.selectedIngredientsList = this.data.selectedIngredientsList.filter(
+      this.selectedIngredients = this.selectedIngredients.filter(
         x => x.inventoryItemId !== ingredient.inventoryItemId
       );
     }
   }
 
-  save() {
-    const selectedIngredients = this.data.selectedIngredientsList;
-    this.ref.close(selectedIngredients);
-  }
-
-  isOverflowing(el?: HTMLElement): boolean {
-    if (!el) return false;
-    return el.scrollWidth > el.clientWidth;
-  }
-
-
-
-
-
-  onInputQty(ingredient: addIngredientDto) {
-    const existing = this.data.selectedIngredientsList.find(
+  onInputQty(ingredient: addIngredientDto): void {
+    const existing = this.selectedIngredients.find(
       x => x.inventoryItemId === ingredient.inventoryItemId
     );
 
@@ -71,23 +71,29 @@ export class AddIngredientsDialog implements OnInit {
     }
   }
 
-  loadItems(search: string = '') {
+  save(): void {
+    this.ref.close(this.selectedIngredients);
+  }
+
+  loadItems(search: string = ''): void {
     this.loading = true;
 
     this.getInventoryItemsListEp.handleAsync({
       pageNumber: 1,
       pageSize: 100,
-      search: search,
+      search,
       sort: ''
     }).subscribe({
-      next: (result) => {
+      next: result => {
         this.listIngredients = result.items.map(ing => {
-          const existing = this.data.selectedIngredientsList.find(x => x.inventoryItemId === ing.id);
+          const existing = this.selectedIngredients.find(
+            x => x.inventoryItemId === ing.id
+          );
 
           return {
             inventoryItemId: ing.id,
             inventoryItemName: ing.name,
-            quantity: existing ? existing.quantity : 1,
+            quantity: existing?.quantity ?? 1,
             unitType: UnitTypes[ing.unitType] as string,
             selected: !!existing
           };
@@ -95,17 +101,9 @@ export class AddIngredientsDialog implements OnInit {
 
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Failed to load inventory items', err);
+      error: () => {
         this.loading = false;
       }
     });
   }
-
-  ngOnInit() {
-    this.cancelListIngredients = this.data.selectedIngredientsList;
-    this.loadItems();
-  }
-
-  protected readonly UnitTypes = UnitTypes;
 }

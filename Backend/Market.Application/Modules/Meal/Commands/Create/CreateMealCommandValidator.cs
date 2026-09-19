@@ -6,6 +6,7 @@ public sealed class CreateMealCommandValidator : AbstractValidator<CreateMealCom
 {
     public CreateMealCommandValidator()
     {
+
         RuleFor(x => x.Name)
             .NotEmpty()
             .MaximumLength(100);
@@ -18,6 +19,9 @@ public sealed class CreateMealCommandValidator : AbstractValidator<CreateMealCom
 
         RuleFor(x => x.Ingredients)
             .NotNull();
+
+        RuleFor(x => x.ImageField)
+            .MaximumLength(500);
 
         RuleForEach(x => x.Ingredients)
             .ChildRules(ingredient =>

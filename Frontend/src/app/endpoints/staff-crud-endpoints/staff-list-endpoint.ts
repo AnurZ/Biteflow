@@ -19,7 +19,7 @@ export class StaffListEndpoint implements BaseEndpointAsync<StaffListRequest, Pa
 
   handleAsync(req: StaffListRequest) {
     let params = new HttpParams()
-      .set('paging.page',     String(req.pageNumber)) // << OVO je ključno
+      .set('paging.page',     String(req.pageNumber))
       .set('paging.pageSize', String(req.pageSize));
 
     if (req.search) params = params.set('search', req.search);

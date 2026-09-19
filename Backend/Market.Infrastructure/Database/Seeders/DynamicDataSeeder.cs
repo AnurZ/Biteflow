@@ -398,6 +398,7 @@ public static class DynamicDataSeeder
 
         var order1 = new Order
         {
+            RestaurantId = SeedConstants.DefaultRestaurantId,
             DiningTableId = tablesByNumber.GetValueOrDefault(3)?.Id,
             TableNumber = 3,
             Status = OrderStatus.New,
@@ -411,28 +412,30 @@ public static class DynamicDataSeeder
 
         var order2 = new Order
         {
+            RestaurantId = SeedConstants.DefaultRestaurantId,
             DiningTableId = tablesByNumber.GetValueOrDefault(4)?.Id,
             TableNumber = 4,
             Status = OrderStatus.Cooking,
             TenantId = SeedConstants.DefaultTenantId,
             Items = new List<OrderItem>
-            {
-                new() { Name = "Grilled Salmon", Quantity = 1, UnitPrice = 24.99m, MealId = mSalmon.Id, TenantId = SeedConstants.DefaultTenantId },
-                new() { Name = "Truffle Pasta", Quantity = 2, UnitPrice = 18.99m, MealId = mTruffle.Id, TenantId = SeedConstants.DefaultTenantId }
-            }
+    {
+        new() { Name = "Grilled Salmon", Quantity = 1, UnitPrice = 24.99m, MealId = mSalmon.Id, TenantId = SeedConstants.DefaultTenantId },
+        new() { Name = "Truffle Pasta", Quantity = 2, UnitPrice = 18.99m, MealId = mTruffle.Id, TenantId = SeedConstants.DefaultTenantId }
+    }
         };
 
         var order3 = new Order
         {
+            RestaurantId = SeedConstants.DefaultRestaurantId,
             DiningTableId = tablesByNumber.GetValueOrDefault(6)?.Id,
             TableNumber = 6,
             Status = OrderStatus.ReadyForPickup,
             TenantId = SeedConstants.DefaultTenantId,
             Items = new List<OrderItem>
-            {
-                new() { Name = "Ribeye Steak", Quantity = 2, UnitPrice = 22.50m, MealId = mRibeye.Id, TenantId = SeedConstants.DefaultTenantId },
-                new() { Name = "Tiramisu", Quantity = 2, UnitPrice = 7.95m, MealId = mTiramisu.Id, TenantId = SeedConstants.DefaultTenantId }
-            }
+    {
+        new() { Name = "Ribeye Steak", Quantity = 2, UnitPrice = 22.50m, MealId = mRibeye.Id, TenantId = SeedConstants.DefaultTenantId },
+        new() { Name = "Tiramisu", Quantity = 2, UnitPrice = 7.95m, MealId = mTiramisu.Id, TenantId = SeedConstants.DefaultTenantId }
+    }
         };
 
         context.Orders.AddRange(order1, order2, order3);
@@ -461,6 +464,10 @@ public static class DynamicDataSeeder
             if (order.TableNumber.HasValue &&
                 tablesByNumber.TryGetValue(order.TableNumber.Value, out var table))
             {
+                if (!table.TableLayout.RestaurantId.HasValue)
+                    continue;
+
+                order.RestaurantId = table.TableLayout.RestaurantId.Value;
                 order.DiningTableId = table.Id;
                 order.TableNumber = table.Number;
             }

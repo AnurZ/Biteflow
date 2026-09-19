@@ -86,7 +86,7 @@ export class NotificationStoreService {
 
           this.received$.next(notification);
 
-          this.snack.open(notification.title || 'Nova notifikacija', 'Close', {
+          this.snack.open(notification.title || 'New notification', 'Close', {
             duration: 2500,
             panelClass: ['app-snackbar', 'app-snackbar-info']
           });

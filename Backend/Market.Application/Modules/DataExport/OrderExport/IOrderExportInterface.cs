@@ -1,8 +1,9 @@
 ﻿using System.Globalization;
 using CsvHelper;
 using ClosedXML.Excel;
-using Microsoft.EntityFrameworkCore;
+using Market.Application.Abstractions;
 using Market.Application.Modules.DataExport.OrderExport;
+using Microsoft.EntityFrameworkCore;
 
 namespace Market.API.Services;
 
@@ -16,10 +17,14 @@ public interface IOrderExportService
 public class OrderExportService : IOrderExportService
 {
     private readonly IAppDbContext _context;
+    private readonly ITenantContext _tenantContext;
 
-    public OrderExportService(IAppDbContext context)
+    public OrderExportService(
+        IAppDbContext context,
+        ITenantContext tenantContext)
     {
         _context = context;
+        _tenantContext = tenantContext;
     }
 
     public async Task<byte[]> ExportOrdersCsv(
@@ -55,7 +60,7 @@ public class OrderExportService : IOrderExportService
         worksheet.Cell(1, 2).Value = "Status";
         worksheet.Cell(1, 3).Value = "Total Price";
         worksheet.Cell(1, 4).Value = "Created At";
-        worksheet.Cell(1, 5).Value = "Item Count"; 
+        worksheet.Cell(1, 5).Value = "Item Count";
         worksheet.Cell(1, 6).Value = "Dining Table Id";
         worksheet.Cell(1, 7).Value = "Table Number";
 
@@ -67,7 +72,8 @@ public class OrderExportService : IOrderExportService
         {
             var row = i + 2;
 
-            worksheet.Cell(row, 1).Value = orders[i].OrderId;
+            worksheet.Cell(row, 1).Value =
+                orders[i].OrderId;
 
             worksheet.Cell(row, 2).Value =
                 orders[i].Status.ToString();
@@ -86,11 +92,10 @@ public class OrderExportService : IOrderExportService
 
             worksheet.Cell(row, 7).Value =
                 orders[i].TableNumber;
-
         }
 
         worksheet.Column(3).Style.NumberFormat.Format =
-            "$ #,##0.00";
+            "€ #,##0.00";
 
         worksheet.Column(4).Style.DateFormat.Format =
             "dd.MM.yyyy HH:mm";
@@ -107,8 +112,11 @@ public class OrderExportService : IOrderExportService
     private async Task<List<OrderExportDto>> GetOrders(
         OrderExportRequest request)
     {
+        var restaurantId = _tenantContext.RequireRestaurantId();
+
         var query = _context.Orders
             .Include(x => x.Items)
+            .Where(x => x.RestaurantId == restaurantId)
             .AsQueryable();
 
         if (request.Status.HasValue)

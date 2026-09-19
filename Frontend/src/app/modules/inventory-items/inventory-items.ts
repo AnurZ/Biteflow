@@ -1,25 +1,12 @@
-import {AfterViewInit, Component, Inject, inject, OnInit, ViewChild, viewChild} from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, inject, OnInit } from '@angular/core';
 import { InventoryItemService } from './inventory-item.servise';
 import { InventoryItemDto } from './inventory-item-model';
-import {MatPaginator} from '@angular/material/paginator';
-import {MatTableDataSource} from '@angular/material/table';
-import {InventoryItemListEndpoint} from '../../endpoints/inventory-items-crud-endpoints/inventory-item-list-endpoint';
-import {
-  InventoryItemDeleteEndpoint
-} from '../../endpoints/inventory-items-crud-endpoints/inventory-item-delete-endpoint';
-import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
-import {StaffFormDialogComponent} from '../admin/staff/staff-form-dialog/staff-form-dialog';
-import {
-  InventoryItemCreateEndpoint
-} from '../../endpoints/inventory-items-crud-endpoints/inventory-item-create-endpoint';
-import {InventoryItemsFormDialogComponent} from './inventory-items-form-dialog/inventory-items-form-dialog';
-import {
-  InventoryItemsConfirmDialogComponent
-} from './confirm-dialog-component/inventory-items-confirm-dialog-component';
-import {UnitTypes} from '../meals/meals-model';
-
-
+import { InventoryItemListEndpoint } from '../../endpoints/inventory-items-crud-endpoints/inventory-item-list-endpoint';
+import { InventoryItemDeleteEndpoint } from '../../endpoints/inventory-items-crud-endpoints/inventory-item-delete-endpoint';
+import { MatDialog } from '@angular/material/dialog';
+import { InventoryItemsFormDialogComponent } from './inventory-items-form-dialog/inventory-items-form-dialog';
+import { InventoryItemsConfirmDialogComponent } from './confirm-dialog-component/inventory-items-confirm-dialog-component';
+import { UnitTypes } from '../meals/meals-model';
 
 @Component({
   selector: 'app-inventory-items',
@@ -27,14 +14,12 @@ import {UnitTypes} from '../meals/meals-model';
   standalone: false,
   styleUrls: ['./inventory-items.css']
 })
-export class InventoryItems implements OnInit, AfterViewInit {
+export class InventoryItems implements OnInit {
   private listEp = inject(InventoryItemListEndpoint);
   private deleteEp = inject(InventoryItemDeleteEndpoint);
   private dialog = inject(MatDialog);
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-
-  items = new MatTableDataSource<InventoryItemDto>([]);
+  items: InventoryItemDto[] = [];
   columns: string[] = [
     'name',
     'sku',
@@ -42,120 +27,117 @@ export class InventoryItems implements OnInit, AfterViewInit {
     'currentQty',
     'actions'
   ];
-  form!: FormGroup;
-  selectedId: number | null = null;
+
   unitTypes: string[] = [];
   pageNumber = 1;
   pageSize = 10;
   total = 0;
   search = '';
   sort: string | undefined;
-  constructor(private inventoryService: InventoryItemService, private fb: FormBuilder
-              ) {}
-  onPage(event: any) {
-    console.log('Paginator event', event);
-    // Implement server-side pagination if needed
-  }
 
-  ngAfterViewInit() {
-    this.items.paginator = this.paginator;
-  }
+  selectedUnitType: number | null = null;
+  minQty: number | null = null;
+  maxQty: number | null = null;
+
   ngOnInit() {
-    this.unitTypes = Object.keys(UnitTypes).filter(k => isNaN(Number(k))); // ["Kilogram","Gram",...]
+    this.unitTypes = Object.keys(UnitTypes)
+      .filter(k => isNaN(Number(k)));
 
+    this.loadItems();
+  }
 
-    this.form = this.fb.group({
-      name: [''],
-      sku: [''],
-      unitType: [0],        // default to first enum value
-      reorderQty: [0],
-      reorderFrequency: [0],
-      currentQty: [0]
-    });
+  onUnitTypeChange(unitType: number | null) {
+    this.selectedUnitType = unitType;
+    this.pageNumber = 1;
+    this.loadItems();
+  }
 
+  onQuantityChange() {
+    this.pageNumber = 1;
+    this.loadItems();
+  }
+
+  onSearch(search: string) {
+    this.search = search;
+    this.pageNumber = 1;
+    this.loadItems();
+  }
+
+  onPage(event: any) {
+    this.pageNumber = event.pageIndex + 1;
+    this.pageSize = event.pageSize;
     this.loadItems();
   }
 
   loadItems() {
-    this.inventoryService.list({
+    const req = {
       pageNumber: this.pageNumber,
       pageSize: this.pageSize,
-      search: this.search,
-      sort: this.sort
-    }).subscribe(res => {
-      this.items.data = res.items || res;
+      search: this.search || undefined,
+      sort: this.sort,
+      unitType: this.selectedUnitType ?? undefined,
+      minQty: this.minQty ?? undefined,
+      maxQty: this.maxQty ?? undefined
+    };
+
+    this.listEp.handleAsync(req).subscribe(res => {
+      this.items = res.items;
       this.total = res.total;
     });
   }
 
-
-  saveItem() {
-    const data = this.form.value;
-    if (this.selectedId) {
-      this.inventoryService.update({ ...data, id: this.selectedId }).subscribe(() => this.loadItems());
-    } else {
-      this.inventoryService.create(data).subscribe(() => this.loadItems());
-    }
-    this.form.reset();
-    this.selectedId = null;
-  }
-
-  edit(item: InventoryItemDto) {
-    this.form.patchValue(item);
-    this.selectedId = item.id;
-  }
-
-  delete(id: number) {
-    this.inventoryService.delete(id).subscribe(() => this.loadItems());
-  }
-
-  loadItemsByName(value: string) {
-    if (!value.trim()) {
-      this.loadItems();
-      return;
-    }
-
-    this.inventoryService.getByName(value).subscribe({
-      next: (res) => {
-        console.log('API response:', res);
-        this.items.data = res.items || res; // ✅ assign array to .data
-        this.total = (res.items || res).length;
-      },
-      error: (err) => console.error('Error fetching inventory items', err)
-    });
-  }
-
   editItem(id: number) {
-    const ref = this.dialog.open(InventoryItemsFormDialogComponent, { width: '720px', data: { mode: 'edit', id } });
-    console.log(`ID edit ${id}`);
-    ref.afterClosed().subscribe(changed => changed && this.loadItems());
+    const ref = this.dialog.open(InventoryItemsFormDialogComponent, {
+      width: '720px',
+      data: { mode: 'edit', id }
+    });
+
+    ref.afterClosed().subscribe(changed => {
+      if (changed) {
+        this.loadItems();
+      }
+    });
   }
 
   deleteItem(id: number) {
     const ref = this.dialog.open(InventoryItemsConfirmDialogComponent, {
-      data: { title: 'Delete inventory item?', message: 'This cannot be undone.' }
+      data: {
+        title: 'Delete inventory item?',
+        message: 'This cannot be undone.'
+      }
     });
+
     ref.afterClosed().subscribe(ok => {
-      console.log(`ID ${id}`);
-      if (ok) this.deleteEp.handleAsync({id}).subscribe(() => this.loadItems());
+      if (ok) {
+        this.deleteEp.handleAsync({ id }).subscribe(() => {
+          this.loadItems();
+        });
+      }
     });
   }
 
   createItem() {
-    const ref = this.dialog.open(InventoryItemsFormDialogComponent, { width: '720px', data: { mode: 'create' } });
-    ref.afterClosed().subscribe(changed => changed && this.loadItems());
+    const ref = this.dialog.open(InventoryItemsFormDialogComponent, {
+      width: '720px',
+      data: { mode: 'create' }
+    });
+
+    ref.afterClosed().subscribe(changed => {
+      if (changed) {
+        this.loadItems();
+      }
+    });
   }
 
   onSort(key: string) {
-    if (!this.sort || this.sort.replace('-', '') !== key) {
-      this.sort = key;
-    } else if (this.sort === key) {
+    if (this.sort === key) {
       this.sort = `-${key}`;
-    } else {
+    } else if (this.sort === `-${key}`) {
       this.sort = undefined;
+    } else {
+      this.sort = key;
     }
+
     this.loadItems();
   }
-
-
 }

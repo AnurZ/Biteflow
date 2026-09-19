@@ -6,6 +6,7 @@ using Market.Domain.Common.Enums;
 using Market.Domain.Entities.Notifications;
 using Market.Domain.Entities.Orders;
 using Market.Shared.Constants;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Market.Tests.OrderTests;
@@ -16,10 +17,18 @@ public sealed class UpdateOrderStatusCommandHandlerTests
     public async Task Handle_ShouldAllowKitchenPrepTransitions()
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
         await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, OrderStatus.New);
-        var handler = CreateHandler(db, RoleNames.Kitchen);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.New,
+            restaurantId: restaurantId);
+
+        var handler = CreateHandler(db, tenantContext, RoleNames.Kitchen);
 
         var cooking = await handler.Handle(new UpdateOrderStatusCommand
         {
@@ -39,17 +48,27 @@ public sealed class UpdateOrderStatusCommandHandlerTests
 
         Assert.True(ready.StatusChanged);
         Assert.Equal(OrderStatus.ReadyForPickup, ready.Status);
-        Assert.Equal(OrderStatus.ReadyForPickup, (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
+        Assert.Equal(
+            OrderStatus.ReadyForPickup,
+            (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
     }
 
     [Fact]
     public async Task Handle_ShouldAllowWaiterCompletion()
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
         await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, OrderStatus.ReadyForPickup);
-        var handler = CreateHandler(db, RoleNames.Waiter);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.ReadyForPickup,
+            restaurantId: restaurantId);
+
+        var handler = CreateHandler(db, tenantContext, RoleNames.Waiter);
 
         var result = await handler.Handle(new UpdateOrderStatusCommand
         {
@@ -59,7 +78,9 @@ public sealed class UpdateOrderStatusCommandHandlerTests
 
         Assert.True(result.StatusChanged);
         Assert.Equal(OrderStatus.Completed, result.Status);
-        Assert.Equal(OrderStatus.Completed, (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
+        Assert.Equal(
+            OrderStatus.Completed,
+            (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
     }
 
     [Theory]
@@ -69,13 +90,23 @@ public sealed class UpdateOrderStatusCommandHandlerTests
     [InlineData(OrderStatus.Cooking, OrderStatus.Cancelled)]
     [InlineData(OrderStatus.ReadyForPickup, OrderStatus.Completed)]
     [InlineData(OrderStatus.ReadyForPickup, OrderStatus.Cancelled)]
-    public async Task Handle_ShouldAllowAdminForAnyValidTransition(OrderStatus current, OrderStatus next)
+    public async Task Handle_ShouldAllowAdminForAnyValidTransition(
+        OrderStatus current,
+        OrderStatus next)
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
         await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, current);
-        var handler = CreateHandler(db, RoleNames.Admin);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            current,
+            restaurantId: restaurantId);
+
+        var handler = CreateHandler(db, tenantContext, RoleNames.Admin);
 
         var result = await handler.Handle(new UpdateOrderStatusCommand
         {
@@ -85,7 +116,9 @@ public sealed class UpdateOrderStatusCommandHandlerTests
 
         Assert.True(result.StatusChanged);
         Assert.Equal(next, result.Status);
-        Assert.Equal(next, (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
+        Assert.Equal(
+            next,
+            (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
     }
 
     [Theory]
@@ -93,47 +126,83 @@ public sealed class UpdateOrderStatusCommandHandlerTests
     [InlineData(OrderStatus.New, OrderStatus.Cooking, RoleNames.Waiter)]
     [InlineData(OrderStatus.ReadyForPickup, OrderStatus.Completed, RoleNames.Kitchen)]
     [InlineData(OrderStatus.New, OrderStatus.Cooking, RoleNames.SuperAdmin)]
-    public async Task Handle_ShouldDenyValidTransitionForWrongRole(OrderStatus current, OrderStatus next, string role)
+    public async Task Handle_ShouldDenyValidTransitionForWrongRole(
+        OrderStatus current,
+        OrderStatus next,
+        string role)
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
         await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, current);
-        var handler = CreateHandler(db, role);
 
-        await Assert.ThrowsAsync<MarketForbiddenException>(() => handler.Handle(new UpdateOrderStatusCommand
-        {
-            Id = order.Id,
-            Status = next
-        }, CancellationToken.None));
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            current,
+            restaurantId: restaurantId);
 
-        Assert.Equal(current, (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
+        var handler = CreateHandler(db, tenantContext, role);
+
+        await Assert.ThrowsAsync<MarketForbiddenException>(() =>
+            handler.Handle(
+                new UpdateOrderStatusCommand
+                {
+                    Id = order.Id,
+                    Status = next
+                },
+                CancellationToken.None));
+
+        Assert.Equal(
+            current,
+            (await db.Orders.SingleAsync(x => x.Id == order.Id)).Status);
     }
 
     [Fact]
     public async Task Handle_ShouldRejectInvalidStateTransition()
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
-        await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, OrderStatus.New);
-        var handler = CreateHandler(db, RoleNames.Admin);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
 
-        await Assert.ThrowsAsync<ValidationException>(() => handler.Handle(new UpdateOrderStatusCommand
-        {
-            Id = order.Id,
-            Status = OrderStatus.Completed
-        }, CancellationToken.None));
+        await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.New,
+            restaurantId: restaurantId);
+
+        var handler = CreateHandler(db, tenantContext, RoleNames.Admin);
+
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            handler.Handle(
+                new UpdateOrderStatusCommand
+                {
+                    Id = order.Id,
+                    Status = OrderStatus.Completed
+                },
+                CancellationToken.None));
     }
 
     [Fact]
     public async Task Handle_ShouldCreateReadyNotificationWithOrderId()
     {
         var tenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
+        var restaurantId = Guid.NewGuid();
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
         await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, OrderStatus.Cooking, tableNumber: 12);
-        var handler = CreateHandler(db, RoleNames.Kitchen);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.Cooking,
+            tableNumber: 12,
+            restaurantId: restaurantId);
+
+        var handler = CreateHandler(db, tenantContext, RoleNames.Kitchen);
 
         var result = await handler.Handle(new UpdateOrderStatusCommand
         {
@@ -141,31 +210,70 @@ public sealed class UpdateOrderStatusCommandHandlerTests
             Status = OrderStatus.ReadyForPickup
         }, CancellationToken.None);
 
-        var notification = await db.Notifications.SingleAsync(x => x.OrderId == order.Id);
+        var notification = await db.Notifications
+            .SingleAsync(x => x.OrderId == order.Id);
+
         Assert.NotNull(result.CreatedNotification);
         Assert.Equal(notification.Id, result.CreatedNotification.Id);
         Assert.Equal(order.Id, notification.OrderId);
         Assert.Equal(RoleNames.Waiter, notification.TargetRole);
         Assert.Equal("OrderReady", notification.Type);
         Assert.Equal($"/waiter/orders/{order.Id}", notification.Link);
-        Assert.Contains("Sto 12", notification.Message);
+        Assert.Contains("Table 12", notification.Message);
     }
 
     [Fact]
     public async Task Handle_ShouldClearOnlyMatchingOrderNotificationsOnCompletion()
     {
         var tenantId = Guid.NewGuid();
+        var restaurantId = Guid.NewGuid();
         var otherTenantId = Guid.NewGuid();
-        var tenantContext = new TestTenantContext(tenantId);
-        await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
-        var order = await SeedOrderAsync(db, tenantId, OrderStatus.ReadyForPickup);
-        var otherOrder = await SeedOrderAsync(db, tenantId, OrderStatus.ReadyForPickup);
 
-        var matchingCreated = CreateNotification(tenantId, order.Id, "OrderCreated", RoleNames.Kitchen);
-        var matchingReady = CreateNotification(tenantId, order.Id, "OrderReady", RoleNames.Waiter);
-        var otherType = CreateNotification(tenantId, order.Id, "OtherType", RoleNames.Waiter);
-        var otherOrderNotification = CreateNotification(tenantId, otherOrder.Id, "OrderReady", RoleNames.Waiter);
-        var otherTenantNotification = CreateNotification(otherTenantId, order.Id, "OrderCreated", RoleNames.Kitchen);
+        var tenantContext = new TestTenantContext(tenantId, restaurantId);
+
+        await using var db = CreateContext(Guid.NewGuid().ToString(), tenantContext);
+
+        var order = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.ReadyForPickup,
+            restaurantId: restaurantId);
+
+        var otherOrder = await SeedOrderAsync(
+            db,
+            tenantId,
+            OrderStatus.ReadyForPickup,
+            restaurantId: restaurantId);
+
+        var matchingCreated = CreateNotification(
+            tenantId,
+            order.Id,
+            "OrderCreated",
+            RoleNames.Kitchen);
+
+        var matchingReady = CreateNotification(
+            tenantId,
+            order.Id,
+            "OrderReady",
+            RoleNames.Waiter);
+
+        var otherType = CreateNotification(
+            tenantId,
+            order.Id,
+            "OtherType",
+            RoleNames.Waiter);
+
+        var otherOrderNotification = CreateNotification(
+            tenantId,
+            otherOrder.Id,
+            "OrderReady",
+            RoleNames.Waiter);
+
+        var otherTenantNotification = CreateNotification(
+            otherTenantId,
+            order.Id,
+            "OrderCreated",
+            RoleNames.Kitchen);
 
         db.Notifications.AddRange(
             matchingCreated,
@@ -173,9 +281,10 @@ public sealed class UpdateOrderStatusCommandHandlerTests
             otherType,
             otherOrderNotification,
             otherTenantNotification);
+
         await db.SaveChangesAsync();
 
-        var handler = CreateHandler(db, RoleNames.Waiter);
+        var handler = CreateHandler(db, tenantContext, RoleNames.Waiter);
 
         var result = await handler.Handle(new UpdateOrderStatusCommand
         {
@@ -183,7 +292,13 @@ public sealed class UpdateOrderStatusCommandHandlerTests
             Status = OrderStatus.Completed
         }, CancellationToken.None);
 
-        Assert.Equal(new[] { matchingCreated.Id, matchingReady.Id }.OrderBy(x => x), result.ClearedNotificationIds.OrderBy(x => x));
+        Assert.Equal(
+            new[]
+            {
+                matchingCreated.Id,
+                matchingReady.Id
+            }.OrderBy(x => x),
+            result.ClearedNotificationIds.OrderBy(x => x));
 
         var notifications = await db.Notifications
             .IgnoreQueryFilters()
@@ -206,37 +321,50 @@ public sealed class UpdateOrderStatusCommandHandlerTests
 
     private static UpdateOrderStatusCommandHandler CreateHandler(
         IAppDbContext db,
+        ITenantContext tenantContext,
         params string[] roles)
-        => new(db, new TestCurrentUser(roles));
+        => new(db, new TestCurrentUser(roles), tenantContext);
 
-    private static DatabaseContext CreateContext(string dbName, ITenantContext tenantContext)
+    private static DatabaseContext CreateContext(
+        string dbName,
+        ITenantContext tenantContext)
     {
         var options = new DbContextOptionsBuilder<DatabaseContext>()
             .UseInMemoryDatabase(dbName)
             .Options;
 
-        return new DatabaseContext(options, new FakeTimeProvider(), tenantContext);
+        return new DatabaseContext(
+            options,
+            new FakeTimeProvider(),
+            tenantContext);
     }
 
     private static async Task<Order> SeedOrderAsync(
         DatabaseContext db,
         Guid tenantId,
         OrderStatus status,
-        int tableNumber = 5)
+        int tableNumber = 5,
+        Guid? restaurantId = null)
     {
         var order = new Order
         {
             TenantId = tenantId,
+            RestaurantId = restaurantId ?? Guid.NewGuid(),
             Status = status,
             TableNumber = tableNumber
         };
 
         db.Orders.Add(order);
         await db.SaveChangesAsync();
+
         return order;
     }
 
-    private static NotificationEntity CreateNotification(Guid tenantId, int orderId, string type, string role)
+    private static NotificationEntity CreateNotification(
+        Guid tenantId,
+        int orderId,
+        string type,
+        string role)
         => new()
         {
             TenantId = tenantId,
@@ -248,23 +376,30 @@ public sealed class UpdateOrderStatusCommandHandlerTests
             Link = $"/orders/{orderId}"
         };
 
-    private sealed class TestTenantContext(Guid tenantId) : ITenantContext
+    private sealed class TestTenantContext(
+        Guid tenantId,
+        Guid restaurantId) : ITenantContext
     {
         public Guid? TenantId => tenantId;
-        public Guid? RestaurantId => Guid.NewGuid();
+        public Guid? RestaurantId => restaurantId;
         public bool IsSuperAdmin => false;
     }
 
     private sealed class TestCurrentUser(params string[] roles) : IAppCurrentUser
     {
         public Guid? UserId { get; } = Guid.NewGuid();
+
         public string? Email => "test@example.com";
+
         public bool IsAuthenticated => true;
+
         public IReadOnlyCollection<string> Roles { get; } = roles
             .Where(role => !string.IsNullOrWhiteSpace(role))
             .ToArray();
 
         public bool IsInRole(string role)
-            => Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+            => Roles.Contains(
+                role,
+                StringComparer.OrdinalIgnoreCase);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Market.Application.Abstractions;
+using Market.Domain.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
@@ -7,24 +8,35 @@ namespace Market.Application.Modules.Analytics.Queries.GetOrdersPerDay
         : IRequestHandler<GetOrdersPerDayQuery, List<GetOrdersPerDayDto>>
     {
         private readonly IAppDbContext _context;
+        private readonly ITenantContext _tenantContext;
 
-        public GetOrdersPerDayHandler(IAppDbContext context)
+        public GetOrdersPerDayHandler(
+            IAppDbContext context,
+            ITenantContext tenantContext)
         {
             _context = context;
+            _tenantContext = tenantContext;
         }
 
         public async Task<List<GetOrdersPerDayDto>> Handle(
             GetOrdersPerDayQuery request,
             CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var query = _context.Orders
-                .AsNoTracking();
+                .AsNoTracking()
+                .Where(o =>
+                    o.RestaurantId == restaurantId &&
+                    o.Status != OrderStatus.Cancelled);
 
             if (request.From.HasValue)
-                query = query.Where(o => o.CreatedAtUtc >= request.From.Value);
+                query = query.Where(o =>
+                    o.CreatedAtUtc >= request.From.Value);
 
             if (request.To.HasValue)
-                query = query.Where(o => o.CreatedAtUtc < request.To.Value);
+                query = query.Where(o =>
+                    o.CreatedAtUtc < request.To.Value);
 
             var data = await query
                 .GroupBy(o => new

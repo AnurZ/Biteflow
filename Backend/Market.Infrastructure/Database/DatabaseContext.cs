@@ -1,4 +1,6 @@
-﻿using Market.Application.Abstractions;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Market.Application.Abstractions;
 using Market.Domain.Entities.ActivationLinkEntity;
 using Market.Domain.Entities.DashboardLayout;
 using Market.Domain.Entities.DiningTables;
@@ -47,15 +49,21 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     public DbSet<DashboardLayout> DashboardLayouts => Set<DashboardLayout>();
 
     private readonly TimeProvider _clock;
+
     public Guid? CurrentTenantId { get; private set; }
     public bool IsSuperAdmin { get; private set; }
 
-    public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock)
+    public DatabaseContext(
+        DbContextOptions<DatabaseContext> options,
+        TimeProvider clock)
         : this(options, clock, new SystemTenantContext())
     {
     }
 
-    public DatabaseContext(DbContextOptions<DatabaseContext> options, TimeProvider clock, ITenantContext tenantContext)
+    public DatabaseContext(
+        DbContextOptions<DatabaseContext> options,
+        TimeProvider clock,
+        ITenantContext tenantContext)
         : base(options)
     {
         _clock = clock;
@@ -66,5 +74,69 @@ public partial class DatabaseContext : DbContext, IAppDbContext
     {
         CurrentTenantId = tenantContext.TenantId;
         IsSuperAdmin = tenantContext.IsSuperAdmin;
+    }
+
+    public async Task<IDbContextTransaction> BeginTransactionAsync(
+        CancellationToken ct)
+    {
+        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            return new NoOpDbContextTransaction();
+        }
+
+        return await Database.BeginTransactionAsync(ct);
+    }
+
+    private sealed class NoOpDbContextTransaction : IDbContextTransaction
+    {
+        public Guid TransactionId { get; } = Guid.NewGuid();
+
+        public void Commit()
+        {
+        }
+
+        public Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Rollback()
+        {
+        }
+
+        public Task RollbackAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task CreateSavepointAsync(
+            string name,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task RollbackToSavepointAsync(
+            string name,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ReleaseSavepointAsync(
+            string name,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return ValueTask.CompletedTask;
+        }
     }
 }

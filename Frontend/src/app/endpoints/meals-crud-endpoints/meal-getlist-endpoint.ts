@@ -10,12 +10,24 @@ export class MealGetListEndpoint {
 
   constructor(private http: HttpClient) {}
 
-  handleAsync(page?: number, pageSize?: number, search?: string, sort?: string, categoryId?: number) {
+  handleAsync(
+    page?: number,
+    pageSize?: number,
+    search?: string,
+    sort?: string,
+    categoryId?: number,
+    minPrice?: number,
+    maxPrice?: number,
+    isAvailable?: boolean
+  ) {
     return this.http.get<PageResult<MealDto>>(this.base, {
       params: {
         search: search ?? '',
         sort: sort ?? '',
         categoryId: categoryId ?? 0,
+        minPrice: minPrice ?? '',
+        maxPrice: maxPrice ?? '',
+        isAvailable: isAvailable ?? '',
 
         'paging.page': page ?? 1,
         'paging.pageSize': pageSize ?? 10

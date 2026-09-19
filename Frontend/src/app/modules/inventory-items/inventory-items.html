@@ -1,17 +1,84 @@
 <div class="card" xmlns="http://www.w3.org/1999/html">
   <div class="card-header">
     <div class="title">Inventory Items</div>
+
     <div class="actions">
-      <button mat-flat-button color="primary"  (click)="createItem()" class="action-btn">
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="createItem()"
+        class="action-btn">
         <mat-icon>add</mat-icon>
         <span>New Item</span>
       </button>
+
+      <!-- Search -->
       <mat-form-field appearance="outline" class="search">
         <mat-label>Search</mat-label>
-        <input #searchInput
-               (input)="loadItemsByName(searchInput.value)"
-               matInput
-               placeholder="Name, SKU…" />
+        <input
+          #searchInput
+          (keyup.enter)="onSearch(searchInput.value)"
+          matInput
+          placeholder="Name, SKU…" />
+      </mat-form-field>
+
+      <!-- Unit type -->
+      <mat-form-field appearance="outline" style="width:180px;">
+        <mat-label>Unit type</mat-label>
+
+        <mat-select
+          [value]="selectedUnitType"
+          (selectionChange)="onUnitTypeChange($event.value)">
+
+          <mat-option [value]="null">
+            Any
+          </mat-option>
+
+          <mat-option [value]="0">kilogram (kg)</mat-option>
+          <mat-option [value]="1">gram (g)</mat-option>
+          <mat-option [value]="2">miligram (mg)</mat-option>
+          <mat-option [value]="3">liter (l)</mat-option>
+          <mat-option [value]="4">mililiter (ml)</mat-option>
+          <mat-option [value]="5">unit</mat-option>
+          <mat-option [value]="6">slice</mat-option>
+          <mat-option [value]="7">teaspoon</mat-option>
+          <mat-option [value]="8">tablespoon</mat-option>
+          <mat-option [value]="9">cup</mat-option>
+          <mat-option [value]="10">pinch</mat-option>
+          <mat-option [value]="11">drop</mat-option>
+          <mat-option [value]="12">meter (m)</mat-option>
+          <mat-option [value]="13">centimeter (cm)</mat-option>
+          <mat-option [value]="14">pack</mat-option>
+          <mat-option [value]="15">bottle</mat-option>
+          <mat-option [value]="16">can</mat-option>
+          <mat-option [value]="17">box</mat-option>
+          <mat-option [value]="18">bag</mat-option>
+
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Minimum quantity -->
+      <mat-form-field appearance="outline" style="width:130px;">
+        <mat-label>Min qty</mat-label>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          [(ngModel)]="minQty"
+          (keyup.enter)="onQuantityChange()" />
+      </mat-form-field>
+
+      <!-- Maximum quantity -->
+      <mat-form-field appearance="outline" style="width:130px;">
+        <mat-label>Max qty</mat-label>
+
+        <input
+          matInput
+          type="number"
+          min="0"
+          [(ngModel)]="maxQty"
+          (keyup.enter)="onQuantityChange()" />
       </mat-form-field>
     </div>
   </div>

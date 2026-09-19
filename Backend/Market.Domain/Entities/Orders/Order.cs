@@ -7,11 +7,17 @@ namespace Market.Domain.Entities.Orders
 {
     public class Order : BaseEntity
     {
+        public Guid RestaurantId { get; set; }
+
         public int? DiningTableId { get; set; }  // nullable eat-out order
         public DiningTable? DiningTable { get; set; }
+
         public int? TableNumber { get; set; }
+
         public OrderStatus Status { get; set; } = OrderStatus.New;
+
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+
         public string? Notes { get; set; }
     }
 }

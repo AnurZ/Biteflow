@@ -1,11 +1,6 @@
 using Market.Application.Abstractions;
-using Market.Application.Modules.InventoryItem.Queries.GetByName;
-using Market.Domain.Common.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Market.Application.Modules.InventoryItem.Queries.GetByName
 {
@@ -13,16 +8,25 @@ namespace Market.Application.Modules.InventoryItem.Queries.GetByName
         : IRequestHandler<GetInventoryItemByNameQuery, PageResult<GetInventoryItemByNameDto>>
     {
         private readonly IAppDbContext _db;
+        private readonly ITenantContext _tenantContext;
 
-        public GetInventoryItemByNameQueryHandler(IAppDbContext db)
+        public GetInventoryItemByNameQueryHandler(
+            IAppDbContext db,
+            ITenantContext tenantContext)
         {
             _db = db;
+            _tenantContext = tenantContext;
         }
 
-        public async Task<PageResult<GetInventoryItemByNameDto>> Handle(GetInventoryItemByNameQuery req, CancellationToken ct)
+        public async Task<PageResult<GetInventoryItemByNameDto>> Handle(
+            GetInventoryItemByNameQuery req,
+            CancellationToken ct)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var q = _db.InventoryItems
                 .AsNoTracking()
+                .Where(x => x.RestaurantId == restaurantId)
                 .Select(x => new GetInventoryItemByNameDto
                 {
                     Id = x.Id,
@@ -42,8 +46,11 @@ namespace Market.Application.Modules.InventoryItem.Queries.GetByName
                 q = q.Where(x => x.Name.ToLower().StartsWith(s));
             }
 
-            // Pagination (same helper)
-            return await PageResult<GetInventoryItemByNameDto>.FromQueryableAsync(q, req.Paging, ct);
+            q = q.OrderBy(x => x.Name);
+
+            // Pagination
+            return await PageResult<GetInventoryItemByNameDto>
+                .FromQueryableAsync(q, req.Paging, ct);
         }
     }
 }

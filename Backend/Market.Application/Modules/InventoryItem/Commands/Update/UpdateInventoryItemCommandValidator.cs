@@ -10,9 +10,6 @@ namespace Market.Application.Modules.InventoryItem.Commands.Update
             RuleFor(x => x.Id)
                 .GreaterThan(0);
 
-            RuleFor(x => x.RestaurantId)
-                .NotEmpty();
-
             RuleFor(x => x.Name)
                 .NotEmpty()
                 .MaximumLength(100);

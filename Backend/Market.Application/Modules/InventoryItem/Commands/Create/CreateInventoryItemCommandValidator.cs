@@ -7,9 +7,6 @@ namespace Market.Application.Modules.InventoryItem.Commands.Create
     {
         public CreateInventoryItemCommandValidator()
         {
-            RuleFor(x => x.RestaurantId)
-                .NotEmpty();
-
             RuleFor(x => x.Name)
                 .NotEmpty()
                 .MaximumLength(100);

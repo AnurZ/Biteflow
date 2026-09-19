@@ -12,31 +12,41 @@ using Market.Domain.Entities.Staff;
 using Market.Domain.Entities.TableLayout;
 using Market.Domain.Entities.TableReservations;
 using Market.Domain.Entities.Tenants;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Market.Application.Abstractions;
 
-// Application layer
 public interface IAppDbContext
 {
-    DbSet<ProductEntity> Products { get; }
     DbSet<ProductCategoryEntity> ProductCategories { get; }
+    DbSet<ProductEntity> Products { get; }
+
     DbSet<Tenant> Tenants { get; }
     DbSet<Restaurant> Restaurants { get; }
     DbSet<TenantActivationRequest> TenantActivationRequests { get; }
+
     DbSet<EmployeeProfile> EmployeeProfiles { get; }
     DbSet<ActivationLinkEntity> ActivationLinks { get; }
+
     DbSet<InventoryItem> InventoryItems { get; }
+
     DbSet<Meal> Meals { get; }
     DbSet<MealIngredient> MealIngredients { get; }
     DbSet<MealCategory> MealCategories { get; }
+
     DbSet<DiningTable> DiningTables { get; }
     DbSet<TableReservation> TableReservations { get; }
     DbSet<TableLayout> TableLayouts { get; }
+
     DbSet<Order> Orders { get; }
     DbSet<OrderItem> OrderItems { get; }
+
     DbSet<NotificationEntity> Notifications { get; }
+
     DbSet<DashboardLayout> DashboardLayouts { get; }
 
-
     Task<int> SaveChangesAsync(CancellationToken ct);
+
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken ct);
 }

@@ -1,51 +1,50 @@
-﻿using MediatR;
+﻿using Market.Domain.Common.Enums;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Market.Application.Modules.TableReservation.Queries.GetTableReservations
 {
-    public sealed class GetTableReservationsQueryHandler(IAppDbContext db)
+    public sealed class GetTableReservationsQueryHandler(
+        IAppDbContext db,
+        ITenantContext tenantContext)
         : IRequestHandler<GetTableReservationsQuery, List<GetTableReservationsQueryDto>>
     {
-        public async Task<List<GetTableReservationsQueryDto>> Handle(GetTableReservationsQuery request, CancellationToken cancellationToken)
+        public async Task<List<GetTableReservationsQueryDto>> Handle(
+            GetTableReservationsQuery request,
+            CancellationToken cancellationToken)
         {
-            var query = db.TableReservations.AsQueryable();
+            var restaurantId = tenantContext.RequireRestaurantId();
 
-            // Filter by ReservationId
+            var query = db.TableReservations
+                .Where(r =>
+                    r.DiningTable != null &&
+                    r.DiningTable.TableLayout.RestaurantId == restaurantId)
+                .AsQueryable();
+
             if (request.ReservationId.HasValue)
+            {
                 query = query.Where(r => r.Id == request.ReservationId.Value);
+            }
 
-            // Filter by DiningTableId
             if (request.DiningTableId.HasValue)
+            {
                 query = query.Where(r => r.DiningTableId == request.DiningTableId.Value);
+            }
 
-            // Filter by Status
-            if (request.Status.HasValue)
-                query = query.Where(r => r.Status == request.Status.Value);
-
-            if (request.RequestedStart.HasValue && request.RequestedEnd.HasValue)
+            if (request.RequestedStart.HasValue &&
+                request.RequestedEnd.HasValue)
             {
                 var start = request.RequestedStart.Value;
                 var end = request.RequestedEnd.Value;
+                var buffer = TimeSpan.FromMinutes(90);
 
-                Console.WriteLine(start);
-                Console.WriteLine(end);
                 query = query.Where(r =>
-                    r.ReservationEnd.HasValue
-                        ? r.ReservationStart < end && r.ReservationEnd > start
-                        : r.ReservationStart < end);
+                    r.Status != ReservationStatus.Cancelled &&
+                    r.ReservationStart < end.Add(buffer) &&
+                    (r.ReservationEnd ?? DateTime.MaxValue) > start);
             }
 
-
-
-
-
-
-            var reservations = await query
+            return await query
                 .Select(r => new GetTableReservationsQueryDto
                 {
                     Id = r.Id,
@@ -69,9 +68,6 @@ namespace Market.Application.Modules.TableReservation.Queries.GetTableReservatio
                     TableLayoutId = r.DiningTable.TableLayoutId
                 })
                 .ToListAsync(cancellationToken);
-
-
-            return reservations;
         }
     }
 }

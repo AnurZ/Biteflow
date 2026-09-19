@@ -62,6 +62,16 @@ namespace Market.Application.Modules.Meal.Commands.Create
             if (request.Ingredients.Any(i => i.Quantity <= 0))
                 throw new ValidationException("Ingredient quantity must be greater than zero.");
 
+            var duplicateIds = request.Ingredients
+                .GroupBy(i => i.InventoryItemId)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+
+            if (duplicateIds.Any())
+                throw new ValidationException(
+                    $"Duplicate ingredients: {string.Join(", ", duplicateIds)}");
+
             // 4. Create meal
             var newMeal = new Domain.Entities.Meal.Meal
             {

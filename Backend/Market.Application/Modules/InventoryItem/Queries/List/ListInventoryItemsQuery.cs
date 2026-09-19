@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Market.Application.Modules.InventoryItem.Queries.List;
+using Market.Domain.Common.Enums;
 using MediatR;
 
 namespace Market.Application.Modules.InventoryItem.Queries.List
@@ -12,6 +13,9 @@ namespace Market.Application.Modules.InventoryItem.Queries.List
     {
         public string? Search { get; init; }
         public string? Sort { get; init; }
+        public double? MinQty { get; init; }
+        public double? MaxQty { get; init; }
+        public UnitTypes? UnitType { get; init; }
         public Guid? RestaurantId { get; init; }
     }
 }

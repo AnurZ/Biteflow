@@ -254,7 +254,9 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TableLayoutId");
+                    b.HasIndex("TableLayoutId", "Number")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("DiningTables", (string)null);
                 });
@@ -623,11 +625,11 @@ namespace Market.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "OrderId", "Type");
-
                     b.HasIndex("TenantId", "TargetRole");
 
                     b.HasIndex("TenantId", "TargetUserId");
+
+                    b.HasIndex("TenantId", "OrderId", "Type");
 
                     b.ToTable("Notifications", (string)null);
                 });
@@ -655,6 +657,9 @@ namespace Market.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()

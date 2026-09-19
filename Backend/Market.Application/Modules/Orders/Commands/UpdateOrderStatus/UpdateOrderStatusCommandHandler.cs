@@ -10,7 +10,8 @@ using ValidationException = System.ComponentModel.DataAnnotations.ValidationExce
 
 namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
 {
-    public sealed class UpdateOrderStatusCommandHandler : IRequestHandler<UpdateOrderStatusCommand, UpdateOrderStatusResult>
+    public sealed class UpdateOrderStatusCommandHandler
+        : IRequestHandler<UpdateOrderStatusCommand, UpdateOrderStatusResult>
     {
         private const string OrderCreatedNotificationType = "OrderCreated";
         private const string OrderReadyNotificationType = "OrderReady";
@@ -26,24 +27,38 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
 
         private readonly IAppDbContext _db;
         private readonly IAppCurrentUser _currentUser;
+        private readonly ITenantContext _tenantContext;
 
-        public UpdateOrderStatusCommandHandler(IAppDbContext db, IAppCurrentUser currentUser)
+        public UpdateOrderStatusCommandHandler(
+            IAppDbContext db,
+            IAppCurrentUser currentUser,
+            ITenantContext tenantContext)
         {
             _db = db;
             _currentUser = currentUser;
+            _tenantContext = tenantContext;
         }
 
-        public async Task<UpdateOrderStatusResult> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
+        public async Task<UpdateOrderStatusResult> Handle(
+            UpdateOrderStatusCommand request,
+            CancellationToken cancellationToken)
         {
+            var restaurantId = _tenantContext.RequireRestaurantId();
+
             var order = await _db.Orders
-                .FirstOrDefaultAsync(o => o.Id == request.Id, cancellationToken);
+                .FirstOrDefaultAsync(
+                    o => o.Id == request.Id &&
+                         o.RestaurantId == restaurantId,
+                    cancellationToken);
 
             if (order == null)
             {
-                throw new KeyNotFoundException($"Order with id {request.Id} not found.");
+                throw new KeyNotFoundException(
+                    $"Order with id {request.Id} not found.");
             }
 
             var current = order.Status;
+
             if (IsTerminalNoOp(current, request.Status))
             {
                 return new UpdateOrderStatusResult(
@@ -58,75 +73,107 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
             EnsureValidTransition(current, request.Status);
             EnsureRoleCanTransition(current, request.Status);
 
-            order.Status = request.Status;
-            await _db.SaveChangesAsync(cancellationToken);
+            await using var transaction =
+                await _db.BeginTransactionAsync(cancellationToken);
 
-            OrderNotificationResult? createdNotification = null;
-            var clearedNotificationIds = Array.Empty<int>();
-
-            if (order.Status == OrderStatus.ReadyForPickup)
+            try
             {
-                var notification = new NotificationEntity
+                order.Status = request.Status;
+
+                OrderNotificationResult? createdNotification = null;
+                var clearedNotificationIds = Array.Empty<int>();
+
+                if (order.Status == OrderStatus.ReadyForPickup)
                 {
-                    TenantId = order.TenantId,
-                    OrderId = order.Id,
-                    TargetRole = RoleNames.Waiter,
-                    Title = "Narudzba spremna",
-                    Message = $"Sto {order.TableNumber ?? order.DiningTableId} - narudzba je spremna.",
-                    Type = OrderReadyNotificationType,
-                    Link = $"/waiter/orders/{order.Id}"
-                };
-
-                _db.Notifications.Add(notification);
-                await _db.SaveChangesAsync(cancellationToken);
-                createdNotification = ToNotificationResult(notification);
-            }
-
-            if (order.Status == OrderStatus.Completed)
-            {
-                var notificationTypes = new[] { OrderCreatedNotificationType, OrderReadyNotificationType };
-                var notifications = await _db.Notifications
-                    .Where(n => n.TenantId == order.TenantId &&
-                                n.OrderId == order.Id &&
-                                notificationTypes.Contains(n.Type))
-                    .ToListAsync(cancellationToken);
-
-                clearedNotificationIds = notifications
-                    .Select(n => n.Id)
-                    .ToArray();
-
-                if (notifications.Count > 0)
-                {
-                    var now = DateTime.UtcNow;
-
-                    foreach (var item in notifications)
+                    var notification = new NotificationEntity
                     {
-                        item.ReadAtUtc ??= now;
-                    }
+                        TenantId = order.TenantId,
+                        OrderId = order.Id,
+                        TargetRole = RoleNames.Waiter,
+                        Title = "Order ready",
+                        Message =
+                            $"Table {order.TableNumber ?? order.DiningTableId} - " +
+                            "order is ready.",
+                        Type = OrderReadyNotificationType,
+                        Link = $"/waiter/orders/{order.Id}"
+                    };
 
-                    await _db.SaveChangesAsync(cancellationToken);
+                    _db.Notifications.Add(notification);
+
+                    createdNotification =
+                        ToNotificationResult(notification);
                 }
-            }
 
-            return new UpdateOrderStatusResult(
-                order.Id,
-                order.TenantId,
-                order.Status,
-                true,
-                createdNotification,
-                clearedNotificationIds);
+                if (order.Status == OrderStatus.Completed)
+                {
+                    var notificationTypes = new[]
+                    {
+                        OrderCreatedNotificationType,
+                        OrderReadyNotificationType
+                    };
+
+                    var notifications = await _db.Notifications
+                        .Where(n =>
+                            n.TenantId == order.TenantId &&
+                            n.OrderId == order.Id &&
+                            notificationTypes.Contains(n.Type))
+                        .ToListAsync(cancellationToken);
+
+                    clearedNotificationIds = notifications
+                        .Select(n => n.Id)
+                        .ToArray();
+
+                    if (notifications.Count > 0)
+                    {
+                        var now = DateTime.UtcNow;
+
+                        foreach (var item in notifications)
+                        {
+                            item.ReadAtUtc ??= now;
+                        }
+                    }
+                }
+
+                // Order status and notification changes are persisted
+                // in the same database transaction.
+                await _db.SaveChangesAsync(cancellationToken);
+
+                // Both the status change and notification changes
+                // become permanent together.
+                await transaction.CommitAsync(cancellationToken);
+
+                return new UpdateOrderStatusResult(
+                    order.Id,
+                    order.TenantId,
+                    order.Status,
+                    true,
+                    createdNotification,
+                    clearedNotificationIds);
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
-        private static bool IsTerminalNoOp(OrderStatus current, OrderStatus requested)
-            => current == requested && current is OrderStatus.Completed or OrderStatus.Cancelled;
+        private static bool IsTerminalNoOp(
+            OrderStatus current,
+            OrderStatus requested)
+            => current == requested &&
+               current is OrderStatus.Completed or OrderStatus.Cancelled;
 
-        private static void EnsureValidTransition(OrderStatus current, OrderStatus requested)
+        private static void EnsureValidTransition(
+            OrderStatus current,
+            OrderStatus requested)
         {
-            if (AllowedTransitions.TryGetValue(current, out var allowed) && allowed.Length > 0)
+            if (AllowedTransitions.TryGetValue(current, out var allowed) &&
+                allowed.Length > 0)
             {
                 if (!allowed.Contains(requested))
                 {
-                    throw new ValidationException($"Cannot change order status from {current} to {requested}.");
+                    throw new ValidationException(
+                        $"Cannot change order status from {current} to {requested}.");
                 }
 
                 return;
@@ -134,13 +181,17 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
 
             if (current is OrderStatus.Completed or OrderStatus.Cancelled)
             {
-                throw new ValidationException("Completed or cancelled orders cannot change status.");
+                throw new ValidationException(
+                    "Completed or cancelled orders cannot change status.");
             }
 
-            throw new ValidationException($"Cannot change order status from {current} to {requested}.");
+            throw new ValidationException(
+                $"Cannot change order status from {current} to {requested}.");
         }
 
-        private void EnsureRoleCanTransition(OrderStatus current, OrderStatus requested)
+        private void EnsureRoleCanTransition(
+            OrderStatus current,
+            OrderStatus requested)
         {
             if (_currentUser.IsInRole(RoleNames.Admin))
             {
@@ -148,8 +199,10 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
             }
 
             if (_currentUser.IsInRole(RoleNames.Kitchen) &&
-                ((current == OrderStatus.New && requested == OrderStatus.Cooking) ||
-                 (current == OrderStatus.Cooking && requested == OrderStatus.ReadyForPickup)))
+                ((current == OrderStatus.New &&
+                  requested == OrderStatus.Cooking) ||
+                 (current == OrderStatus.Cooking &&
+                  requested == OrderStatus.ReadyForPickup)))
             {
                 return;
             }
@@ -161,10 +214,12 @@ namespace Market.Application.Modules.Orders.Commands.UpdateOrderStatus
                 return;
             }
 
-            throw new MarketForbiddenException($"Current role cannot change order status from {current} to {requested}.");
+            throw new MarketForbiddenException(
+                $"Current role cannot change order status from {current} to {requested}.");
         }
 
-        private static OrderNotificationResult ToNotificationResult(NotificationEntity notification)
+        private static OrderNotificationResult ToNotificationResult(
+            NotificationEntity notification)
             => new(
                 notification.Id,
                 notification.TargetRole,

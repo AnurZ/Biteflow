@@ -1,6 +1,7 @@
 import {Component, Inject} from '@angular/core';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
 import {AdminOrderDto} from '../../../../services/orders/orders.service';
+import { CurrencyService } from '../../../../services/currency-service/currency.service';
 
 @Component({
   selector: 'app-view-order-details',
@@ -11,7 +12,8 @@ import {AdminOrderDto} from '../../../../services/orders/orders.service';
 export class ViewOrderDetails {
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: AdminOrderDto,
-    private dialogRef: MatDialogRef<ViewOrderDetails>
+    private dialogRef: MatDialogRef<ViewOrderDetails>,
+    public currencyService: CurrencyService
   ) {}
 
   close() {

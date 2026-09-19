@@ -16,7 +16,7 @@
     <div class="meta-item">
       <span class="label">Table</span>
       <span class="value">
-       {{ data.tableLayoutName }} - {{ data.tableNumber ?? data.diningTableId ?? '-' }}
+        {{ data.tableLayoutName }} - {{ data.tableNumber ?? data.diningTableId ?? '-' }}
       </span>
     </div>
 
@@ -28,7 +28,6 @@
     </div>
 
   </div>
-
 
   <div class="meta-item" *ngIf="data.notes">
     <span class="label">Notes</span>
@@ -60,23 +59,23 @@
       </div>
 
       <div style="text-align: center" class="price">
-        {{ item.unitPrice | currency:'EUR' }}
+        {{ currencyService.format(item.unitPrice) }}
       </div>
 
       <div style="text-align: center" class="total">
-        {{ (item.quantity * item.unitPrice) | currency:'EUR' }}
+        {{ currencyService.format(item.quantity * item.unitPrice) }}
       </div>
 
     </div>
-
 
   </div>
 
   <!-- TOTAL -->
   <div class="footer">
     <div class="total-label">Total</div>
+
     <div class="total-value">
-      {{ data.totalPrice | currency:'EUR' }}
+      {{ currencyService.format(data.totalPrice) }}
     </div>
   </div>
 

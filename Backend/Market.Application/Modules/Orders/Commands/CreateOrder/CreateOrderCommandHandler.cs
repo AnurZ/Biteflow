@@ -11,7 +11,8 @@ using ValidationException = System.ComponentModel.DataAnnotations.ValidationExce
 
 namespace Market.Application.Modules.Orders.Commands.CreateOrder
 {
-    public sealed class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, CreateOrderResult>
+    public sealed class CreateOrderCommandHandler
+        : IRequestHandler<CreateOrderCommand, CreateOrderResult>
     {
         private const string OrderCreatedNotificationType = "OrderCreated";
 
@@ -32,35 +33,43 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
             _logger = logger;
         }
 
-        public async Task<CreateOrderResult> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+        public async Task<CreateOrderResult> Handle(
+            CreateOrderCommand request,
+            CancellationToken cancellationToken)
         {
             var tenantId = _tenantContext.RequireTenantId();
             var restaurantId = _tenantContext.RequireRestaurantId();
 
             if (request.Items == null || request.Items.Count == 0)
             {
-                throw new ValidationException("Order must contain at least one item.");
+                throw new ValidationException(
+                    "Order must contain at least one item.");
             }
 
             ValidateItemShapes(request.Items);
 
-            if (!request.DiningTableId.HasValue || request.DiningTableId.Value <= 0)
+            if (!request.DiningTableId.HasValue ||
+                request.DiningTableId.Value <= 0)
             {
-                throw new ValidationException("DiningTableId is required.");
+                throw new ValidationException(
+                    "DiningTableId is required.");
             }
 
             var table = await _db.DiningTables
                 .AsNoTracking()
                 .Include(t => t.TableLayout)
                 .FirstOrDefaultAsync(
-                    t => t.Id == request.DiningTableId.Value &&
-                         t.IsActive &&
-                         t.TableLayout.RestaurantId == restaurantId,
+                    t =>
+                        t.Id == request.DiningTableId.Value &&
+                        t.IsActive &&
+                        t.TableLayout.RestaurantId == restaurantId,
                     cancellationToken);
 
             if (table == null)
             {
-                throw new KeyNotFoundException($"Dining table with ID {request.DiningTableId.Value} was not found or is inactive.");
+                throw new KeyNotFoundException(
+                    $"Dining table with ID {request.DiningTableId.Value} " +
+                    "was not found or is inactive.");
             }
 
             var menuMealIds = request.Items
@@ -74,9 +83,17 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 : await _db.Meals
                     .AsNoTracking()
                     .WhereCurrentRestaurant(_tenantContext)
-                    .Where(meal => menuMealIds.Contains(meal.Id) && meal.IsAvailable)
-                    .Select(meal => new MealSnapshot(meal.Id, meal.Name, meal.BasePrice))
-                    .ToDictionaryAsync(meal => meal.Id, cancellationToken);
+                    .Where(meal =>
+                        menuMealIds.Contains(meal.Id) &&
+                        meal.IsAvailable)
+                    .Select(meal =>
+                        new MealSnapshot(
+                            meal.Id,
+                            meal.Name,
+                            meal.BasePrice))
+                    .ToDictionaryAsync(
+                        meal => meal.Id,
+                        cancellationToken);
 
             var missingMealIds = menuMealIds
                 .Where(mealId => !mealsById.ContainsKey(mealId))
@@ -84,11 +101,14 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
 
             if (missingMealIds.Length > 0)
             {
-                throw new ValidationException($"Meal(s) are unavailable or not found: {string.Join(", ", missingMealIds)}.");
+                throw new ValidationException(
+                    $"Meal(s) are unavailable or not found: " +
+                    $"{string.Join(", ", missingMealIds)}.");
             }
 
             var order = new Order
             {
+                RestaurantId = restaurantId,
                 DiningTableId = table.Id,
                 TableNumber = table.Number,
                 Status = OrderStatus.New,
@@ -106,7 +126,9 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 {
                     if (!CanCreateCustomItems())
                     {
-                        throw new ValidationException("Custom order items are only allowed for waiter and admin roles.");
+                        throw new ValidationException(
+                            "Custom order items are only allowed " +
+                            "for waiter and admin roles.");
                     }
 
                     orderItem = new OrderItem
@@ -137,92 +159,132 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 order.Items.Add(orderItem);
             }
 
-            _db.Orders.Add(order);
-            await _db.SaveChangesAsync(cancellationToken);
+            await using var transaction =
+                await _db.BeginTransactionAsync(cancellationToken);
 
-            var notification = new NotificationEntity
+            try
             {
-                TenantId = order.TenantId,
-                OrderId = order.Id,
-                TargetRole = RoleNames.Kitchen,
-                Title = "Nova narudzba",
-                Message = $"Sto {order.TableNumber ?? order.DiningTableId} - nova narudzba je stigla.",
-                Type = OrderCreatedNotificationType,
-                Link = $"/kitchen/orders/{order.Id}"
-            };
+                // First commit inside the transaction:
+                // Order and OrderItems must exist so that Order.Id is generated.
+                _db.Orders.Add(order);
 
-            _db.Notifications.Add(notification);
-            await _db.SaveChangesAsync(cancellationToken);
+                await _db.SaveChangesAsync(cancellationToken);
 
-            foreach (var item in customOrderItems)
-            {
-                _logger.LogInformation(
-                    "Custom order item accepted. TenantId={TenantId} UserId={UserId} OrderId={OrderId} OrderItemId={OrderItemId} DiningTableId={DiningTableId} ItemName={ItemName} UnitPrice={UnitPrice} Quantity={Quantity}",
-                    tenantId,
-                    _currentUser.UserId,
+                // Order.Id is now available.
+                var notification = new NotificationEntity
+                {
+                    TenantId = order.TenantId,
+                    OrderId = order.Id,
+                    TargetRole = RoleNames.Kitchen,
+                    Title = "New order",
+                    Message =
+                        $"Table {order.TableNumber ?? order.DiningTableId} - " +
+                        "new order has arrived.",
+                    Type = OrderCreatedNotificationType,
+                    Link = $"/kitchen/orders/{order.Id}"
+                };
+
+                _db.Notifications.Add(notification);
+
+                // Notification is saved in the SAME database transaction.
+                await _db.SaveChangesAsync(cancellationToken);
+
+                // Both Order and Notification become permanent together.
+                await transaction.CommitAsync(cancellationToken);
+
+                foreach (var item in customOrderItems)
+                {
+                    _logger.LogInformation(
+                        "Custom order item accepted. " +
+                        "TenantId={TenantId} UserId={UserId} " +
+                        "OrderId={OrderId} OrderItemId={OrderItemId} " +
+                        "DiningTableId={DiningTableId} ItemName={ItemName} " +
+                        "UnitPrice={UnitPrice} Quantity={Quantity}",
+                        tenantId,
+                        _currentUser.UserId,
+                        order.Id,
+                        item.Id,
+                        table.Id,
+                        item.Name,
+                        item.UnitPrice,
+                        item.Quantity);
+                }
+
+                return new CreateOrderResult(
                     order.Id,
-                    item.Id,
-                    table.Id,
-                    item.Name,
-                    item.UnitPrice,
-                    item.Quantity);
+                    order.TenantId,
+                    order.TableNumber,
+                    order.Notes,
+                    order.CreatedAtUtc,
+                    order.Status,
+                    order.Items
+                        .Select(item =>
+                            new OrderRealtimeItemResult(
+                                item.Name,
+                                item.Quantity))
+                        .ToArray(),
+                    ToNotificationResult(notification));
             }
-
-            return new CreateOrderResult(
-                order.Id,
-                order.TenantId,
-                order.TableNumber,
-                order.Notes,
-                order.CreatedAtUtc,
-                order.Status,
-                order.Items
-                    .Select(item => new OrderRealtimeItemResult(item.Name, item.Quantity))
-                    .ToArray(),
-                ToNotificationResult(notification));
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
         }
 
         private bool CanCreateCustomItems()
-            => _currentUser.IsInRole(RoleNames.Waiter) || _currentUser.IsInRole(RoleNames.Admin);
+            => _currentUser.IsInRole(RoleNames.Waiter) ||
+               _currentUser.IsInRole(RoleNames.Admin);
 
-        private static void ValidateItemShapes(IReadOnlyCollection<CreateOrderItemDto> items)
+        private static void ValidateItemShapes(
+            IReadOnlyCollection<CreateOrderItemDto> items)
         {
             foreach (var item in items)
             {
                 if (item.Quantity <= 0)
                 {
-                    throw new ValidationException("Order item quantity must be greater than zero.");
+                    throw new ValidationException(
+                        "Order item quantity must be greater than zero.");
                 }
 
                 if (item.IsCustom)
                 {
                     if (item.MealId.HasValue)
                     {
-                        throw new ValidationException("Custom order items cannot reference a meal.");
+                        throw new ValidationException(
+                            "Custom order items cannot reference a meal.");
                     }
 
                     if (string.IsNullOrWhiteSpace(item.Name))
                     {
-                        throw new ValidationException("Custom order item name is required.");
+                        throw new ValidationException(
+                            "Custom order item name is required.");
                     }
 
                     if (item.Name.Length > 256)
                     {
-                        throw new ValidationException("Custom order item name cannot exceed 256 characters.");
+                        throw new ValidationException(
+                            "Custom order item name cannot exceed 256 characters.");
                     }
 
-                    if (!item.UnitPrice.HasValue || item.UnitPrice.Value <= 0)
+                    if (!item.UnitPrice.HasValue ||
+                        item.UnitPrice.Value <= 0)
                     {
-                        throw new ValidationException("Custom order item unit price must be greater than zero.");
+                        throw new ValidationException(
+                            "Custom order item unit price must be greater than zero.");
                     }
                 }
-                else if (!item.MealId.HasValue || item.MealId.Value <= 0)
+                else if (!item.MealId.HasValue ||
+                         item.MealId.Value <= 0)
                 {
-                    throw new ValidationException("MealId is required for menu order items.");
+                    throw new ValidationException(
+                        "MealId is required for menu order items.");
                 }
             }
         }
 
-        private static OrderNotificationResult ToNotificationResult(NotificationEntity notification)
+        private static OrderNotificationResult ToNotificationResult(
+            NotificationEntity notification)
             => new(
                 notification.Id,
                 notification.TargetRole,
@@ -233,6 +295,9 @@ namespace Market.Application.Modules.Orders.Commands.CreateOrder
                 notification.CreatedAtUtc,
                 notification.ReadAtUtc);
 
-        private sealed record MealSnapshot(int Id, string Name, decimal BasePrice);
+        private sealed record MealSnapshot(
+            int Id,
+            string Name,
+            decimal BasePrice);
     }
 }

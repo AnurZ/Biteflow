@@ -16,7 +16,6 @@ export interface MealCategoryCreateDto{
   description: string;
 }
 
-// UnitTypes enum (matches backend exactly)
 export enum UnitTypes {
   Kilogram = 0,
   Gram = 1,
@@ -143,7 +142,7 @@ export interface UpdateMealCommand {
 export interface MealIngredientApiDto {
   inventoryItemId: number;
   quantity: number;
-  unitType: number; // or string depending on API
+  unitType: number;
 }
 
 
@@ -152,4 +151,10 @@ export interface MealIngredientApiDto {
 // =======================
 export interface DeleteMealCommand {
   id: number;
+}
+
+export interface MealByNameRequest {
+  name: string;
+  pageNumber?: number;
+  pageSize?: number;
 }
