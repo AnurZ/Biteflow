@@ -59,7 +59,7 @@ namespace Market.Infrastructure
             if (file.Length > MaxFileSize)
             {
                 throw new Exception(
-                    "File is too large. Maximum size is 10 MB.");
+                    "File is too large. Maximum size is 5 MB.");
             }
 
             if (!AllowedTypes.Contains(file.ContentType))
